@@ -13,6 +13,7 @@ import {
   FiFilter,
   FiChevronDown,
   FiChevronUp,
+  FiStar
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -88,6 +89,12 @@ const MyCourses = ({ setActiveView }) => {
   const [categories, setCategories] = useState([]);
   const studentData = JSON.parse(localStorage.getItem("studentData"));
   const base_url = import.meta.env.VITE_API_KEY_Base_URL;
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [rating, setRating] = useState(0);
+  const [review, setReview] = useState("");
+  const [isSubmittingRating, setIsSubmittingRating] = useState(false);
+  const [hoverRating, setHoverRating] = useState(0);
 
   const fetchUserCourses = async () => {
     try {
@@ -112,8 +119,8 @@ const MyCourses = ({ setActiveView }) => {
         `${base_url}/api/student/enrolled-courses/${studentData.id}`,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("studentToken")}`,
-          },
+            Authorization: `Bearer ${localStorage.getItem("studentToken")}`
+          }
         }
       );
 
@@ -126,6 +133,7 @@ const MyCourses = ({ setActiveView }) => {
         const formattedCourses = response.data.enrolledCourses.map((item) => {
           const course = item.courseDetails || {};
           const enrollment = item.enrollmentInfo || {};
+
           // Find instructor details from teachers list
           const instructor = teachersList.find(
             (teacher) =>
@@ -197,6 +205,7 @@ const MyCourses = ({ setActiveView }) => {
                 ).toLocaleDateString()}`
               : "Not started yet",
             certificate: enrollment.certificate,
+            hasRated: enrollment.hasRated || false, // Directly use the hasRated field from enrollment
             isLive: course.type === "live",
             stats: enrollment.stats || {
               totalQuestions: 0,
@@ -205,8 +214,8 @@ const MyCourses = ({ setActiveView }) => {
               accuracy: 0,
               totalMarksObtained: 0,
               totalMaxMarks: 0,
-              overallPercentage: 0,
-            },
+              overallPercentage: 0
+            }
           };
         });
         // 5. Set courses and extract unique categories
@@ -288,7 +297,7 @@ const MyCourses = ({ setActiveView }) => {
     myCourses,
     filterType,
     filterCategory,
-    filterLevel,
+    filterLevel
   ]);
 
   useEffect(() => {
@@ -303,9 +312,9 @@ const MyCourses = ({ setActiveView }) => {
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("studentToken")}`,
-            "Content-Type": "application/json",
+            "Content-Type": "application/json"
           },
-          validateStatus: (status) => status < 500, // Don't throw for 4xx errors
+          validateStatus: (status) => status < 500 // Don't throw for 4xx errors
         }
       );
 
@@ -317,7 +326,7 @@ const MyCourses = ({ setActiveView }) => {
               ? {
                   ...course,
                   lastAccessed: new Date().toISOString(),
-                  lastActivity: `Last active: ${new Date().toLocaleDateString()}`,
+                  lastActivity: `Last active: ${new Date().toLocaleDateString()}`
                 }
               : course
           )
@@ -332,7 +341,7 @@ const MyCourses = ({ setActiveView }) => {
       console.error("Error recording access:", {
         message: error.message,
         response: error.response?.data,
-        status: error.response?.status,
+        status: error.response?.status
       });
 
       const errorMsg =
@@ -350,7 +359,7 @@ const MyCourses = ({ setActiveView }) => {
       // await recordCourseAccess(courseId);
       setActiveView({
         view: "videoPlayer",
-        courseId: courseId,
+        courseId: courseId
       });
     } catch (error) {
       toast.error("Failed to start course");
@@ -377,7 +386,7 @@ const MyCourses = ({ setActiveView }) => {
       const response = await axios.get(
         `${base_url}/api/student/certificate/${courseId}/${studentData.id}`,
         {
-          responseType: "blob",
+          responseType: "blob"
         }
       );
 
@@ -406,7 +415,59 @@ const MyCourses = ({ setActiveView }) => {
       console.error("Certificate download error:", error);
     }
   };
+  const handleRateCourse = (course) => {
+    setSelectedCourse(course);
+    setShowRatingModal(true);
+    setRating(0);
+    setReview("");
+  };
+  const submitRating = async (courseId) => {
+    if (rating === 0) return;
 
+    setIsSubmittingRating(true);
+    try {
+      const response = await axios.post(
+        `${base_url}/api/course-player/${courseId}/rate`,
+        {
+          rating,
+          review,
+          user_id: studentData.id
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("studentToken")}`
+          }
+        }
+      );
+
+      if (response.data.success) {
+        toast.success("Thank you for your feedback!");
+        setShowRatingModal(false);
+        setSelectedCourse(null);
+        setRating(0);
+        setReview("");
+
+        // Update the course to mark it as rated
+        setMyCourses((prevCourses) =>
+          prevCourses.map((course) =>
+            course.id === courseId ? { ...course, hasRated: true } : course
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error submitting rating:", error);
+
+      if (error.response?.status === 400) {
+        toast.error(error.response.data.message || "Invalid rating data");
+      } else if (error.response?.status === 404) {
+        toast.error("Course not found");
+      } else {
+        toast.error("Failed to submit rating");
+      }
+    } finally {
+      setIsSubmittingRating(false);
+    }
+  };
   return (
     <div className="min-h-screen text-gray-900 bg-gray-50">
       {/* Header */}
@@ -536,7 +597,7 @@ const MyCourses = ({ setActiveView }) => {
                   setFilterCategory("all");
                   setFilterLevel("all");
                   toast.success("All filters cleared", {
-                    icon: <FiRefreshCw className="text-green-500" />,
+                    icon: <FiRefreshCw className="text-green-500" />
                   });
                 }}
               >
@@ -753,35 +814,45 @@ const MyCourses = ({ setActiveView }) => {
                   </div>
 
                   <ProgressStats course={course} />
-
+                  <div className="text-xs text-gray-500 mb-2">
+                    Enrolled: {course.enrolledAt}
+                  </div>
                   <div className="flex justify-between items-center mt-auto">
-                    <div className="text-xs text-gray-500">
-                      Enrolled: {course.enrolledAt}
+                    <div className="flex gap-2">
+                      {/* {course.completed && !course.hasRated && (
+                        <button
+                          onClick={() => handleRateCourse(course)}
+                          className="px-3 py-2 rounded-lg text-sm font-medium bg-yellow-100 text-yellow-700 hover:bg-yellow-200 flex items-center transition-colors"
+                        >
+                          <FiStar className="mr-1" />
+                          Rate
+                        </button>
+                      )} */}
+                      <button
+                        onClick={() =>
+                          course.completed
+                            ? handleViewCertificate(course.id)
+                            : handleStartCourse(course.id)
+                        }
+                        className={`px-3 py-2 rounded-lg text-sm font-medium ${
+                          course.completed
+                            ? "bg-green-100 text-green-700 hover:bg-green-200 flex items-center"
+                            : "bg-indigo-100 text-gray-700 hover:bg-gray-200 flex items-center"
+                        } transition-colors`}
+                      >
+                        {course.completed ? (
+                          <>
+                            <FiAward className="mr-1" />
+                            Certificate
+                          </>
+                        ) : (
+                          <>
+                            <FiPlay className="mr-1" />
+                            {course.progress === 0 ? "Start" : "Continue"}
+                          </>
+                        )}
+                      </button>
                     </div>
-                    <button
-                      onClick={() =>
-                        course.completed
-                          ? handleViewCertificate(course.id)
-                          : handleStartCourse(course.id)
-                      }
-                      className={`px-3 py-2 rounded-lg text-sm font-medium ${
-                        course.completed
-                          ? "bg-green-100 text-green-700 hover:bg-green-200 flex items-center"
-                          : "bg-indigo-100 text-gray-700 hover:bg-gray-200 flex items-center"
-                      } transition-colors`}
-                    >
-                      {course.completed ? (
-                        <>
-                          <FiAward className="mr-1" />
-                          Certificate
-                        </>
-                      ) : (
-                        <>
-                          <FiPlay className="mr-1" />
-                          {course.progress === 0 ? "Start" : "Continue"}
-                        </>
-                      )}
-                    </button>
                   </div>
                 </div>
               </motion.div>
@@ -819,6 +890,76 @@ const MyCourses = ({ setActiveView }) => {
               Browse Courses
             </button>
           </motion.div>
+        )}
+        {/* Rating Modal */}
+        {showRatingModal && selectedCourse && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 rounded-full mb-4">
+                  <FiStar className="text-indigo-600 text-2xl" />
+                </div>
+                <h2 className="text-2xl font-bold mb-2">Rate This Course</h2>
+                <p className="text-gray-600 mb-6">
+                  How would you rate "{selectedCourse.title}"?
+                </p>
+
+                {/* Star Rating */}
+                <div className="flex justify-center mb-6">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRating(star)}
+                      onMouseEnter={() => setHoverRating(star)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      className="text-2xl p-1 focus:outline-none"
+                    >
+                      {star <= (hoverRating || rating) ? (
+                        <span className="text-yellow-400">★</span>
+                      ) : (
+                        <span className="text-gray-300">☆</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Review Textarea */}
+                <div className="mb-6">
+                  <textarea
+                    value={review}
+                    onChange={(e) => setReview(e.target.value)}
+                    placeholder="Share your thoughts about this course (optional)"
+                    className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    rows={4}
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowRatingModal(false);
+                      setSelectedCourse(null);
+                      setRating(0);
+                      setReview("");
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                    disabled={isSubmittingRating}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => submitRating(selectedCourse.id)}
+                    disabled={rating === 0 || isSubmittingRating}
+                    className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmittingRating ? "Submitting..." : "Submit Rating"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </main>
     </div>

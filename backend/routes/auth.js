@@ -26,12 +26,12 @@ const {
   getCategory,
   createCategory,
   updateCategory,
-  deleteCategory,
+  deleteCategory
 } = require("../controllers/auth");
 const {
   authenticateToken,
   authorizeAdmin,
-  authorizeSubAdmin,
+  authorizeSubAdmin
 } = require("../middleware/auth");
 const multer = require("multer");
 
@@ -63,7 +63,7 @@ const storage = multer.diskStorage({
     }
 
     cb(null, finalName);
-  },
+  }
 });
 
 // File filter configuration (unchanged)
@@ -87,8 +87,8 @@ const upload = multer({
   fileFilter: fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit
-    files: 12, // Max 7 files total (1 cv + 5 certificates + 1 profile photo)
-  },
+    files: 12 // Max 7 files total (1 cv + 5 certificates + 1 profile photo)
+  }
 });
 
 // Error handling middleware for file uploads
@@ -102,13 +102,13 @@ const handleUploadErrors = (err, req, res, next) => {
           ? "File too large (max 5MB)"
           : err.code === "LIMIT_FILE_COUNT"
           ? "Too many files uploaded"
-          : "File upload error",
+          : "File upload error"
     });
   } else if (err) {
     // An unknown error occurred
     return res.status(400).json({
       status: "error",
-      message: err.message || "File upload failed",
+      message: err.message || "File upload failed"
     });
   }
   next();
@@ -148,7 +148,7 @@ router.post(
   upload.fields([
     { name: "cv", maxCount: 1 },
     { name: "certificates[]", maxCount: 10 }, // Changed from certificates[] to certificates
-    { name: "profile_photo", maxCount: 1 },
+    { name: "profile_photo", maxCount: 1 }
   ]),
   handleUploadErrors,
   teacherregistration
@@ -163,7 +163,7 @@ router.get("/notification-count", async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to get notification count",
+      message: "Failed to get notification count"
     });
   }
 });

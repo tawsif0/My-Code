@@ -22,7 +22,7 @@ import {
   FiUser,
   FiUsers,
   FiCalendar,
-  FiAlertCircle,
+  FiAlertCircle
 } from "react-icons/fi";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
@@ -61,13 +61,19 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
   const base_url = import.meta.env.VITE_API_KEY_Base_URL;
   const studentdata = JSON.parse(localStorage.getItem("studentData"));
   const [hasNextContent, setHasNextContent] = useState(false);
+  // Add to your existing state variables
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [review, setReview] = useState("");
+  const [isSubmittingRating, setIsSubmittingRating] = useState(false);
+  const [hoverRating, setHoverRating] = useState(0);
   // Get auth headers
   const getAuthHeaders = () => {
     const token = localStorage.getItem("authToken");
     return {
       headers: {
-        Authorization: `Bearer ${token}`,
-      },
+        Authorization: `Bearer ${token}`
+      }
     };
   };
 
@@ -89,7 +95,7 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
           initialProgress[item._id] = {
             completed: item.completed || false,
             progress: item.progress || 0,
-            timeSpent: item.timeSpent || 0,
+            timeSpent: item.timeSpent || 0
           };
 
           if (item.type === "quiz" && item.answers) {
@@ -237,7 +243,7 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
             contentItemId: currentItem._id,
             secondsWatched: timeWatched,
             totalDuration: currentItem.duration || 0,
-            user_id: studentdata.id,
+            user_id: studentdata.id
           },
           getAuthHeaders()
         );
@@ -255,12 +261,12 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
         if (currentItem && currentItem.type !== "quiz") {
           axios
             .post(
-              `${base_url}/api/course-player/${id}/track-video-time`,
+              `${base_url}/api/course-player/${courseId}/track-video-time`,
               {
                 contentItemId: currentItem._id,
                 secondsWatched: timeWatched,
                 totalDuration: currentItem.duration || 0,
-                user_id: studentdata.id,
+                user_id: studentdata.id
               },
               getAuthHeaders()
             )
@@ -375,7 +381,7 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
             contentItemId: currentItem._id,
             secondsWatched: timeWatched,
             totalDuration: currentItem.duration || 0,
-            user_id: studentdata.id,
+            user_id: studentdata.id
           },
           getAuthHeaders()
         );
@@ -392,8 +398,8 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
         [currentItem._id]: {
           ...prev[currentItem._id],
           completed: true,
-          progress: 100,
-        },
+          progress: 100
+        }
       }));
     }
   };
@@ -410,7 +416,7 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
   const handleAnswerChange = (questionId, answer) => {
     setQuizAnswers((prev) => ({
       ...prev,
-      [questionId]: answer,
+      [questionId]: answer
     }));
   };
 
@@ -426,7 +432,7 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
           contentItemId: quiz._id,
           contentItemType: quiz.type,
           answers: quizAnswers,
-          user_id: studentdata.id,
+          user_id: studentdata.id
         },
         getAuthHeaders()
       );
@@ -448,12 +454,12 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
           completed: true,
           score: response.data.score,
           gradingStatus: response.data.gradingStatus,
-          answers: response.data.answers,
+          answers: response.data.answers
         };
 
         return {
           ...prevCourse,
-          content: updatedContent,
+          content: updatedContent
         };
       });
 
@@ -462,8 +468,8 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
         [quiz._id]: {
           ...prev[quiz._id],
           completed: true,
-          progress: 100,
-        },
+          progress: 100
+        }
       }));
 
       // Show success message based on grading status
@@ -552,16 +558,21 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
       enablejsapi: "1",
       origin: window.location.origin,
       autoplay: isPlaying ? "1" : "0",
-      mute: isMuted ? "1" : "0",
+      mute: isMuted ? "1" : "0"
     });
 
     return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
   };
 
-  const downloadCertificate = async (courseId) => {
+  const downloadCertificate = async () => {
     try {
-      // Check if course is actually completed (not just progress 100%)
-      if (!courseCompleted) {
+      // Check if all content is completed
+      const allCompleted = course.content.every((item) => {
+        const progressItem = progress[item._id];
+        return progressItem?.completed || item.completed;
+      });
+
+      if (!allCompleted) {
         toast.error(
           "Please complete all course requirements to get your certificate"
         );
@@ -575,7 +586,7 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
       const response = await axios.get(
         `${base_url}/api/student/certificate/${courseId}/${studentdata.id}`,
         {
-          responseType: "blob", // Important for file downloads
+          responseType: "blob" // Important for file downloads
         }
       );
 
@@ -604,11 +615,155 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
       toast.success("Certificate downloaded successfully");
     } catch (error) {
       toast.dismiss();
-      toast.error("Failed to download certificate");
       console.error("Certificate download error:", error);
+
+      if (error.response?.status === 404) {
+        toast.error("Certificate not available yet. Please contact support.");
+      } else {
+        toast.error("Failed to download certificate");
+      }
     }
   };
+  useEffect(() => {
+    // Check if course is completed and user hasn't rated it yet
+    if (courseCompleted && course && !showRatingModal) {
+      const hasRated = course.ratings?.some(
+        (rating) =>
+          rating.user === studentdata.id || rating.user._id === studentdata.id
+      );
 
+      if (!hasRated) {
+        // Show rating modal after a short delay
+        const timer = setTimeout(() => {
+          setShowRatingModal(true);
+        }, 2000);
+
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [courseCompleted, course, studentdata.id, showRatingModal]);
+  const submitRating = async () => {
+    if (rating === 0) return;
+
+    setIsSubmittingRating(true);
+    try {
+      const response = await axios.post(
+        `${base_url}/api/course-player/${courseId}/rate`,
+        {
+          rating,
+          review,
+          user_id: studentdata.id // Change from user.id to user_id
+        },
+        getAuthHeaders() // Make sure to include auth headers
+      );
+
+      if (response.data.success) {
+        toast.success("Thank you for your feedback!");
+        setShowRatingModal(false);
+        setRating(0);
+        setReview("");
+
+        // Update course with new rating
+        setCourse((prev) => ({
+          ...prev,
+          ratings: [
+            ...prev.ratings,
+            {
+              user: studentdata.id,
+              rating,
+              review,
+              createdAt: new Date()
+            }
+          ],
+          averageRating: response.data.newAverageRating
+        }));
+      }
+    } catch (error) {
+      console.error("Error submitting rating:", error);
+
+      // More specific error handling
+      if (error.response?.status === 400) {
+        toast.error(error.response.data.message || "Invalid rating data");
+      } else if (error.response?.status === 404) {
+        toast.error("Course not found");
+      } else {
+        toast.error("Failed to submit rating");
+      }
+    } finally {
+      setIsSubmittingRating(false);
+    }
+  };
+  // Add this function to mark live sessions as completed
+  const markLiveSessionCompleted = async (contentItemId) => {
+    try {
+      const response = await axios.post(
+        `${base_url}/api/course-player/${courseId}/complete-live-session`,
+        {
+          contentItemId,
+          user_id: studentdata.id,
+          attended: true
+        },
+        getAuthHeaders()
+      );
+
+      if (response.data.success) {
+        // Update progress locally
+        setProgress((prev) => ({
+          ...prev,
+          [contentItemId]: {
+            ...prev[contentItemId],
+            completed: true,
+            progress: 100
+          }
+        }));
+
+        // Update course data
+        setCourse((prev) => ({
+          ...prev,
+          content: prev.content.map((item) =>
+            item._id === contentItemId
+              ? { ...item, completed: true, attendanceStatus: "present" }
+              : item
+          )
+        }));
+
+        toast.success("Live session marked as attended");
+      }
+    } catch (error) {
+      console.error("Error marking live session as completed:", error);
+      toast.error("Failed to update attendance");
+    }
+  };
+  // Add this useEffect to properly detect course completion
+  useEffect(() => {
+    if (course && course.content && course.content.length > 0) {
+      // Check if all content items are completed
+      const allCompleted = course.content.every((item) => {
+        const progressItem = progress[item._id];
+        return progressItem?.completed || item.completed;
+      });
+
+      // Check if user has already rated this course
+      const hasRated = course.ratings?.some(
+        (rating) =>
+          rating.user === studentdata.id || rating.user._id === studentdata.id
+      );
+
+      if (allCompleted && !courseCompleted) {
+        setCourseCompleted(true);
+
+        // Show rating modal after completion (if not already rated)
+        if (!hasRated && !showRatingModal) {
+          const timer = setTimeout(() => {
+            setShowRatingModal(true);
+          }, 2000);
+          return () => clearTimeout(timer);
+        }
+      } else if (!allCompleted && courseCompleted) {
+        setCourseCompleted(false);
+      }
+    }
+  }, [course, progress, courseCompleted, showRatingModal, studentdata.id]);
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -714,13 +869,13 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
                         if (!currentItem.duration) {
                           const updatedItem = {
                             ...currentItem,
-                            duration: e.target.duration,
+                            duration: e.target.duration
                           };
                           setCourse((prev) => ({
                             ...prev,
                             content: prev.content.map((item) =>
                               item._id === currentItem._id ? updatedItem : item
-                            ),
+                            )
                           }));
                         }
                       }}
@@ -736,8 +891,8 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
                           [currentItem._id]: {
                             ...prev[currentItem._id],
                             completed: true,
-                            progress: 100,
-                          },
+                            progress: 100
+                          }
                         }));
                       }}
                     />
@@ -778,7 +933,7 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
                         style={{
                           width: `${
                             (currentTime / (currentItem.duration || 1)) * 100
-                          }%`,
+                          }%`
                         }}
                       ></div>
                       <div className="absolute top-0 left-0 h-full w-full opacity-0 group-hover/progress:opacity-100">
@@ -921,21 +1076,10 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
                   <p className="text-gray-300 mb-6">
                     {currentItem.description.replace(/<[^>]+>/g, "")}
                   </p>
-
-                  {/* Add attendance status display here */}
-                  {currentItem.attendanceStatus && (
-                    <div className="mb-4">
-                      <span
-                        className={`px-4 py-2 rounded-full text-sm font-medium ${
-                          currentItem.attendanceStatus === "present"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {currentItem.attendanceStatus === "present"
-                          ? "Present"
-                          : "Absent"}
-                      </span>
+                  {progress[currentItem._id]?.completed && (
+                    <div className="mt-4 bg-green-100 text-green-800 px-4 py-2 rounded-lg">
+                      <FiCheck className="inline mr-2" />
+                      Attendance confirmed
                     </div>
                   )}
 
@@ -952,7 +1096,7 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
                               day: "numeric",
                               year: "numeric",
                               hour: "2-digit",
-                              minute: "2-digit",
+                              minute: "2-digit"
                             }
                           )}
                         </span>
@@ -1045,7 +1189,6 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
                 {overallProgress}% complete
               </div>
             </div>
-
             <div className="mb-6">
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
@@ -1054,7 +1197,6 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
                 ></div>
               </div>
             </div>
-
             <div className="space-y-2">
               {course.content.map((item, index) => (
                 <motion.div
@@ -1178,15 +1320,16 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
                 </motion.div>
               ))}
             </div>
-
-            {overallProgress === 100 && courseCompleted && (
+            {calculateOverallProgress() === 100 && courseCompleted && (
               <div className="mt-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl p-6 text-white">
                 <div className="flex items-center">
                   <div className="bg-white/20 p-3 rounded-full mr-4">
                     <FiAward size={24} />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg">Course Completed!</h3>
+                    <h3 className="font-bold text-lg !text-white">
+                      Course Completed!
+                    </h3>
                     <p className="text-sm opacity-90">
                       Congratulations on finishing this course!
                     </p>
@@ -1200,6 +1343,56 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
                 </button>
               </div>
             )}
+            <div className="mt-6">
+              <h3 className="font-bold text-lg mb-3">Course Ratings</h3>
+              {course.averageRating > 0 ? (
+                <div className="space-y-3">
+                  <div className="flex items-center">
+                    <div className="text-2xl font-bold text-yellow-500 mr-2">
+                      {course.averageRating.toFixed(1)}
+                    </div>
+                    <div className="flex">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <span
+                          key={star}
+                          className={`text-lg ${
+                            star <= Math.round(course.averageRating)
+                              ? "text-yellow-400"
+                              : "text-gray-300"
+                          }`}
+                        >
+                          ★
+                        </span>
+                      ))}
+                    </div>
+                    <span className="text-sm text-gray-600 ml-2">
+                      ({course.ratings?.length || 0} ratings)
+                    </span>
+                  </div>
+
+                  {course.ratings?.slice(0, 3).map((rating) => (
+                    <div key={rating._id} className="border-t pt-3">
+                      <div className="flex items-center mb-1">
+                        <div className="flex text-yellow-400">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <span key={star} className="text-sm">
+                              {star <= rating.rating ? "★" : "☆"}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      {rating.review && (
+                        <p className="text-sm text-gray-600 mt-1">
+                          {rating.review}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-sm">No ratings yet</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1588,6 +1781,88 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
                     </button>
                   </div>
                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* Rating Modal */}
+      <AnimatePresence>
+        {showRatingModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          >
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 20, opacity: 0 }}
+              className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6"
+            >
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 rounded-full mb-4">
+                  <FiAward className="text-indigo-600 text-2xl" />
+                </div>
+                <h2 className="text-2xl font-bold mb-2">Course Completed!</h2>
+                <p className="text-gray-600 mb-6">
+                  Congratulations on completing "{course.title}"! Please share
+                  your experience.
+                </p>
+
+                {/* Star Rating */}
+                <div className="flex justify-center mb-6">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRating(star)}
+                      onMouseEnter={() => setHoverRating(star)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      className="text-2xl p-1 focus:outline-none"
+                    >
+                      {star <= (hoverRating || rating) ? (
+                        <span className="text-yellow-400">★</span>
+                      ) : (
+                        <span className="text-gray-300">☆</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Review Textarea */}
+                <div className="mb-6">
+                  <textarea
+                    value={review}
+                    onChange={(e) => setReview(e.target.value)}
+                    placeholder="Share your thoughts about this course (optional)"
+                    className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    rows={4}
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowRatingModal(false);
+                      setRating(0);
+                      setReview("");
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                    disabled={isSubmittingRating}
+                  >
+                    Maybe Later
+                  </button>
+                  <button
+                    onClick={submitRating}
+                    disabled={rating === 0 || isSubmittingRating}
+                    className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmittingRating ? "Submitting..." : "Submit Review"}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>

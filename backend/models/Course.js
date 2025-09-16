@@ -8,7 +8,7 @@ const questionSchema = new Schema({
   type: {
     type: String,
     required: true,
-    enum: ["mcq-single", "mcq-multiple", "short-answer", "broad-answer"],
+    enum: ["mcq-single", "mcq-multiple", "short-answer", "broad-answer"]
   },
   options: [String],
   // Change correctAnswer to be conditional
@@ -16,14 +16,14 @@ const questionSchema = new Schema({
     type: Schema.Types.Mixed,
     required: function () {
       return ["mcq-single", "mcq-multiple"].includes(this.type);
-    },
+    }
   },
   // Add expectedAnswer for short and broad answers
   expectedAnswer: {
     type: String,
     required: function () {
       return ["short-answer", "broad-answer"].includes(this.type);
-    },
+    }
   },
   marks: { type: Number, default: 1 },
   explanation: String,
@@ -31,8 +31,8 @@ const questionSchema = new Schema({
     type: Boolean,
     default: function () {
       return ["short-answer", "broad-answer"].includes(this.type);
-    },
-  },
+    }
+  }
 });
 
 // In models/Course.js - update the contentItemSchema
@@ -41,7 +41,7 @@ const contentItemSchema = new Schema(
     type: {
       type: String,
       required: true,
-      enum: ["tutorial", "quiz", "live"],
+      enum: ["tutorial", "quiz", "live"]
     },
     title: { type: String, required: true },
     description: String,
@@ -49,21 +49,21 @@ const contentItemSchema = new Schema(
       filename: String,
       path: String,
       size: Number,
-      mimetype: String,
+      mimetype: String
     },
     youtubeLink: String, // For free courses
     thumbnail: {
       filename: String,
       path: String,
       size: Number,
-      mimetype: String,
+      mimetype: String
     },
     meetingLink: String, // For live classes
     schedule: {
       type: String,
       required: function () {
         return this.type === "live";
-      },
+      }
     },
     questions: [questionSchema], // For quizzes
     isPremium: { type: Boolean, default: false },
@@ -71,7 +71,7 @@ const contentItemSchema = new Schema(
     passingScore: { type: Number, default: 70 },
     maxAttempts: { type: Number, default: 3 },
     showAnswers: { type: Boolean, default: false },
-    showCorrectAnswers: { type: Boolean, default: false },
+    showCorrectAnswers: { type: Boolean, default: false }
   },
   { timestamps: true }
 );
@@ -80,7 +80,7 @@ const attachmentSchema = new Schema({
   filename: { type: String, required: true },
   path: { type: String, required: true },
   size: { type: Number, required: true },
-  mimetype: { type: String, required: true },
+  mimetype: { type: String, required: true }
 });
 
 // Student answer schema with detailed tracking
@@ -97,7 +97,7 @@ const studentAnswerSchema = new Schema(
     teacherFeedback: String,
     gradedBy: { type: Schema.Types.ObjectId, ref: "Student" },
     gradedAt: Date,
-    timeSpent: { type: Number, default: 0 }, // in seconds
+    timeSpent: { type: Number, default: 0 } // in seconds
   },
   { _id: true }
 );
@@ -121,7 +121,7 @@ const studentProgressSchema = new Schema(
     status: {
       type: String,
       enum: ["not-started", "in-progress", "completed", "graded"],
-      default: "not-started",
+      default: "not-started"
     },
     gradingStatus: {
       type: String,
@@ -129,15 +129,15 @@ const studentProgressSchema = new Schema(
         "not-graded",
         "auto-graded",
         "manually-graded",
-        "partially-graded",
+        "partially-graded"
       ],
-      default: "not-graded",
+      default: "not-graded"
     },
     attendanceStatus: {
       type: String,
       enum: ["present", "absent", "pending"], // ✅ all strings
-      default: "pending",
-    },
+      default: "pending"
+    }
   },
   { _id: true }
 );
@@ -148,7 +148,7 @@ const certificateSchema = new Schema({
   issuedAt: { type: Date, default: Date.now },
   issuedBy: { type: Schema.Types.ObjectId, ref: "Student" },
   downloadUrl: String,
-  verificationCode: String,
+  verificationCode: String
 });
 
 // Student enrollment with comprehensive tracking
@@ -160,6 +160,7 @@ const enrollmentSchema = new Schema(
     lastAccessed: Date,
     completed: { type: Boolean, default: false },
     completedAt: Date,
+    hasRated: { type: Boolean, default: false }, // Make sure this line exists
     progress: [studentProgressSchema],
     totalTimeSpent: { type: Number, default: 0 }, // in seconds
     certificate: certificateSchema,
@@ -168,8 +169,8 @@ const enrollmentSchema = new Schema(
         accessedAt: Date,
         duration: Number, // in seconds
         contentItemId: Schema.Types.ObjectId,
-        action: String, // 'viewed', 'attempted', 'completed', etc.
-      },
+        action: String // 'viewed', 'attempted', 'completed', etc.
+      }
     ],
     overallGrade: {
       score: Number,
@@ -178,13 +179,13 @@ const enrollmentSchema = new Schema(
       letterGrade: String,
       feedback: String,
       gradedBy: { type: Schema.Types.ObjectId, ref: "Student" },
-      gradedAt: Date,
+      gradedAt: Date
     },
     status: {
       type: String,
       enum: ["active", "completed", "dropped", "certified"],
-      default: "active",
-    },
+      default: "active"
+    }
   },
   { _id: true }
 );
@@ -193,20 +194,20 @@ const courseSchema = new Schema(
     title: { type: String, required: true },
     description: { type: String, required: true },
     instructor: {
-      type: Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId
     },
     teachingAssistants: [
       {
         user: { type: Schema.Types.ObjectId },
         role: String,
-        addedAt: { type: Date, default: Date.now },
-      },
+        addedAt: { type: Date, default: Date.now }
+      }
     ],
     thumbnail: {
       filename: String,
       path: String,
       size: Number,
-      mimetype: String,
+      mimetype: String
     },
     attachments: [attachmentSchema],
     content: [contentItemSchema],
@@ -215,12 +216,12 @@ const courseSchema = new Schema(
       type: String,
       required: true,
       enum: ["free", "premium", "live"],
-      default: "free",
+      default: "free"
     },
     status: {
       type: String,
       enum: ["active", "inactive", "draft"],
-      default: "draft",
+      default: "draft"
     },
     categories: [{ type: String }],
     tags: [String],
@@ -231,15 +232,15 @@ const courseSchema = new Schema(
         user: { type: Schema.Types.ObjectId },
         rating: { type: Number, min: 1, max: 5 },
         review: String,
-        createdAt: { type: Date, default: Date.now },
-      },
+        createdAt: { type: Date, default: Date.now }
+      }
     ],
     averageRating: { type: Number, default: 0 },
     targetAudience: [String],
     level: {
       type: String,
       enum: ["beginner", "intermediate", "advanced"],
-      default: "beginner",
+      default: "beginner"
     },
     gradingPolicy: {
       passingGrade: { type: Number, default: 40 },
@@ -247,16 +248,16 @@ const courseSchema = new Schema(
         {
           letter: String,
           minPercentage: Number,
-          maxPercentage: Number,
-        },
-      ],
+          maxPercentage: Number
+        }
+      ]
     },
     previousInstructors: [
       {
         instructor: { type: Schema.Types.ObjectId },
         changedAt: { type: Date, default: Date.now },
-        changedBy: { type: Schema.Types.ObjectId, ref: "Student" },
-      },
+        changedBy: { type: Schema.Types.ObjectId, ref: "Student" }
+      }
     ],
     createdBy: { type: Schema.Types.ObjectId, ref: "Student" },
     totalStudents: { type: Number, default: 0 },
@@ -265,13 +266,13 @@ const courseSchema = new Schema(
     analytics: {
       completionRate: Number,
       averageScore: Number,
-      satisfactionScore: Number,
+      satisfactionScore: Number
     },
     settings: {
       allowDiscussion: { type: Boolean, default: true },
       showProgress: { type: Boolean, default: true },
-      showLeaderboard: { type: Boolean, default: false },
-    },
+      showLeaderboard: { type: Boolean, default: false }
+    }
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
@@ -343,7 +344,7 @@ courseSchema.methods.calculateQuizResults = function (quizId, answers) {
       marksObtained,
       maxMarks: question.marks,
       explanation: question.explanation,
-      needsManualGrading: question.needsManualGrading,
+      needsManualGrading: question.needsManualGrading
     });
   });
 
@@ -358,7 +359,7 @@ courseSchema.methods.calculateQuizResults = function (quizId, answers) {
     passed,
     answers: detailedAnswers,
     gradingStatus,
-    needsManualGrading,
+    needsManualGrading
   };
 };
 courseSchema.methods.submitQuiz = async function (
@@ -410,7 +411,7 @@ courseSchema.methods.submitQuiz = async function (
       bestScore: 0,
       bestAttempt: 0,
       status: "in-progress",
-      gradingStatus: "not-graded",
+      gradingStatus: "not-graded"
     };
     enrollment.progress.push(progress);
   }
@@ -440,7 +441,7 @@ courseSchema.methods.submitQuiz = async function (
     accessedAt: now,
     duration: timeSpent,
     contentItemId: quizId,
-    action: "submitted",
+    action: "submitted"
   });
 
   // Check if all content is completed
@@ -450,7 +451,7 @@ courseSchema.methods.submitQuiz = async function (
   return {
     ...results,
     attemptNumber: progress.attempts,
-    remainingAttempts: quiz.maxAttempts - progress.attempts,
+    remainingAttempts: quiz.maxAttempts - progress.attempts
   };
 };
 // Grade student answers (for teachers)
@@ -515,17 +516,17 @@ courseSchema.methods.gradeStudentAnswers = async function (
     accessedAt: now,
     duration: 0,
     contentItemId: quizId,
-    action: "graded",
+    action: "graded"
   });
 
   await this.save();
   return progress;
 };
 
-// Check if student has completed the course
+// In models/Course.js - update the checkCourseCompletion method
 courseSchema.methods.checkCourseCompletion = function (studentId) {
-  const enrollment = this.enrollments.find((e) =>
-    e.studentId.equals(studentId)
+  const enrollment = this.enrollments.find(
+    (e) => e.studentId.toString() === studentId
   );
   if (!enrollment || enrollment.completed) return false;
 
@@ -573,7 +574,7 @@ courseSchema.methods.issueCertificate = async function (
     issuedAt: new Date(),
     issuedBy: issuedBy,
     downloadUrl: certificateData.downloadUrl || "",
-    verificationCode,
+    verificationCode
   };
 
   enrollment.status = "certified";

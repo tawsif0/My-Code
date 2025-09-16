@@ -42,7 +42,7 @@ Courseplayer.get("/single-courses/:id", async (req, res) => {
         answers: progress?.answers,
         passed: progress?.passed,
         timeSpent: progress?.timeSpent || 0,
-        gradingStatus: progress?.gradingStatus,
+        gradingStatus: progress?.gradingStatus
       };
     });
 
@@ -61,8 +61,8 @@ Courseplayer.get("/single-courses/:id", async (req, res) => {
       enrollmentStatus: {
         enrolledAt: enrollment.enrolledAt,
         completed: enrollment.completed,
-        certificate: enrollment.certificate,
-      },
+        certificate: enrollment.certificate
+      }
     });
   } catch (error) {
     console.log(error);
@@ -75,7 +75,7 @@ Courseplayer.post("/:courseId/access", async (req, res) => {
   try {
     const course = await Course.findOne({
       _id: req.params.courseId,
-      "enrollments.studentId": req.body.user_id,
+      "enrollments.studentId": req.body.user_id
     });
 
     if (!course) {
@@ -104,7 +104,7 @@ Courseplayer.post("/:courseId/track-watch-time", async (req, res) => {
     const { contentItemId, duration, currentTime, totalDuration } = req.body;
     const course = await Course.findOne({
       _id: req.params.courseId,
-      "enrollments.studentId": req.user._id,
+      "enrollments.studentId": req.user._id
     });
 
     if (!course) {
@@ -141,7 +141,7 @@ Courseplayer.post("/:courseId/track-watch-time", async (req, res) => {
         progress: 0,
         completed: false,
         timeSpent: 0,
-        status: "in-progress",
+        status: "in-progress"
       };
       enrollment.progress.push(progressRecord);
     }
@@ -166,7 +166,7 @@ Courseplayer.post("/:courseId/track-watch-time", async (req, res) => {
       duration,
       contentItemId: contentItem._id,
       action: "watched",
-      progress: progressPercentage,
+      progress: progressPercentage
     });
 
     enrollment.lastAccessed = now;
@@ -195,7 +195,7 @@ Courseplayer.post("/:courseId/track-watch-time", async (req, res) => {
       progress: progressRecord.progress,
       timeSpent: progressRecord.timeSpent,
       completed: progressRecord.completed,
-      courseCompleted: allCompleted,
+      courseCompleted: allCompleted
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -209,7 +209,7 @@ Courseplayer.post("/:courseId/track-tutorial-time", async (req, res) => {
 
     const course = await Course.findOne({
       _id: req.params.courseId,
-      "enrollments.studentId": userId,
+      "enrollments.studentId": userId
     });
 
     if (!course) {
@@ -246,7 +246,7 @@ Courseplayer.post("/:courseId/track-tutorial-time", async (req, res) => {
         progress: 0,
         completed: false,
         timeSpent: 0,
-        status: "in-progress",
+        status: "in-progress"
       };
       enrollment.progress.push(progressRecord);
     }
@@ -271,7 +271,7 @@ Courseplayer.post("/:courseId/track-tutorial-time", async (req, res) => {
       duration,
       contentItemId: contentItem._id,
       action: "watched",
-      progress: progressPercentage,
+      progress: progressPercentage
     });
 
     enrollment.lastAccessed = now;
@@ -300,7 +300,7 @@ Courseplayer.post("/:courseId/track-tutorial-time", async (req, res) => {
       progress: progressRecord.progress,
       timeSpent: progressRecord.timeSpent,
       completed: progressRecord.completed,
-      courseCompleted: allCompleted,
+      courseCompleted: allCompleted
     });
   } catch (error) {
     console.error("Error tracking tutorial time:", error);
@@ -311,114 +311,83 @@ Courseplayer.post("/:courseId/track-tutorial-time", async (req, res) => {
 });
 
 // Track video watch time in seconds
-
 Courseplayer.post("/:courseId/track-video-time", async (req, res) => {
   try {
-    const { contentItemId, secondsWatched, totalDuration } = req.body;
-    const userId = req.body.user_id;
+    const { courseId } = req.params;
+    const { contentItemId, secondsWatched, totalDuration, user_id } = req.body;
 
-    const course = await Course.findOne({
-      _id: req.params.courseId,
-      "enrollments.studentId": userId,
-    });
+    // Validate input
+    if (!contentItemId || !user_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Content item ID and user ID are required"
+      });
+    }
 
+    // Find the course
+    const course = await Course.findById(courseId);
     if (!course) {
-      return res
-        .status(404)
-        .json({ message: "Course not found or not enrolled" });
+      return res.status(404).json({
+        success: false,
+        message: "Course not found"
+      });
     }
 
+    // Find the enrollment
     const enrollment = course.enrollments.find(
-      (e) => e.studentId.toString() === userId.toString()
+      (e) => e.studentId.toString() === user_id
     );
 
-    const contentItem = course.content.id(contentItemId);
-    if (!contentItem || contentItem.type !== "tutorial") {
-      return res.status(404).json({ message: "Video content not found" });
+    if (!enrollment) {
+      return res.status(404).json({
+        success: false,
+        message: "Enrollment not found"
+      });
     }
 
-    // Find or create progress record
-    let progressRecord = enrollment.progress.find(
-      (p) => p.contentItemId.toString() === contentItemId.toString()
+    // Update progress for this content item
+    const progressIndex = enrollment.progress.findIndex(
+      (p) => p.contentItemId.toString() === contentItemId
     );
 
-    const now = new Date();
-    const progressPercentage = Math.min(
-      100,
-      Math.round((secondsWatched / totalDuration) * 100)
-    );
-    const isCompleted = progressPercentage >= 95; // Consider 95% or more as completed
+    if (progressIndex === -1) {
+      // Add new progress entry
+      enrollment.progress.push({
+        contentItemId,
+        completed: secondsWatched >= totalDuration * 0.95, // Mark as completed if watched 95% or more
+        progress: Math.min(
+          100,
+          Math.round((secondsWatched / totalDuration) * 100)
+        ),
+        timeSpent: secondsWatched,
+        lastWatched: new Date()
+      });
+    } else {
+      // Update existing progress
+      enrollment.progress[progressIndex].progress = Math.min(
+        100,
+        Math.round((secondsWatched / totalDuration) * 100)
+      );
+      enrollment.progress[progressIndex].timeSpent = secondsWatched;
+      enrollment.progress[progressIndex].lastWatched = new Date();
 
-    if (!progressRecord) {
-      progressRecord = {
-        contentItemId: contentItem._id,
-        contentItemType: "tutorial",
-        progress: 0,
-        completed: false,
-        timeSpent: 0,
-        status: "in-progress",
-      };
-      enrollment.progress.push(progressRecord);
-    }
-
-    // Update watch time and progress
-    progressRecord.timeSpent = secondsWatched;
-    progressRecord.progress = Math.max(
-      progressRecord.progress,
-      progressPercentage
-    );
-    progressRecord.lastAccessed = now;
-
-    if (isCompleted && !progressRecord.completed) {
-      progressRecord.completed = true;
-      progressRecord.completedAt = now;
-      progressRecord.status = "completed";
-    }
-
-    // Update access history
-    enrollment.accessHistory.push({
-      accessedAt: now,
-      duration: secondsWatched - (progressRecord.timeSpent || 0),
-      contentItemId: contentItem._id,
-      action: "watched",
-      progress: progressPercentage,
-    });
-
-    enrollment.lastAccessed = now;
-    enrollment.totalTimeSpent =
-      (enrollment.totalTimeSpent || 0) +
-      (secondsWatched - (progressRecord.timeSpent || 0));
-
-    // Check course completion
-    const allContentIds = course.content.map((item) => item._id.toString());
-    const completedContentIds = enrollment.progress
-      .filter((p) => p.completed)
-      .map((p) => p.contentItemId.toString());
-
-    const allCompleted = allContentIds.every((id) =>
-      completedContentIds.includes(id)
-    );
-
-    if (allCompleted) {
-      enrollment.completed = true;
-      enrollment.completedAt = now;
-      enrollment.status = "completed";
+      // Mark as completed if watched 95% or more
+      if (secondsWatched >= totalDuration * 0.95) {
+        enrollment.progress[progressIndex].completed = true;
+      }
     }
 
     await course.save();
 
     res.json({
       success: true,
-      progress: progressRecord.progress,
-      timeSpent: progressRecord.timeSpent,
-      completed: progressRecord.completed,
-      courseCompleted: allCompleted,
+      message: "Progress updated successfully"
     });
   } catch (error) {
-    console.error("Error tracking video time:", error);
+    console.error("Progress tracking error:", error);
     res.status(500).json({
-      message: "Failed to track video time",
-      error: error.message,
+      success: false,
+      message: "Internal server error"
     });
   }
 });
@@ -465,7 +434,7 @@ Courseplayer.post("/submit-quiz", async (req, res) => {
         attempts: existingProgress.attempts,
         certificateUrl: enrollment.certificate,
         courseCompleted: enrollment.completed,
-        gradingStatus: existingProgress.gradingStatus,
+        gradingStatus: existingProgress.gradingStatus
       });
     }
 
@@ -494,7 +463,7 @@ Courseplayer.post("/submit-quiz", async (req, res) => {
           maxMarks: question.marks,
           explanation: question.explanation,
           needsManualGrading: false,
-          status: "not-answered",
+          status: "not-answered"
         });
         return;
       }
@@ -555,7 +524,7 @@ Courseplayer.post("/submit-quiz", async (req, res) => {
           ? "awaiting-grading"
           : isCorrect
           ? "correct"
-          : "incorrect",
+          : "incorrect"
       });
     });
 
@@ -598,7 +567,7 @@ Courseplayer.post("/submit-quiz", async (req, res) => {
         bestScore: 0,
         bestAttempt: 0,
         status: "in-progress",
-        gradingStatus: "not-graded",
+        gradingStatus: "not-graded"
       };
       enrollment.progress.push(progress);
     }
@@ -624,7 +593,7 @@ Courseplayer.post("/submit-quiz", async (req, res) => {
       accessedAt: now,
       duration: 0,
       contentItemId: quiz._id,
-      action: "quiz-submitted",
+      action: "quiz-submitted"
     });
 
     enrollment.lastAccessed = now;
@@ -668,12 +637,227 @@ Courseplayer.post("/submit-quiz", async (req, res) => {
       needsManualGrading,
       autoGradedScore,
       autoGradedMaxScore,
-      autoGradedPercentage,
+      autoGradedPercentage
     });
   } catch (error) {
     console.log("Quiz submission error:", error);
     res.status(500).json({ message: error.message });
   }
 });
+Courseplayer.post("/:courseId/rate", async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { rating, review, user_id } = req.body;
 
+    // Validate input
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({
+        success: false,
+        message: "Rating must be between 1 and 5 stars"
+      });
+    }
+
+    if (!user_id) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required"
+      });
+    }
+
+    // Find the course
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found"
+      });
+    }
+
+    // Check if user has completed the course
+    const enrollment = course.enrollments.find(
+      (e) => e.studentId.toString() === user_id
+    );
+
+    if (!enrollment) {
+      return res.status(404).json({
+        success: false,
+        message: "Enrollment not found"
+      });
+    }
+
+    // Check if all content items are completed
+    const allContentCompleted = course.content.every((contentItem) => {
+      const progress = enrollment.progress.find(
+        (p) => p.contentItemId.toString() === contentItem._id.toString()
+      );
+      return progress && progress.completed;
+    });
+
+    if (!allContentCompleted) {
+      return res.status(400).json({
+        success: false,
+        message: "You must complete the course before rating it"
+      });
+    }
+
+    // Check if user has already rated this course
+    const existingRating = course.ratings.find(
+      (r) => r.user.toString() === user_id
+    );
+
+    if (existingRating) {
+      return res.status(400).json({
+        success: false,
+        message: "You have already rated this course"
+      });
+    }
+
+    // Add the new rating
+    course.ratings.push({
+      user: user_id,
+      rating: parseInt(rating),
+      review: review || "",
+      createdAt: new Date()
+    });
+
+    // Mark the enrollment as rated - THIS IS THE KEY FIX
+    // Use Mongoose's markModified to ensure the field is saved
+    enrollment.hasRated = true;
+    course.markModified("enrollments");
+
+    // Recalculate average rating
+    const totalRatings = course.ratings.length;
+    const sumRatings = course.ratings.reduce((sum, r) => sum + r.rating, 0);
+    course.averageRating = totalRatings > 0 ? sumRatings / totalRatings : 0;
+
+    await course.save();
+
+    res.json({
+      success: true,
+      message: "Rating submitted successfully",
+      newAverageRating: course.averageRating,
+      hasRated: true
+    });
+  } catch (error) {
+    console.error("Rating submission error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+});
+Courseplayer.get("/:courseId/ratings", async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+
+    const course = await Course.findById(courseId)
+      .populate("ratings.user", "full_name avatar")
+      .select("ratings averageRating");
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found"
+      });
+    }
+
+    // Paginate ratings
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    const paginatedRatings = course.ratings.slice(startIndex, endIndex);
+
+    res.json({
+      success: true,
+      ratings: paginatedRatings,
+      averageRating: course.averageRating,
+      totalRatings: course.ratings.length,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(course.ratings.length / limit)
+    });
+  } catch (error) {
+    console.error("Get ratings error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+});
+
+// Add to your backend routes (coursePlayer.js)
+Courseplayer.post("/:courseId/complete-live-session", async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { contentItemId, user_id, attended } = req.body;
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: "Course not found"
+      });
+    }
+
+    // Find enrollment
+    const enrollment = course.enrollments.find(
+      (e) => e.studentId.toString() === user_id
+    );
+
+    if (!enrollment) {
+      return res.status(400).json({
+        success: false,
+        message: "Student not enrolled in this course"
+      });
+    }
+
+    // Find or create progress record
+    let progress = enrollment.progress.find(
+      (p) => p.contentItemId.toString() === contentItemId
+    );
+
+    if (!progress) {
+      progress = {
+        contentItemId,
+        contentItemType: "live",
+        completed: false,
+        score: 0,
+        percentage: 0,
+        passed: true,
+        attempts: 0,
+        status: "not-started",
+        gradingStatus: "not-graded"
+      };
+      enrollment.progress.push(progress);
+    }
+
+    // Update progress
+    progress.completed = attended;
+    progress.completedAt = new Date();
+    progress.status = attended ? "completed" : "not-started";
+    progress.lastAccessed = new Date();
+
+    // Update the content item attendance status
+    const contentItem = course.content.id(contentItemId);
+    if (contentItem) {
+      contentItem.attendanceStatus = attended ? "present" : "absent";
+      contentItem.completed = attended;
+    }
+
+    // Check if course is now completed
+    course.checkCourseCompletion(user_id);
+
+    await course.save();
+
+    res.json({
+      success: true,
+      message: "Live session attendance updated successfully"
+    });
+  } catch (error) {
+    console.error("Live session completion error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+});
 module.exports = Courseplayer;
