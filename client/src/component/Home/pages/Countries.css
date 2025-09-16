@@ -1,0 +1,53 @@
+/* Hero Section */
+.career-hero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh; /* baseline; GSAP overrides via inline min-height */
+}
+
+/* Scroll Indicator */
+.scroll-indicator {
+  position: absolute;
+  bottom: 5vh;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.mouse {
+  width: 25px;
+  height: 40px;
+  border: 2px solid #004080;
+  border-radius: 15px;
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.mouse:before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  background-color: #004080;
+  border-radius: 50%;
+  animation: scrollAnimation 2s infinite;
+}
+
+@keyframes scrollAnimation {
+  0% {
+    opacity: 1;
+    transform: translateY(0) translateX(-50%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(20px) translateX(-50%);
+  }
+}
