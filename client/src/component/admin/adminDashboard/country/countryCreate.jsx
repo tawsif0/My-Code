@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
-import { FiMap, FiType, FiFileText, FiX, FiPlus, FiTrash2 } from "react-icons/fi";
+import {
+  FiMap,
+  FiType,
+  FiFileText,
+  FiX,
+  FiPlus,
+  FiTrash2,
+} from "react-icons/fi";
 
 function CountryCreate() {
   const [criteriaOptions, setCriteriaOptions] = useState([]);
@@ -10,19 +18,21 @@ function CountryCreate() {
   const [form, setForm] = useState({
     name: "",
     description: "",
-    criteria: ""
+    criteria: "",
   });
   const [criteriaFields, setCriteriaFields] = useState([
-    { criteria: "", description: "" }
+    { criteria: "", description: "" },
   ]);
   const [files, setFiles] = useState({
-    flag: null
+    flag: null,
   });
   const [errors, setErrors] = useState({
     name: "",
-    criteria: ""
+    criteria: "",
   });
-  const [fieldErrors, setFieldErrors] = useState([{ criteria: "", description: "" }]);
+  const [fieldErrors, setFieldErrors] = useState([
+    { criteria: "", description: "" },
+  ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const token = localStorage.getItem("token");
@@ -76,19 +86,19 @@ function CountryCreate() {
       // For main form
       setErrors((prev) => ({ ...prev, [name]: error }));
     }
-    
+
     return !error;
   };
 
   const handleChange = (e, index) => {
     const { name, value } = e.target;
-    
+
     if (index >= 0) {
       // Handle criteria fields
       const newFields = [...criteriaFields];
       newFields[index] = { ...newFields[index], [name]: value };
       setCriteriaFields(newFields);
-      
+
       if (fieldErrors[index] && fieldErrors[index][name]) {
         validateField(name, value, index);
       }
@@ -102,22 +112,27 @@ function CountryCreate() {
   const handleFileChange = (e) => {
     const { name } = e.target;
     const file = e.target.files[0];
-    
+
     if (!file) return;
-    
+
     // Validate file type
-    const validTypes = ["image/jpeg", "image/png", "image/jpg", "image/svg+xml"];
+    const validTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/jpg",
+      "image/svg+xml",
+    ];
     if (!validTypes.includes(file.type)) {
       toast.error("Only JPG, PNG, or SVG images are allowed");
       return;
     }
-    
+
     // Validate file size (max 5MB for flags)
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Flag image must be less than 5MB");
       return;
     }
-    
+
     setFiles((prev) => ({ ...prev, [name]: file }));
   };
 
@@ -131,11 +146,11 @@ function CountryCreate() {
       toast.error("At least one criteria is required");
       return;
     }
-    
+
     const newFields = [...criteriaFields];
     newFields.splice(index, 1);
     setCriteriaFields(newFields);
-    
+
     const newErrors = [...fieldErrors];
     newErrors.splice(index, 1);
     setFieldErrors(newErrors);
@@ -144,65 +159,61 @@ function CountryCreate() {
   const validateForm = () => {
     let isValid = true;
     isValid = validateField("name", form.name) && isValid;
-    
+
     // Validate all criteria fields
     criteriaFields.forEach((field, index) => {
       isValid = validateField("criteria", field.criteria, index) && isValid;
     });
-    
+
     return isValid;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       toast.error("Please fix all errors before submitting");
       return;
     }
-    
+
     setIsSubmitting(true);
     const toastId = toast.loading("Creating country...");
-    
+
     try {
       // Prepare form data for image upload
       const formData = new FormData();
       formData.append("name", form.name);
-      
+
       // Add criteria and descriptions as arrays
       criteriaFields.forEach((field, index) => {
         formData.append(`criteria[${index}]`, field.criteria);
         formData.append(`description[${index}]`, field.description);
       });
-      
+
       // Add flag file if exists
       if (files.flag) {
         formData.append("flag", files.flag);
       }
-      
-      await axios.post(
-        "http://localhost:3500/api/countries",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            ...authHeaders,
-          },
-        }
-      );
-      
+
+      await axios.post("http://localhost:3500/api/countries", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          ...authHeaders,
+        },
+      });
+
       // Reset form
       setForm({
         name: "",
         description: "",
-        criteria: ""
+        criteria: "",
       });
       setCriteriaFields([{ criteria: "", description: "" }]);
       setFieldErrors([{ criteria: "", description: "" }]);
       setFiles({
-        flag: null
+        flag: null,
       });
-      
+
       toast.success("Country created successfully", { id: toastId });
     } catch (err) {
       let errorMessage = "Failed to create country";
@@ -221,7 +232,7 @@ function CountryCreate() {
       } else if (err.message) {
         errorMessage = err.message;
       }
-      
+
       toast.error(errorMessage, { id: toastId });
     } finally {
       setIsSubmitting(false);
@@ -266,42 +277,82 @@ function CountryCreate() {
             <h2 className="text-2xl font-semibold text-gray-800 mb-2">
               Create New Country
             </h2>
-            <p className="text-gray-600">
-              Fill the form to add a new country
-            </p>
+            <p className="text-gray-600">Fill the form to add a new country</p>
           </div>
-          
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Country Name */}
-            <div className="space-y-2">
-              <label className="flex items-center text-sm font-medium text-gray-700">
-                <FiMap className="mr-2 text-gray-500" /> Country Name *
-              </label>
-              <input
-                name="name"
-                type="text"
-                value={form.name}
-                onChange={(e) => handleChange(e)}
-                onBlur={() => validateField("name", form.name)}
-                placeholder="Enter country name"
-                className={`w-full px-4 py-3 rounded-lg border ${
-                  errors.name ? "border-red-500" : "border-gray-300"
-                } focus:border-gray-500 transition-all`}
-              />
-              {errors.name && (
-                <motion.p
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-sm text-red-500"
-                >
-                  {errors.name}
-                </motion.p>
-              )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="flex items-center text-sm font-medium text-gray-700">
+                  <FiMap className="mr-2 text-gray-500" /> Country Name *
+                </label>
+                <input
+                  name="name"
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => handleChange(e)}
+                  onBlur={() => validateField("name", form.name)}
+                  placeholder="Enter country name"
+                  className={`w-full px-4 py-3 rounded-lg border ${
+                    errors.name ? "border-red-500" : "border-gray-300"
+                  } focus:border-gray-500 transition-all`}
+                />
+                {errors.name && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-sm text-red-500"
+                  >
+                    {errors.name}
+                  </motion.p>
+                )}
+              </div>
+              {/* Flag Upload */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Flag Image (JPG/PNG/SVG, max 5MB)
+                </label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[60px] text-center hover:bg-gray-50 transition-colors">
+                  {files.flag ? (
+                    <div className="flex items-center justify-between">
+                      <p className="text-gray-900 text-sm truncate max-w-[180px]">
+                        {files.flag.name}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFiles((prev) => ({ ...prev, flag: null }))
+                        }
+                        className="text-gray-400 hover:text-red-500 ml-2 transition-colors duration-200"
+                      >
+                        <FiX className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="block cursor-pointer">
+                      <p className="text-gray-500 text-sm mb-1">
+                        Click to upload flag image
+                      </p>
+                      <p className="text-xs text-gray-400">JPG, PNG or SVG</p>
+                      <input
+                        type="file"
+                        name="flag"
+                        onChange={handleFileChange}
+                        className="hidden"
+                        accept=".jpg,.jpeg,.png,.svg"
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
             </div>
-
             {/* Criteria and Description Fields */}
             {criteriaFields.map((field, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-4 relative">
+              <div
+                key={index}
+                className="border border-gray-200 rounded-lg p-4 relative"
+              >
                 {criteriaFields.length > 1 && (
                   <button
                     type="button"
@@ -311,7 +362,7 @@ function CountryCreate() {
                     <FiTrash2 className="h-4 w-4" />
                   </button>
                 )}
-                
+
                 <div className="space-y-4">
                   {/* Criteria Dropdown */}
                   <div className="space-y-2">
@@ -322,9 +373,13 @@ function CountryCreate() {
                       name="criteria"
                       value={field.criteria}
                       onChange={(e) => handleChange(e, index)}
-                      onBlur={() => validateField("criteria", field.criteria, index)}
+                      onBlur={() =>
+                        validateField("criteria", field.criteria, index)
+                      }
                       className={`w-full px-4 py-3 rounded-lg border ${
-                        fieldErrors[index]?.criteria ? "border-red-500" : "border-gray-300"
+                        fieldErrors[index]?.criteria
+                          ? "border-red-500"
+                          : "border-gray-300"
                       } focus:border-gray-500 transition-all text-gray-900`}
                     >
                       <option value="">Select a criteria</option>
@@ -377,43 +432,6 @@ function CountryCreate() {
               </motion.button>
             </div>
 
-            {/* Flag Upload */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Flag Image (JPG/PNG/SVG, max 5MB)
-              </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[60px] text-center hover:bg-gray-50 transition-colors">
-                {files.flag ? (
-                  <div className="flex items-center justify-between">
-                    <p className="text-gray-900 text-sm truncate max-w-[180px]">
-                      {files.flag.name}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setFiles((prev) => ({ ...prev, flag: null }))}
-                      className="text-gray-400 hover:text-red-500 ml-2 transition-colors duration-200"
-                    >
-                      <FiX className="h-4 w-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <label className="block cursor-pointer">
-                    <p className="text-gray-500 text-sm mb-1">
-                      Click to upload flag image
-                    </p>
-                    <p className="text-xs text-gray-400">JPG, PNG or SVG</p>
-                    <input
-                      type="file"
-                      name="flag"
-                      onChange={handleFileChange}
-                      className="hidden"
-                      accept=".jpg,.jpeg,.png,.svg"
-                    />
-                  </label>
-                )}
-              </div>
-            </div>
-
             <div className="pt-4">
               <p className="text-sm text-gray-500 mb-4">* Mandatory fields</p>
               <div className="flex space-x-3">
@@ -455,7 +473,7 @@ function CountryCreate() {
                   ) : (
                     "Create Country"
                   )}
-                </motion.button>              
+                </motion.button>
               </div>
             </div>
           </form>

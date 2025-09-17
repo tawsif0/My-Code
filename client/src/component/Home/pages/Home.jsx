@@ -4,6 +4,7 @@ import Services from "../components/Services";
 import WhyChooseUs from "../components/WhyChooseUs";
 import CTA from "../components/CTA";
 import Partners from "../components/partners";
+import Scholarship from "../components/Scholarship";
 
 const Home = () => {
   return (
@@ -13,6 +14,7 @@ const Home = () => {
       <div className="relative z-10">
         <WhyChooseUs />
         <Services />
+        <Scholarship />
         <Partners />
         <CTA />
       </div>

@@ -309,4 +309,42 @@ router.post("/:id/register", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+// Get all registered users (with optional filter by eventId)
+router.get("/users", async (req, res) => {
+  try {
+    const { eventId, page = 1, limit = 10 } = req.query;
+
+    const filter = {};
+    if (eventId) {
+      filter.eventId = eventId;
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const users = await EventUser.find(filter)
+      .populate("eventId", "title startDate endDate")
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+
+    const total = await EventUser.countDocuments(filter);
+
+    res.status(200).json({
+      success: true,
+      data: users,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / parseInt(limit)),
+        totalUsers: total,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching event users:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching event users",
+    });
+  }
+});
+
 module.exports = router;

@@ -26,6 +26,17 @@ import CriteriaList from "./country/criteriaList";
 import CountryModify from "./country/countryModify";
 import CreateEvent from "./Events/CreateEvent";
 import ModifyEvent from "./Events/ModifyEvent";
+import BlogCategory from "./blog/blogCategory";
+import ModifyBlogCategory from "./blog/modifyCategory";
+import BlogCreate from "./blog/createBlog";
+import BlogModify from "./blog/modifyBlog";
+
+import ModifyNewsCategory from "./news/ModifyNewsCategory";
+import NewsCreate from "./news/createNews";
+import NewsModify from "./news/modifyNews";
+import NewsCategory from "./news/newsCategory";
+import EventUser from "./Events/EventUser";
+import ShowUser from "./Contact/ShowUser";
 
 const AdminDashboard = () => {
   const [activeView, setActiveView] = useState(() => {
@@ -70,6 +81,7 @@ const AdminDashboard = () => {
         return <HeroForm />;
       case "modifyHero":
         return <HeroModify />;
+
       case "criteriaCountry":
         return <Criteria />;
       case "modifyListCtiterias":
@@ -78,10 +90,36 @@ const AdminDashboard = () => {
         return <CountryCreate />;
       case "modifyCountry":
         return <CountryModify />;
+
+      //Night
+      case "categoryBlog":
+        return <BlogCategory />;
+      case "modifyBlogCategory":
+        return <ModifyBlogCategory />;
+      case "createBlog":
+        return <BlogCreate />;
+      case "modifyBlog":
+        return <BlogModify />;
+
+      //Night
+      case "categoryNews":
+        return <NewsCategory />;
+      case "modifyNewsCategory":
+        return <ModifyNewsCategory />;
+      case "createNews":
+        return <NewsCreate />;
+      case "modifyNews":
+        return <NewsModify />;
+
       case "createEvent":
         return <CreateEvent />;
       case "modifyEvent":
         return <ModifyEvent />;
+      case "eventUser":
+        return <EventUser />;
+
+      case "userList":
+        return <ShowUser />;
       case "TeacherRegistration":
         return (
           <TeacherRegistration setNotificationCount={setNotificationCount} />

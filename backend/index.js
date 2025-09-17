@@ -12,12 +12,17 @@ const Courseplayer = require("./routes/coursePlayer");
 const heroSectionRoutes = require("./routes/heroSection");
 const employeeRoutes = require("./routes/Employee");
 const eventRoutes = require("./routes/Event");
+const contactUserRoutes = require("./routes/contactUser");
 const app = express();
 const PORT = process.env.PORT || 3500;
 
 //Muslim
-const criteriaRoutes = require('./routes/criteria');
+const criteriaRoutes = require("./routes/criteria");
 const countryRoutes = require("./routes/Country");
+const blogRoutes = require("./routes/blog");
+const blogCategoryRoutes = require("./routes/blogCategory");
+const newsCategoryRoutes = require("./routes/newsCategory");
+const newsRoutes = require("./routes/news");
 
 // CORS Configuration
 const corsOptions = {
@@ -44,11 +49,14 @@ app.use("/api/hero", heroSectionRoutes);
 app.use("/api/employee", employeeRoutes);
 app.use("/api/employee/visa", employeeRoutes);
 app.use("/api/events", eventRoutes);
-
+app.use("/api/contact-users", contactUserRoutes);
 //Muslim
-app.use('/api/criterias', criteriaRoutes);
+app.use("/api/criterias", criteriaRoutes);
 app.use("/api/countries", countryRoutes);
-
+app.use("/api/blogs", blogRoutes);
+app.use("/api/blog-categories", blogCategoryRoutes);
+app.use("/api/news-categories", newsCategoryRoutes);
+app.use("/api/news", newsRoutes);
 
 // DB Connection
 connectDB();

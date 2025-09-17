@@ -17,6 +17,9 @@ import {
   FiGlobe,
   FiCalendar,
   FiFlag,
+  FiEdit,
+  FiBookOpen,
+  FiPhoneCall,
 } from "react-icons/fi";
 
 import axios from "axios";
@@ -79,6 +82,7 @@ const Sidebar = ({
       children: [
         { name: "Create Event", component: "createEvent" },
         { name: "Modify Event", component: "modifyEvent" },
+        { name: "Event Users", component: "eventUser" },
       ],
     },
     {
@@ -90,6 +94,31 @@ const Sidebar = ({
         { name: "Country Create ", component: "createCountry" },
         { name: "Modify Country ", component: "modifyCountry" },
       ],
+    },
+    {
+      name: "Blog",
+      icon: <FiEdit />,
+      children: [
+        { name: "Blog Category ", component: "categoryBlog" },
+        { name: "Modify Blog Category ", component: "modifyBlogCategory" },
+        { name: "Blog Create ", component: "createBlog" },
+        { name: "Modify Blog ", component: "modifyBlog" },
+      ],
+    },
+    {
+      name: "News",
+      icon: <FiBookOpen />,
+      children: [
+        { name: "News Category ", component: "categoryNews" },
+        { name: "Modify News Category ", component: "modifyNewsCategory" },
+        { name: "News Create ", component: "createNews" },
+        { name: "Modify News ", component: "modifyNews" },
+      ],
+    },
+    {
+      name: "Contact User",
+      icon: <FiPhoneCall />,
+      children: [{ name: "User List", component: "userList" }],
     },
     {
       name: "Teachers",

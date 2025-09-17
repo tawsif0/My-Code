@@ -1,12 +1,30 @@
 import React, { useRef, useEffect, useState } from "react";
 // eslint-disable-next-line no-unused-vars
 import { motion, useAnimation, useInView } from "framer-motion";
-import emailjs from "@emailjs/browser";
 import { toast, Toaster } from "react-hot-toast";
+import axios from "axios";
 
 const ContactForm = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const form = useRef();
+  const [errors, setErrors] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
+  const [touched, setTouched] = useState({
+    name: false,
+    email: false,
+    phone: false,
+    message: false,
+  });
+
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -61,30 +79,108 @@ const ContactForm = () => {
     },
   };
 
-  const sendEmail = (e) => {
-    e.preventDefault();
-    setIsLoading(true);
+  // Validation functions
+  const validateField = (name, value) => {
+    let error = "";
 
-    emailjs
-      .sendForm(
-        "YOUR_SERVICE_ID", // Replace with your EmailJS service ID
-        "YOUR_TEMPLATE_ID", // Replace with your EmailJS template ID
-        form.current,
-        "YOUR_PUBLIC_KEY" // Replace with your EmailJS public key
-      )
-      .then(
-        (result) => {
-          console.log(result.text);
-          toast.success("Message sent successfully!");
-          form.current.reset();
-          setIsLoading(false);
-        },
-        (error) => {
-          console.log(error.text);
-          toast.error("Failed to send message. Please try again.");
-          setIsLoading(false);
+    switch (name) {
+      case "name":
+        if (!value.trim()) {
+          error = "Name is required";
+        } else if (value.trim().length < 2) {
+          error = "Name must be at least 2 characters";
         }
-      );
+        break;
+      case "email":
+        if (!value.trim()) {
+          error = "Email is required";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          error = "Please enter a valid email address";
+        }
+        break;
+      case "phone":
+        if (!value.trim()) {
+          error = "Phone number is required";
+        }
+        break;
+      case "message":
+        if (!value.trim()) {
+          error = "Message is required";
+        } else if (value.trim().length < 10) {
+          error = "Message must be at least 10 characters";
+        }
+        break;
+      default:
+        break;
+    }
+
+    return error;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+
+    // Validate field and clear error if user starts typing
+    if (touched[name]) {
+      const error = validateField(name, value);
+      setErrors((prev) => ({ ...prev, [name]: error }));
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    setTouched((prev) => ({ ...prev, [name]: true }));
+
+    // Validate field on blur
+    const error = validateField(name, value);
+    setErrors((prev) => ({ ...prev, [name]: error }));
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    const newTouched = {};
+    let isValid = true;
+
+    // Validate all fields
+    Object.keys(form).forEach((key) => {
+      newTouched[key] = true;
+      newErrors[key] = validateField(key, form[key]);
+      if (newErrors[key]) {
+        isValid = false;
+      }
+    });
+
+    setTouched(newTouched);
+    setErrors(newErrors);
+
+    return isValid;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      toast.error("Please fix the errors in the form");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await axios.post("http://localhost:3500/api/contact-users", form);
+      toast.success("Message sent successfully!");
+      setForm({ name: "", email: "", phone: "", message: "" });
+      setTouched({ name: false, email: false, phone: false, message: false });
+      setErrors({ name: "", email: "", phone: "", message: "" });
+    } catch (error) {
+      const msg =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to send message";
+      toast.error(msg);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -116,71 +212,131 @@ const ContactForm = () => {
             >
               Send Us a Message
             </motion.h3>
-            <form ref={form} className="space-y-4" onSubmit={sendEmail}>
+            <form className="space-y-4" onSubmit={handleSubmit}>
               <motion.div variants={formItemVariants}>
                 <label
                   htmlFor="name"
                   className="block text-sm font-medium mb-1 text-black"
                 >
-                  Full Name
+                  Full Name *
                 </label>
                 <input
                   type="text"
                   id="name"
-                  name="user_name"
-                  className="w-full px-4 py-2.5 rounded-xl shadow-sm focus:ring-2 focus:ring-[#004080] placeholder-gray-500"
+                  name="name"
+                  className={`w-full px-4 py-2.5 rounded-xl shadow-sm border ${
+                    errors.name ? "border-red-500" : "border-gray-300"
+                  } focus:border-[#004080] focus:ring-2 focus:ring-[#004080] placeholder-gray-500 transition-colors`}
                   placeholder="John Doe"
+                  value={form.name}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
                   required
                 />
+                {errors.name && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-red-500 text-xs mt-1"
+                  >
+                    {errors.name}
+                  </motion.p>
+                )}
               </motion.div>
+
               <motion.div variants={formItemVariants}>
                 <label
                   htmlFor="email"
                   className="block text-sm font-medium mb-1 text-black"
                 >
-                  Email Address
+                  Email Address *
                 </label>
                 <input
                   type="email"
                   id="email"
-                  name="user_email"
-                  className="w-full px-4 py-2.5 rounded-xl shadow-sm focus:ring-2 focus:ring-[#004080] placeholder-gray-500"
+                  name="email"
+                  className={`w-full px-4 py-2.5 rounded-xl shadow-sm border ${
+                    errors.email ? "border-red-500" : "border-gray-300"
+                  } focus:border-[#004080] focus:ring-2 focus:ring-[#004080] placeholder-gray-500 transition-colors`}
                   placeholder="john@example.com"
+                  value={form.email}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
                   required
                 />
+                {errors.email && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-red-500 text-xs mt-1"
+                  >
+                    {errors.email}
+                  </motion.p>
+                )}
               </motion.div>
+
               <motion.div variants={formItemVariants}>
                 <label
                   htmlFor="phone"
                   className="block text-sm font-medium mb-1 text-black"
                 >
-                  Phone Number
+                  Phone Number *
                 </label>
                 <input
                   type="tel"
                   id="phone"
-                  name="user_phone"
-                  className="w-full px-4 py-2.5 rounded-xl shadow-sm focus:ring-2 focus:ring-[#004080] placeholder-gray-500"
+                  name="phone"
+                  className={`w-full px-4 py-2.5 rounded-xl shadow-sm border ${
+                    errors.phone ? "border-red-500" : "border-gray-300"
+                  } focus:border-[#004080] focus:ring-2 focus:ring-[#004080] placeholder-gray-500 transition-colors`}
                   placeholder="+880 123 456 7890"
+                  value={form.phone}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
                   required
                 />
+                {errors.phone && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-red-500 text-xs mt-1"
+                  >
+                    {errors.phone}
+                  </motion.p>
+                )}
               </motion.div>
+
               <motion.div variants={formItemVariants}>
                 <label
                   htmlFor="message"
                   className="block text-sm font-medium mb-1 text-black"
                 >
-                  Message
+                  Message *
                 </label>
                 <textarea
                   id="message"
                   name="message"
                   rows="4"
-                  className="w-full px-4 py-2.5 rounded-xl shadow-sm focus:ring-2 focus:ring-[#004080] placeholder-gray-500"
+                  className={`w-full px-4 py-2.5 rounded-xl shadow-sm border ${
+                    errors.message ? "border-red-500" : "border-gray-300"
+                  } focus:border-[#004080] placeholder-gray-500 transition-colors`}
                   placeholder="Your message here..."
+                  value={form.message}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
                   required
                 ></textarea>
+                {errors.message && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-red-500 text-xs mt-1"
+                  >
+                    {errors.message}
+                  </motion.p>
+                )}
               </motion.div>
+
               <motion.button
                 type="submit"
                 disabled={isLoading}

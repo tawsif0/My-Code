@@ -10,8 +10,13 @@ import {
 } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import axios from "axios";
-
+import { EditorState, RichUtils, convertToRaw } from "draft-js";
+import "draft-js/dist/Draft.css";
+import draftToHtml from "draftjs-to-html";
+import { Editor } from "react-draft-wysiwyg";
+import "react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
 const CreateEvent = () => {
+  const [editorState, setEditorState] = useState(EditorState.createEmpty());
   const [form, setForm] = useState({
     title: "",
     startDate: "",
@@ -19,7 +24,6 @@ const CreateEvent = () => {
     startTime: "",
     endTime: "",
     location: "",
-    description: "",
   });
 
   const [files, setFiles] = useState({
@@ -48,7 +52,10 @@ const CreateEvent = () => {
     if (!form.startTime) newErrors.startTime = "Start time is required";
     if (!form.endTime) newErrors.endTime = "End time is required";
     if (!form.location) newErrors.location = "Location is required";
-    if (!form.description) newErrors.description = "Description is required";
+
+    const rawContent = convertToRaw(editorState.getCurrentContent());
+    const hasText = rawContent.blocks.some((block) => block.text.trim() !== "");
+    if (!hasText) newErrors.description = "Description is required";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -56,41 +63,34 @@ const CreateEvent = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validateForm()) {
       toast.error("Please fix all errors before submitting");
       return;
     }
 
     setIsSubmitting(true);
-
     try {
       const formData = new FormData();
       for (const [key, value] of Object.entries(form)) {
         formData.append(key, value);
       }
-      if (files.image) {
-        formData.append("image", files.image);
-      }
 
-      // Replace with your backend endpoint
-      const response = await axios.post(
-        "http://localhost:3500/api/events/create",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      // Convert Draft.js to HTML
+      const rawContentState = convertToRaw(editorState.getCurrentContent());
+      const descriptionHtml = draftToHtml(rawContentState);
 
-      if (!response.data?.success) {
-        throw new Error(response.data?.message || "Invalid server response");
-      }
+      formData.append("description", descriptionHtml);
+
+      if (files.image) formData.append("image", files.image);
+
+      await axios.post("http://localhost:3500/api/events/create", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
       toast.success("Event created successfully!");
-
       setForm({
         title: "",
         startDate: "",
@@ -98,9 +98,8 @@ const CreateEvent = () => {
         startTime: "",
         endTime: "",
         location: "",
-        description: "",
       });
-
+      setEditorState(EditorState.createEmpty());
       setFiles({ image: null });
     } catch (error) {
       toast.error(error.response?.data?.message || "Event creation failed");
@@ -257,20 +256,146 @@ const CreateEvent = () => {
             </div>
 
             {/* Description */}
+            {/* Description with Draft.js + Toolbar */}
             <div className="space-y-2">
               <label className="flex items-center text-sm font-medium text-gray-700">
                 <FiFileText className="mr-2 text-gray-500" /> Description *
               </label>
-              <textarea
-                name="description"
-                rows="4"
-                value={form.description}
-                onChange={handleChange}
-                placeholder="Write a brief description about the event"
-                className={`w-full px-4 py-3 rounded-lg border ${
-                  errors.description ? "border-red-500" : "border-gray-300"
-                } focus:border-gray-500 transition-all`}
-              />
+
+              <div className="border border-gray-300 rounded-lg bg-white">
+                <Editor
+                  editorState={editorState}
+                  onEditorStateChange={setEditorState}
+                  wrapperClassName="demo-wrapper"
+                  editorClassName="p-3 min-h-[150px]"
+                  toolbarClassName="border-b border-gray-200"
+                  toolbar={{
+                    options: [
+                      "inline",
+                      "blockType",
+                      "fontSize",
+                      "fontFamily",
+                      "list",
+                      "textAlign",
+                      "colorPicker",
+                      "link",
+                      "embedded",
+                      "emoji",
+                      "image",
+                      "remove",
+                      "history",
+                    ],
+                    inline: {
+                      inDropdown: false,
+                      className: undefined,
+                      component: undefined,
+                      dropdownClassName: undefined,
+                      options: [
+                        "bold",
+                        "italic",
+                        "underline",
+                        "strikethrough",
+                        "monospace",
+                        "superscript",
+                        "subscript",
+                      ],
+                    },
+                    blockType: {
+                      inDropdown: true,
+                      options: [
+                        "Normal",
+                        "H1",
+                        "H2",
+                        "H3",
+                        "H4",
+                        "H5",
+                        "H6",
+                        "Blockquote",
+                        "Code",
+                      ],
+                      className: undefined,
+                      component: undefined,
+                      dropdownClassName: undefined,
+                    },
+                    fontSize: {
+                      options: [
+                        8, 9, 10, 11, 12, 14, 16, 18, 24, 30, 36, 48, 60, 72,
+                        96,
+                      ],
+                      className: undefined,
+                      component: undefined,
+                      dropdownClassName: undefined,
+                    },
+                    list: {
+                      inDropdown: false,
+                      className: undefined,
+                      component: undefined,
+                      dropdownClassName: undefined,
+                      options: ["unordered", "ordered", "indent", "outdent"],
+                    },
+                    textAlign: {
+                      inDropdown: false,
+                      className: undefined,
+                      component: undefined,
+                      dropdownClassName: undefined,
+                      options: ["left", "center", "right", "justify"],
+                    },
+                    link: {
+                      inDropdown: false,
+                      className: undefined,
+                      component: undefined,
+                      popupClassName: undefined,
+                      dropdownClassName: undefined,
+                      showOpenOptionOnHover: true,
+                      defaultTargetOption: "_blank",
+                      options: ["link", "unlink"],
+                      linkCallback: undefined,
+                      unlinkCallback: undefined,
+                    },
+                  }}
+                  placeholder="Write a brief description about the event"
+                  handlePastedText={(text, html, editorState, onChange) => {
+                    // Return false to allow default paste behavior with formatting preservation
+                    return false;
+                  }}
+                  handlePastedFiles={() => false}
+                  stripPastedStyles={false}
+                  spellCheck={true}
+                  readOnly={false}
+                  tabIndex={1}
+                  ariaLabel="Event description editor"
+                  ariaOwneeID="editor"
+                  ariaActiveDescendantID="editor"
+                  ariaAutoComplete="none"
+                  ariaDescribedBy="editor"
+                  ariaExpanded={false}
+                  ariaHaspopup={false}
+                  customStyleMap={{
+                    STRIKETHROUGH: {
+                      textDecoration: "line-through",
+                    },
+                    SUPERSCRIPT: {
+                      verticalAlign: "super",
+                      fontSize: "80%",
+                    },
+                    SUBSCRIPT: {
+                      verticalAlign: "sub",
+                      fontSize: "80%",
+                    },
+                  }}
+                  blockStyleFn={(contentBlock) => {
+                    const type = contentBlock.getType();
+                    if (type === "blockquote") {
+                      return "editor-blockquote";
+                    }
+                    if (type === "code-block") {
+                      return "editor-code-block";
+                    }
+                    return null;
+                  }}
+                />
+              </div>
+
               {errors.description && (
                 <p className="text-sm text-red-500">{errors.description}</p>
               )}

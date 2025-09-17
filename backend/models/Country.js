@@ -6,22 +6,24 @@ const countrySchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      unique: true
+      unique: true,
     },
     description: {
-      type: String,
-      trim: true,
-      default: ""
+      type: [String], // allow array of strings
+      default: [], // default empty array
     },
-    criteria: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Criteria",
-      required: true
-    },
+    criteria: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Criteria",
+        required: true,
+      },
+    ],
+
     flag: {
-      type: String, // This will store the filename/path of the uploaded flag
-      default: null
-    }
+      type: String,
+      default: null,
+    },
   },
   { timestamps: true }
 );

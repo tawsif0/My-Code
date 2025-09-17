@@ -10,24 +10,27 @@ const router = express.Router();
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = "uploads/flags";
-    // Create directory if it doesn't exist
+    const uploadDir = path.join(__dirname, "../public/flags");
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
-    // Generate unique filename
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const extension = path.extname(file.originalname);
     cb(null, "flag-" + uniqueSuffix + extension);
-  }
+  },
 });
 
 // File filter for images only
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/svg+xml"];
+  const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/jpg",
+    "image/svg+xml",
+  ];
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
@@ -39,8 +42,8 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
-  }
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
 });
 
 // GET all countries
@@ -59,7 +62,10 @@ router.get("/", async (req, res) => {
 // GET single country
 router.get("/:id", async (req, res) => {
   try {
-    const country = await Country.findById(req.params.id).populate("criteria", "name");
+    const country = await Country.findById(req.params.id).populate(
+      "criteria",
+      "name"
+    );
     if (!country) {
       return res.status(404).json({ message: "Country not found" });
     }
@@ -78,73 +84,49 @@ router.post("/", upload.single("flag"), async (req, res) => {
   try {
     const { name, description, criteria } = req.body;
 
-    // Validation
     if (!name || !name.trim()) {
       return res.status(400).json({ message: "Country name is required" });
     }
 
-    if (!criteria) {
-      return res.status(400).json({ message: "Criteria is required" });
+    // normalize criteria into array
+    let criteriaArray = Array.isArray(criteria) ? criteria : [criteria];
+
+    // Validate all criterias exist
+    const validCriterias = await Criteria.find({ _id: { $in: criteriaArray } });
+    if (validCriterias.length !== criteriaArray.length) {
+      return res
+        .status(400)
+        .json({ message: "One or more criterias are invalid" });
     }
 
-    // Check if criteria exists
-    const criteriaExists = await Criteria.findById(criteria);
-    if (!criteriaExists) {
-      return res.status(400).json({ message: "Invalid criteria" });
-    }
-
-    // Check if country already exists
-    const existingCountry = await Country.findOne({
-      name: { $regex: new RegExp(`^${name.trim()}$`, "i") }
+    // Check duplicates (same country name + same criteria)
+    const duplicate = await Country.findOne({
+      name: name.trim(),
+      criteria: { $in: criteriaArray },
     });
-
-    if (existingCountry) {
-      return res.status(400).json({ message: "Country already exists" });
+    if (duplicate) {
+      return res
+        .status(400)
+        .json({ message: "This criteria is already used for this country" });
     }
 
-    // Create new country
     const newCountry = new Country({
       name: name.trim(),
-      description: description ? description.trim() : "",
-      criteria: criteria
+      description: Array.isArray(description)
+        ? description.map((d) => d.trim())
+        : [String(description).trim()],
+      criteria: criteriaArray,
+      flag: req.file ? req.file.filename : null,
     });
-
-    // Handle file upload if exists
-    if (req.file) {
-      newCountry.flag = req.file.filename;
-    }
 
     await newCountry.save();
-
-    // Populate criteria for response
     await newCountry.populate("criteria", "name");
 
-    res.status(201).json({
-      message: "Country created successfully",
-      country: newCountry
-    });
+    res
+      .status(201)
+      .json({ message: "Country created successfully", country: newCountry });
   } catch (err) {
     console.error(err);
-
-    // Clean up uploaded file if error occurred
-    if (req.file) {
-      fs.unlink(req.file.path, (unlinkErr) => {
-        if (unlinkErr) console.error("Error deleting uploaded file:", unlinkErr);
-      });
-    }
-
-    if (err.name === "ValidationError") {
-      return res.status(400).json({ message: err.message });
-    }
-
-    if (err.code === "LIMIT_FILE_SIZE") {
-      return res.status(413).json({ message: "File too large (max 5MB)" });
-    }
-
-    if (err.message.includes("images are allowed")) {
-      return res.status(415).json({ message: "Unsupported file type" });
-    }
-
     res.status(500).json({ message: "Error creating country" });
   }
 });
@@ -160,71 +142,44 @@ router.put("/:id", upload.single("flag"), async (req, res) => {
       return res.status(404).json({ message: "Country not found" });
     }
 
-    if (name && !name.trim()) {
-      return res.status(400).json({ message: "Country name cannot be empty" });
+    let criteriaArray = Array.isArray(criteria) ? criteria : [criteria];
+
+    // Validate all criterias exist
+    const validCriterias = await Criteria.find({ _id: { $in: criteriaArray } });
+    if (validCriterias.length !== criteriaArray.length) {
+      return res
+        .status(400)
+        .json({ message: "One or more criterias are invalid" });
     }
 
-    if (criteria) {
-      const criteriaExists = await Criteria.findById(criteria);
-      if (!criteriaExists) {
-        return res.status(400).json({ message: "Invalid criteria" });
-      }
+    // Check duplicates in other countries (exclude current one)
+    const duplicate = await Country.findOne({
+      _id: { $ne: id },
+      name: name.trim(),
+      criteria: { $in: criteriaArray },
+    });
+    if (duplicate) {
+      return res
+        .status(400)
+        .json({ message: "This criteria is already used for this country" });
     }
 
-    // Check for duplicate name (excluding current country)
-    if (name && name.trim().toLowerCase() !== country.name.toLowerCase()) {
-      const existingCountry = await Country.findOne({
-        name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
-        _id: { $ne: id }
-      });
+    country.name = name.trim();
+    country.description = Array.isArray(description)
+      ? description.map((d) => d.trim())
+      : [String(description).trim()];
+    country.criteria = criteriaArray;
 
-      if (existingCountry) {
-        return res.status(400).json({ message: "Country name already exists" });
-      }
-    }
-
-    // Update fields
-    if (name) country.name = name.trim();
-    if (description !== undefined) country.description = description.trim();
-    if (criteria) country.criteria = criteria;
-
-    // Handle file upload
     if (req.file) {
-      // Delete old flag file if exists
-      if (country.flag) {
-        const oldFlagPath = path.join("uploads/flags", country.flag);
-        fs.unlink(oldFlagPath, (err) => {
-          if (err) console.error("Error deleting old flag:", err);
-        });
-      }
       country.flag = req.file.filename;
     }
 
     await country.save();
     await country.populate("criteria", "name");
 
-    res.status(200).json({
-      message: "Country updated successfully",
-      country
-    });
+    res.status(200).json({ message: "Country updated successfully", country });
   } catch (err) {
     console.error(err);
-
-    // Clean up uploaded file if error occurred
-    if (req.file) {
-      fs.unlink(req.file.path, (unlinkErr) => {
-        if (unlinkErr) console.error("Error deleting uploaded file:", unlinkErr);
-      });
-    }
-
-    if (err.name === "ValidationError") {
-      return res.status(400).json({ message: err.message });
-    }
-
-    if (err.name === "CastError") {
-      return res.status(400).json({ message: "Invalid country ID" });
-    }
-
     res.status(500).json({ message: "Error updating country" });
   }
 });
@@ -263,7 +218,7 @@ router.delete("/:id", async (req, res) => {
 // Serve flag images
 router.get("/flag/:filename", (req, res) => {
   const filename = req.params.filename;
-  const filePath = path.join(__dirname, "../uploads/flags", filename);
+  const filePath = path.join(__dirname, "../public/flags", filename);
 
   if (fs.existsSync(filePath)) {
     res.sendFile(filePath);

@@ -12,7 +12,6 @@ import {
   FiImage,
   FiUpload,
   FiRefreshCw,
-  FiMap,
   FiType,
   FiFileText,
   FiX,
@@ -20,88 +19,120 @@ import {
   FiPlus,
 } from "react-icons/fi";
 
-function CountryModify() {
-  const [countries, setCountries] = useState([]);
-  const [criteriaOptions, setCriteriaOptions] = useState([]);
+function NewsModify() {
+  const [news, setNews] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [files, setFiles] = useState({
+    image: null,
+  });
+  const [currentImage, setCurrentImage] = useState("");
   // Form state
   const [form, setForm] = useState({
-    name: "",
+    title: "",
+    description: "",
+    category: "",
   });
-  const [criteriaFields, setCriteriaFields] = useState([
-    { criteria: "", description: "" },
-  ]);
-  const [files, setFiles] = useState({
-    flag: null,
-  });
-  const [currentFlag, setCurrentFlag] = useState("");
   const [errors, setErrors] = useState({
-    name: "",
+    title: "",
+    description: "",
+    category: "",
   });
-  const [fieldErrors, setFieldErrors] = useState([
-    { criteria: "", description: "" },
-  ]);
 
   const token = localStorage.getItem("token");
   const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 
-  const fetchCountries = async () => {
+  const fetchNews = async () => {
     try {
-      const { data } = await axios.get("http://localhost:3500/api/countries", {
+      const response = await axios.get("http://localhost:3500/api/news", {
         headers: authHeaders,
       });
-      setCountries(data);
+
+      // Handle different response structures
+      let newsData = [];
+      if (Array.isArray(response.data)) {
+        newsData = response.data;
+      } else if (response.data && Array.isArray(response.data.news)) {
+        newsData = response.data.news;
+      } else if (
+        response.data &&
+        response.data.data &&
+        Array.isArray(response.data.data)
+      ) {
+        newsData = response.data.data;
+      }
+
+      setNews(newsData);
       setLoading(false);
     } catch (err) {
-      console.error("Error fetching countries:", err);
+      console.error("Error fetching news:", err);
       toast.error(
-        err.response?.data?.message || err.message || "Failed to load countries"
+        err.response?.data?.message || err.message || "Failed to load news"
       );
       setLoading(false);
     }
   };
 
-  const fetchCriteria = async () => {
+  const fetchCategories = async () => {
     try {
-      const { data } = await axios.get("http://localhost:3500/api/criterias", {
-        headers: authHeaders,
-      });
-      setCriteriaOptions(data);
+      const response = await axios.get(
+        "http://localhost:3500/api/news-categories",
+        { headers: authHeaders }
+      );
+
+      // Handle different response structures
+      let categoriesData = [];
+      if (Array.isArray(response.data)) {
+        categoriesData = response.data;
+      } else if (response.data && Array.isArray(response.data.categories)) {
+        categoriesData = response.data.categories;
+      } else if (
+        response.data &&
+        response.data.data &&
+        Array.isArray(response.data.data)
+      ) {
+        categoriesData = response.data.data;
+      }
+
+      setCategories(categoriesData);
     } catch (err) {
-      console.error("Error fetching criteria:", err);
-      toast.error("Failed to load criteria options");
+      console.error("Error fetching categories:", err);
+      toast.error("Failed to load category options");
     }
   };
 
   useEffect(() => {
-    fetchCountries();
-    fetchCriteria();
+    fetchNews();
+    fetchCategories();
   }, []);
 
   const resetForm = () => {
     setForm({
-      name: "",
+      title: "",
+      description: "",
+      category: "",
     });
-    setCriteriaFields([{ criteria: "", description: "" }]);
-    setFieldErrors([{ criteria: "", description: "" }]);
-    setFiles({ flag: null });
-    setCurrentFlag("");
-    setErrors({ name: "" });
+    setFiles({ image: null });
+    setCurrentImage("");
+    setErrors({
+      title: "",
+      description: "",
+      category: "",
+    });
     setEditingId(null);
   };
 
   const handleDelete = async (id) => {
-    const toastId = toast.loading("Deleting country...");
+    const toastId = toast.loading("Deleting news post...");
     try {
-      await axios.delete(`http://localhost:3500/api/countries/${id}`, {
+      await axios.delete(`http://localhost:3500/api/news/${id}`, {
         headers: authHeaders,
       });
-      toast.success("Country deleted", { id: toastId });
-      fetchCountries();
+      toast.success("News post deleted", { id: toastId });
+      fetchNews();
     } catch (err) {
       toast.error(
         err.response?.data?.message || err.message || "Failed to delete",
@@ -113,52 +144,31 @@ function CountryModify() {
   const startEditing = async (id) => {
     setLoading(true);
     try {
-      const { data } = await axios.get(
-        `http://localhost:3500/api/countries/${id}`,
-        { headers: authHeaders }
-      );
-
-      setForm({
-        name: data.name,
+      const response = await axios.get(`http://localhost:3500/api/news/${id}`, {
+        headers: authHeaders,
       });
 
-      // If country has multiple criteria/descriptions
-      if (Array.isArray(data.criteria) && data.criteria.length > 0) {
-        setCriteriaFields(
-          data.criteria.map((c, idx) => ({
-            criteria: c._id || "",
-            description: data.description?.[idx] || "",
-          }))
-        );
-        setFieldErrors(
-          data.criteria.map(() => ({ criteria: "", description: "" }))
-        );
-      } else {
-        setCriteriaFields([
-          {
-            criteria: data.criteria?._id || "",
-            description: data.description || "",
-          },
-        ]);
-        setFieldErrors([{ criteria: "", description: "" }]);
-      }
+      // Handle different response structures
+      const newsData =
+        response.data.data || response.data.news || response.data;
 
-      if (data.flag) {
-        setCurrentFlag(`http://localhost:3500/api/countries/flag/${data.flag}`);
+      setForm({
+        title: newsData.title,
+        description: newsData.description,
+        category: newsData.category?._id || newsData.category || "",
+      });
+
+      if (newsData.image) {
+        setCurrentImage(`http://localhost:3500/news/${newsData.image}`);
       }
 
       setEditingId(id);
       setShowForm(true);
     } catch (err) {
-      toast.error("Failed to load country data");
+      toast.error("Failed to load news data");
     } finally {
       setLoading(false);
     }
-  };
-
-  const startCreating = () => {
-    resetForm();
-    setShowForm(true);
   };
 
   const cancelForm = () => {
@@ -168,56 +178,38 @@ function CountryModify() {
 
   const handleRefresh = () => {
     setLoading(true);
-    fetchCountries();
-    toast.success("Countries refreshed!");
+    fetchNews();
+    fetchCategories();
+    toast.success("News posts refreshed!");
   };
 
   // Validation function
-  const validateField = (name, value, index = 0) => {
+  const validateField = (name, value) => {
     let error = "";
 
     switch (name) {
-      case "name":
-        if (!value) error = "Country name is required";
+      case "title":
+        if (!value) error = "News title is required";
         break;
-      case "criteria":
-        if (!value) error = "Criteria selection is required";
+      case "description":
+        if (!value) error = "News description is required";
+        break;
+      case "category":
+        if (!value) error = "Category selection is required";
         break;
       default:
         break;
     }
 
-    if (index >= 0) {
-      // For criteria fields array
-      const newFieldErrors = [...fieldErrors];
-      newFieldErrors[index] = { ...newFieldErrors[index], [name]: error };
-      setFieldErrors(newFieldErrors);
-    } else {
-      // For main form
-      setErrors((prev) => ({ ...prev, [name]: error }));
-    }
-
+    setErrors((prev) => ({ ...prev, [name]: error }));
     return !error;
   };
 
-  const handleChange = (e, index) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    if (index >= 0) {
-      // Handle criteria fields
-      const newFields = [...criteriaFields];
-      newFields[index] = { ...newFields[index], [name]: value };
-      setCriteriaFields(newFields);
-
-      if (fieldErrors[index] && fieldErrors[index][name]) {
-        validateField(name, value, index);
-      }
-    } else {
-      // Handle main form
-      setForm((prev) => ({ ...prev, [name]: value }));
-      if (errors[name]) validateField(name, value);
-    }
+    setForm((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) validateField(name, value);
   };
-
   const handleFileChange = (e) => {
     const { name } = e.target;
     const file = e.target.files[0];
@@ -229,51 +221,33 @@ function CountryModify() {
       "image/jpeg",
       "image/png",
       "image/jpg",
-      "image/svg+xml",
+      "image/gif",
+      "image/webp",
     ];
     if (!validTypes.includes(file.type)) {
-      toast.error("Only JPG, PNG, or SVG images are allowed");
+      toast.error("Only JPG, PNG, GIF, or WebP images are allowed");
       return;
     }
 
-    // Validate file size (max 5MB for flags)
+    // Validate file size (max 5MB for news images)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Flag image must be less than 5MB");
+      toast.error("News image must be less than 5MB");
       return;
     }
 
     setFiles((prev) => ({ ...prev, [name]: file }));
-    setCurrentFlag(URL.createObjectURL(file));
+    setCurrentImage(URL.createObjectURL(file));
   };
-
-  const addCriteriaField = () => {
-    setCriteriaFields([...criteriaFields, { criteria: "", description: "" }]);
-    setFieldErrors([...fieldErrors, { criteria: "", description: "" }]);
-  };
-
-  const removeCriteriaField = (index) => {
-    if (criteriaFields.length <= 1) {
-      toast.error("At least one criteria is required");
-      return;
-    }
-
-    const newFields = [...criteriaFields];
-    newFields.splice(index, 1);
-    setCriteriaFields(newFields);
-
-    const newErrors = [...fieldErrors];
-    newErrors.splice(index, 1);
-    setFieldErrors(newErrors);
+  const removeImage = () => {
+    setFiles((prev) => ({ ...prev, image: null }));
+    if (!editingId) setCurrentImage("");
   };
 
   const validateForm = () => {
     let isValid = true;
-    isValid = validateField("name", form.name) && isValid;
-
-    // Validate all criteria fields
-    criteriaFields.forEach((field, index) => {
-      isValid = validateField("criteria", field.criteria, index) && isValid;
-    });
+    isValid = validateField("title", form.title) && isValid;
+    isValid = validateField("description", form.description) && isValid;
+    isValid = validateField("category", form.category) && isValid;
 
     return isValid;
   };
@@ -288,29 +262,25 @@ function CountryModify() {
 
     setIsSubmitting(true);
     const toastId = toast.loading(
-      editingId ? "Updating country..." : "Creating country..."
+      editingId ? "Updating news post..." : "Creating news post..."
     );
 
     try {
       // Prepare form data for image upload
       const formData = new FormData();
-      formData.append("name", form.name);
+      formData.append("title", form.title);
+      formData.append("description", form.description);
+      formData.append("category", form.category);
 
-      // Add criteria and descriptions as arrays
-      criteriaFields.forEach((field, index) => {
-        formData.append(`criteria[${index}]`, field.criteria);
-        formData.append(`description[${index}]`, field.description);
-      });
-
-      // Add flag file if exists
-      if (files.flag) {
-        formData.append("flag", files.flag);
+      // Add image file if exists
+      if (files.image) {
+        formData.append("image", files.image);
       }
 
       if (editingId) {
-        // Update existing country
+        // Update existing news
         await axios.put(
-          `http://localhost:3500/api/countries/${editingId}`,
+          `http://localhost:3500/api/news/${editingId}`,
           formData,
           {
             headers: {
@@ -319,25 +289,25 @@ function CountryModify() {
             },
           }
         );
-        toast.success("Country updated successfully", { id: toastId });
+        toast.success("News post updated successfully", { id: toastId });
       } else {
-        // Create new country
-        await axios.post("http://localhost:3500/api/countries", formData, {
+        // Create new news
+        await axios.post("http://localhost:3500/api/news", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
             ...authHeaders,
           },
         });
-        toast.success("Country created successfully", { id: toastId });
+        toast.success("News post created successfully", { id: toastId });
       }
 
       // Reset form and refresh data
       cancelForm();
-      fetchCountries();
+      fetchNews();
     } catch (err) {
       let errorMessage = editingId
-        ? "Failed to update country"
-        : "Failed to create country";
+        ? "Failed to update news post"
+        : "Failed to create news post";
       if (err.response) {
         if (err.response.status === 413) {
           errorMessage = "File too large (max 5MB)";
@@ -391,12 +361,12 @@ function CountryModify() {
               </button>
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                  {editingId ? "Edit Country" : "Create New Country"}
+                  {editingId ? "Edit News Post" : "Create New News Post"}
                 </h1>
                 <p className="text-gray-600 mt-2">
                   {editingId
-                    ? "Edit the country details"
-                    : "Create a new country with criteria and description"}
+                    ? "Edit the news post details"
+                    : "Create a new news post with description"}
                 </p>
               </div>
             </div>
@@ -410,144 +380,115 @@ function CountryModify() {
           >
             <div className="mb-8 text-center">
               <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-                {editingId ? "Edit Country" : "Create New Country"}
+                {editingId ? "Edit News Post" : "Create New News Post"}
               </h2>
               <p className="text-gray-600">
                 {editingId
-                  ? "Update the country information"
-                  : "Fill the form to add a new country"}
+                  ? "Update the news post information"
+                  : "Fill the form to add a new news post"}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Country Name */}
+              {/* News Title */}
               <div className="space-y-2">
                 <label className="flex items-center text-sm font-medium text-gray-700">
-                  <FiMap className="mr-2 text-gray-500" /> Country Name *
+                  <FiType className="mr-2 text-gray-500" /> News Title *
                 </label>
                 <input
-                  name="name"
+                  name="title"
                   type="text"
-                  value={form.name}
-                  onChange={(e) => handleChange(e)}
-                  onBlur={() => validateField("name", form.name)}
-                  placeholder="Enter country name"
+                  value={form.title}
+                  onChange={handleChange}
+                  onBlur={() => validateField("title", form.title)}
+                  placeholder="Enter news title"
                   className={`w-full px-4 py-3 rounded-lg border ${
-                    errors.name ? "border-red-500" : "border-gray-300"
+                    errors.title ? "border-red-500" : "border-gray-300"
                   } focus:border-gray-500 transition-all`}
                 />
-                {errors.name && (
+                {errors.title && (
                   <motion.p
                     initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="text-sm text-red-500"
                   >
-                    {errors.name}
+                    {errors.title}
                   </motion.p>
                 )}
               </div>
 
-              {/* Criteria and Description Fields */}
-              {criteriaFields.map((field, index) => (
-                <div
-                  key={index}
-                  className="border border-gray-200 rounded-lg p-4 relative"
+              {/* Category */}
+              <div className="space-y-2">
+                <label className="flex items-center text-sm font-medium text-gray-700">
+                  <FiType className="mr-2 text-gray-500" /> Category *
+                </label>
+                <select
+                  name="category"
+                  value={form.category}
+                  onChange={handleChange}
+                  onBlur={() => validateField("category", form.category)}
+                  className={`w-full px-4 py-3 rounded-lg border ${
+                    errors.category ? "border-red-500" : "border-gray-300"
+                  } focus:border-gray-500 transition-all text-gray-900`}
                 >
-                  {criteriaFields.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeCriteriaField(index)}
-                      className="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-colors duration-200"
-                    >
-                      <FiTrash2 className="h-4 w-4" />
-                    </button>
-                  )}
-
-                  <div className="space-y-4">
-                    {/* Criteria Dropdown */}
-                    <div className="space-y-2">
-                      <label className="flex items-center text-sm font-medium text-gray-700">
-                        <FiType className="mr-2 text-gray-500" /> Criteria *
-                      </label>
-                      <select
-                        name="criteria"
-                        value={field.criteria}
-                        onChange={(e) => handleChange(e, index)}
-                        onBlur={() =>
-                          validateField("criteria", field.criteria, index)
-                        }
-                        className={`w-full px-4 py-3 rounded-lg border ${
-                          fieldErrors[index]?.criteria
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        } focus:border-gray-500 transition-all text-gray-900`}
-                      >
-                        <option value="">Select a criteria</option>
-                        {criteriaOptions.map((criteria) => (
-                          <option key={criteria._id} value={criteria._id}>
-                            {criteria.name}
-                          </option>
-                        ))}
-                      </select>
-                      {fieldErrors[index]?.criteria && (
-                        <motion.p
-                          initial={{ opacity: 0, y: -5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="text-sm text-red-500"
-                        >
-                          {fieldErrors[index].criteria}
-                        </motion.p>
-                      )}
-                    </div>
-
-                    {/* Description */}
-                    <div className="space-y-2">
-                      <label className="flex items-center text-sm font-medium text-gray-700">
-                        <FiFileText className="mr-2 text-gray-500" />{" "}
-                        Description
-                      </label>
-                      <textarea
-                        name="description"
-                        value={field.description}
-                        onChange={(e) => handleChange(e, index)}
-                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-gray-500 transition-all"
-                        placeholder="Enter criteria description"
-                        rows="3"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* Add Criteria Button */}
-              <div className="flex justify-center">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  type="button"
-                  onClick={addCriteriaField}
-                  className="flex items-center justify-center py-2 px-4 rounded-lg font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all"
-                >
-                  <FiPlus className="mr-2" />
-                  Add Another Criteria
-                </motion.button>
+                  <option value="">Select a category</option>
+                  {categories.map((category) => (
+                    <option key={category._id} value={category._id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.category && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-sm text-red-500"
+                  >
+                    {errors.category}
+                  </motion.p>
+                )}
               </div>
 
-              {/* Flag Upload */}
+              {/* description */}
+              <div className="space-y-2">
+                <label className="flex items-center text-sm font-medium text-gray-700">
+                  <FiFileText className="mr-2 text-gray-500" /> Description *
+                </label>
+                <textarea
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
+                  onBlur={() => validateField("description", form.description)}
+                  className={`w-full px-4 py-3 rounded-lg border ${
+                    errors.description ? "border-red-500" : "border-gray-300"
+                  } focus:border-gray-500 transition-all min-h-[200px]`}
+                  placeholder="Write your news description here..."
+                />
+                {errors.description && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-sm text-red-500"
+                  >
+                    {errors.description}
+                  </motion.p>
+                )}
+              </div>
+              {/* Image Upload */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
-                  Flag Image (JPG/PNG/SVG, max 5MB)
+                  News Image (JPG/PNG, max 5MB)
                 </label>
                 <div className="relative flex-shrink-0">
-                  {files.flag || currentFlag ? (
+                  {files.image || currentImage ? (
                     <div className="relative w-full md:w-48 h-32 rounded-md border border-gray-200 bg-gray-100">
                       <img
                         src={
-                          files.flag
-                            ? URL.createObjectURL(files.flag)
-                            : currentFlag
+                          files.image
+                            ? URL.createObjectURL(files.image)
+                            : currentImage
                         }
-                        alt="Flag preview"
+                        alt="News preview"
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           e.target.onerror = null;
@@ -555,52 +496,48 @@ function CountryModify() {
                         }}
                       />
 
-                      {/* Delete Button - top right half in half out */}
+                      {/* Delete Button - Tight Top Right */}
                       <motion.button
-                        onClick={() => {
-                          setFiles((prev) => ({ ...prev, flag: null }));
-                          setCurrentFlag(""); // ✅ clear preview image as well
-                        }}
+                        onClick={removeImage}
                         whileHover={{ scale: 1.1, rotate: 10 }}
                         whileTap={{ scale: 0.9 }}
                         className="absolute -top-2 -right-2 bg-white p-1.5 rounded-full shadow-md border border-gray-200 hover:bg-red-50 text-red-500"
                         type="button"
                       >
-                        <FiTrash2 className="text-[14px]" />
+                        <FiTrash2 className="text-[16px]" />
                       </motion.button>
 
-                      {/* Edit Button - bottom right half in half out */}
+                      {/* Edit Button - Tight Bottom Right */}
                       <motion.label
                         whileHover={{ scale: 1.1, rotate: -5 }}
                         whileTap={{ scale: 0.95 }}
                         className="absolute -bottom-2 -right-2 bg-white p-1 rounded-full shadow-md border border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors"
                       >
-                        <FiEdit2 className="text-gray-600 text-[14px]" />
+                        <FiEdit2 className="text-gray-600 text-[16px]" />
                         <input
                           type="file"
                           accept="image/*"
                           onChange={handleFileChange}
                           className="hidden"
-                          name="flag"
+                          name="image"
                         />
                       </motion.label>
                     </div>
                   ) : (
                     <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg transition-colors w-56 flex justify-center items-center border border-gray-300 hover:border-gray-500">
                       <FiUpload className="inline mr-2" />
-                      Upload Flag
+                      Upload Image
                       <input
                         type="file"
                         accept="image/*"
                         onChange={handleFileChange}
                         className="hidden"
-                        name="flag"
+                        name="image"
                       />
                     </label>
                   )}
                 </div>
               </div>
-
               <div className="pt-4">
                 <p className="text-sm text-gray-500 mb-4">* Mandatory fields</p>
                 <div className="flex space-x-3">
@@ -647,9 +584,9 @@ function CountryModify() {
                         {editingId ? "Updating..." : "Creating..."}
                       </>
                     ) : editingId ? (
-                      "Update Country"
+                      "Update News Post"
                     ) : (
-                      "Create Country"
+                      "Create News Post"
                     )}
                   </motion.button>
                 </div>
@@ -673,9 +610,11 @@ function CountryModify() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-              Country Management
+              News Management
             </h1>
-            <p className="text-gray-600 mt-2">Manage countries in the system</p>
+            <p className="text-gray-600 mt-2">
+              Manage news posts in the system
+            </p>
           </div>
           <div className="flex space-x-3">
             <button
@@ -700,21 +639,21 @@ function CountryModify() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
-                  Country List
+                  News List
                 </h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  View and manage your countries
+                  View and manage your news posts
                 </p>
               </div>
               <div className="flex items-center space-x-2">
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                  {countries.length} countries
+                  {Array.isArray(news) ? news.length : 0} news posts
                 </span>
               </div>
             </div>
           </div>
 
-          {countries.length === 0 ? (
+          {!Array.isArray(news) || news.length === 0 ? (
             <div className="py-12 text-center">
               <svg
                 className="mx-auto h-12 w-12 text-gray-400"
@@ -731,14 +670,17 @@ function CountryModify() {
                 />
               </svg>
               <h3 className="mt-2 text-lg font-medium text-gray-900">
-                No countries
+                No news posts
               </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Get started by creating a new news post.
+              </p>
             </div>
           ) : (
             <div className="grid gap-6">
-              {countries.map((country) => (
+              {news.map((newsItem) => (
                 <motion.div
-                  key={country._id}
+                  key={newsItem._id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
@@ -746,66 +688,62 @@ function CountryModify() {
                 >
                   <div className="p-6">
                     <div className="flex flex-col md:flex-row gap-6">
-                      {/* Country Flag */}
-                      <div className="relative w-full md:w-48 h-32 rounded-md border border-gray-200 bg-gray-100 overflow-hidden group">
-                        {/* Flag image or skeleton */}
-                        {country.flag ? (
-                          <img
-                            src={`http://localhost:3500/api/countries/flag/${country.flag}`}
-                            alt={`${country.name} flag`}
-                            className="w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = "/placeholder-image.jpg";
-                            }}
-                          />
-                        ) : (
-                          <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-pulse flex items-center justify-center">
-                            <FiImage className="text-gray-400 text-2xl" />
-                          </div>
-                        )}
-
-                        {/* Gradient hover overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      </div>
-
-                      {/* Country Details */}
+                      {/* News Details */}
                       <div className="flex-1">
                         <div className="flex justify-between items-start">
-                          <div>
-                            <h2 className="text-xl font-bold text-gray-900">
-                              {country.name}
-                            </h2>
-                            {/* Show multiple descriptions if available */}
-                            {Array.isArray(country.description)
-                              ? country.description.map((desc, idx) =>
-                                  desc ? (
-                                    <p
-                                      key={idx}
-                                      className="text-sm text-gray-600 mt-1 line-clamp-3"
-                                    >
-                                      {desc}
-                                    </p>
-                                  ) : null
-                                )
-                              : country.description && (
-                                  <p className="text-sm text-gray-600 mt-1 line-clamp-3">
-                                    {country.description}
-                                  </p>
-                                )}
+                          <div className="flex items-center gap-4 duration-300">
+                            {/* Image Section */}
+                            <div className="relative w-40 h-28 rounded-md overflow-hidden flex-shrink-0">
+                              {newsItem.image ? (
+                                <img
+                                  src={`http://localhost:3500/news/${newsItem.image}`}
+                                  alt={newsItem.title}
+                                  className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                                  onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = "/placeholder-image.jpg";
+                                  }}
+                                />
+                              ) : (
+                                <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-pulse flex items-center justify-center">
+                                  <FiImage className="text-gray-400 text-3xl" />
+                                </div>
+                              )}
+                              {/* Overlay */}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
+                            </div>
+
+                            {/* Details Section */}
+                            <div className="flex flex-col justify-between">
+                              <h2 className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors duration-200">
+                                {newsItem.title}
+                              </h2>
+                              <p className="text-sm text-gray-600 mt-1">
+                                <span className="font-medium text-gray-800">
+                                  Category:
+                                </span>{" "}
+                                {newsItem.category?.name || "Uncategorized"}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-2">
+                                Created:{" "}
+                                {new Date(
+                                  newsItem.createdAt
+                                ).toLocaleDateString()}
+                              </p>
+                            </div>
                           </div>
 
                           {/* Action Buttons */}
                           <div className="flex gap-2">
                             <button
-                              onClick={() => startEditing(country._id)}
+                              onClick={() => startEditing(newsItem._id)}
                               className="text-gray-600 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100"
                               title="Edit"
                             >
                               <FiEdit2 />
                             </button>
                             <button
-                              onClick={() => handleDelete(country._id)}
+                              onClick={() => handleDelete(newsItem._id)}
                               className="text-gray-600 hover:text-red-500 p-2 rounded-full hover:bg-gray-100"
                               title="Delete"
                             >
@@ -826,4 +764,4 @@ function CountryModify() {
   );
 }
 
-export default CountryModify;
+export default NewsModify;
