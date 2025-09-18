@@ -10,13 +10,12 @@ import {
 } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import axios from "axios";
-import { EditorState, RichUtils, convertToRaw } from "draft-js";
-import "draft-js/dist/Draft.css";
-import draftToHtml from "draftjs-to-html";
-import { Editor } from "react-draft-wysiwyg";
-import "react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
+// ✅ add these
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
+
 const CreateEvent = () => {
-  const [editorState, setEditorState] = useState(EditorState.createEmpty());
+  const [description, setDescription] = useState("");
   const [form, setForm] = useState({
     title: "",
     startDate: "",
@@ -53,9 +52,13 @@ const CreateEvent = () => {
     if (!form.endTime) newErrors.endTime = "End time is required";
     if (!form.location) newErrors.location = "Location is required";
 
-    const rawContent = convertToRaw(editorState.getCurrentContent());
-    const hasText = rawContent.blocks.some((block) => block.text.trim() !== "");
-    if (!hasText) newErrors.description = "Description is required";
+    if (
+      !description ||
+      description.trim() === "" ||
+      description === "<p><br></p>"
+    ) {
+      newErrors.description = "Description is required";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -76,10 +79,7 @@ const CreateEvent = () => {
       }
 
       // Convert Draft.js to HTML
-      const rawContentState = convertToRaw(editorState.getCurrentContent());
-      const descriptionHtml = draftToHtml(rawContentState);
-
-      formData.append("description", descriptionHtml);
+      formData.append("description", description);
 
       if (files.image) formData.append("image", files.image);
 
@@ -99,7 +99,7 @@ const CreateEvent = () => {
         endTime: "",
         location: "",
       });
-      setEditorState(EditorState.createEmpty());
+      setDescription("");
       setFiles({ image: null });
     } catch (error) {
       toast.error(error.response?.data?.message || "Event creation failed");
@@ -262,137 +262,33 @@ const CreateEvent = () => {
                 <FiFileText className="mr-2 text-gray-500" /> Description *
               </label>
 
-              <div className="border border-gray-300 rounded-lg bg-white">
-                <Editor
-                  editorState={editorState}
-                  onEditorStateChange={setEditorState}
-                  wrapperClassName="demo-wrapper"
-                  editorClassName="p-3 min-h-[150px]"
-                  toolbarClassName="border-b border-gray-200"
-                  toolbar={{
-                    options: [
-                      "inline",
-                      "blockType",
-                      "fontSize",
-                      "fontFamily",
-                      "list",
-                      "textAlign",
-                      "colorPicker",
-                      "link",
-                      "embedded",
-                      "emoji",
-                      "image",
-                      "remove",
-                      "history",
-                    ],
-                    inline: {
-                      inDropdown: false,
-                      className: undefined,
-                      component: undefined,
-                      dropdownClassName: undefined,
-                      options: [
-                        "bold",
-                        "italic",
-                        "underline",
-                        "strikethrough",
-                        "monospace",
-                        "superscript",
-                        "subscript",
-                      ],
-                    },
-                    blockType: {
-                      inDropdown: true,
-                      options: [
-                        "Normal",
-                        "H1",
-                        "H2",
-                        "H3",
-                        "H4",
-                        "H5",
-                        "H6",
-                        "Blockquote",
-                        "Code",
-                      ],
-                      className: undefined,
-                      component: undefined,
-                      dropdownClassName: undefined,
-                    },
-                    fontSize: {
-                      options: [
-                        8, 9, 10, 11, 12, 14, 16, 18, 24, 30, 36, 48, 60, 72,
-                        96,
-                      ],
-                      className: undefined,
-                      component: undefined,
-                      dropdownClassName: undefined,
-                    },
-                    list: {
-                      inDropdown: false,
-                      className: undefined,
-                      component: undefined,
-                      dropdownClassName: undefined,
-                      options: ["unordered", "ordered", "indent", "outdent"],
-                    },
-                    textAlign: {
-                      inDropdown: false,
-                      className: undefined,
-                      component: undefined,
-                      dropdownClassName: undefined,
-                      options: ["left", "center", "right", "justify"],
-                    },
-                    link: {
-                      inDropdown: false,
-                      className: undefined,
-                      component: undefined,
-                      popupClassName: undefined,
-                      dropdownClassName: undefined,
-                      showOpenOptionOnHover: true,
-                      defaultTargetOption: "_blank",
-                      options: ["link", "unlink"],
-                      linkCallback: undefined,
-                      unlinkCallback: undefined,
-                    },
-                  }}
+              <div className="bg-white">
+                <ReactQuill
+                  value={description}
+                  onChange={setDescription}
                   placeholder="Write a brief description about the event"
-                  handlePastedText={(text, html, editorState, onChange) => {
-                    // Return false to allow default paste behavior with formatting preservation
-                    return false;
+                  className="bg-white"
+                  modules={{
+                    toolbar: [
+                      [{ header: [1, 2, 3, false] }],
+                      ["bold", "italic", "underline", "strike", "blockquote"],
+                      [{ list: "ordered" }, { list: "bullet" }],
+                      ["link", "image"],
+                      ["clean"],
+                    ],
                   }}
-                  handlePastedFiles={() => false}
-                  stripPastedStyles={false}
-                  spellCheck={true}
-                  readOnly={false}
-                  tabIndex={1}
-                  ariaLabel="Event description editor"
-                  ariaOwneeID="editor"
-                  ariaActiveDescendantID="editor"
-                  ariaAutoComplete="none"
-                  ariaDescribedBy="editor"
-                  ariaExpanded={false}
-                  ariaHaspopup={false}
-                  customStyleMap={{
-                    STRIKETHROUGH: {
-                      textDecoration: "line-through",
-                    },
-                    SUPERSCRIPT: {
-                      verticalAlign: "super",
-                      fontSize: "80%",
-                    },
-                    SUBSCRIPT: {
-                      verticalAlign: "sub",
-                      fontSize: "80%",
-                    },
-                  }}
-                  blockStyleFn={(contentBlock) => {
-                    const type = contentBlock.getType();
-                    if (type === "blockquote") {
-                      return "editor-blockquote";
-                    }
-                    if (type === "code-block") {
-                      return "editor-code-block";
-                    }
-                    return null;
-                  }}
+                  formats={[
+                    "header",
+                    "bold",
+                    "italic",
+                    "underline",
+                    "strike",
+                    "blockquote",
+                    "list",
+                    "bullet",
+                    "link",
+                    "image",
+                  ]}
                 />
               </div>
 
@@ -402,40 +298,73 @@ const CreateEvent = () => {
             </div>
 
             {/* Image Upload */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                <FiImage className="mr-2 inline text-gray-500" /> Event Image
-                (JPG/PNG)
-              </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:bg-gray-50 transition-colors">
-                {files.image ? (
-                  <div className="flex items-center justify-between">
-                    <p className="text-gray-900 text-sm truncate max-w-[180px]">
-                      {files.image.name}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setFiles({ image: null })}
-                      className="text-gray-400 hover:text-red-500 ml-2 transition-colors duration-200"
-                    >
-                      ✕
-                    </button>
+
+            <div className="flex flex-col md:space-x-4 space-y-4 md:space-y-0">
+              {/* Upload Section */}
+              <div className="w-full space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  <FiImage className="mr-2 inline text-gray-500" /> Event Image
+                  (JPG/PNG)
+                </label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:bg-gray-50 transition-colors">
+                  {files.image ? (
+                    <div className="flex items-center justify-between">
+                      <p className="text-gray-900 text-sm truncate max-w-[180px]">
+                        {files.image.name}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setFiles({ image: null })}
+                        className="text-gray-400 hover:text-red-500 ml-2 transition-colors duration-200"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="block cursor-pointer">
+                      <p className="text-gray-500 text-sm mb-1">
+                        Click to upload image
+                      </p>
+                      <p className="text-xs text-gray-400">JPG or PNG</p>
+                      <input
+                        type="file"
+                        name="image"
+                        onChange={handleFileChange}
+                        className="hidden"
+                        accept=".jpg,.jpeg,.png"
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              {/* Details Section */}
+              <div className="flex-1 mt-2">
+                <div className="text-sm text-gray-600 bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">
+                    Image Details
+                  </h4>
+                  {files.image ? (
+                    <>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="truncate max-w-xs">
+                          {files.image.name}
+                        </span>
+                        <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full">
+                          {(files.image.size / 1024).toFixed(1)} KB
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div>No event image selected</div>
+                  )}
+
+                  <div className="text-xs text-gray-500 mt-3">
+                    <p>• Recommended size: 800×450px (16:9 ratio)</p>
+                    <p>• Maximum file size: 5MB</p>
+                    <p>• Formats: JPG, PNG</p>
                   </div>
-                ) : (
-                  <label className="block cursor-pointer">
-                    <p className="text-gray-500 text-sm mb-1">
-                      Click to upload image
-                    </p>
-                    <p className="text-xs text-gray-400">JPG or PNG</p>
-                    <input
-                      type="file"
-                      name="image"
-                      onChange={handleFileChange}
-                      className="hidden"
-                      accept=".jpg,.jpeg,.png"
-                    />
-                  </label>
-                )}
+                </div>
               </div>
             </div>
 

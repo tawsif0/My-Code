@@ -18,7 +18,8 @@ import {
   FiArrowLeft,
   FiPlus,
 } from "react-icons/fi";
-
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 function BlogModify() {
   const [blogs, setBlogs] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -28,16 +29,14 @@ function BlogModify() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [files, setFiles] = useState({ image: null });
   const [currentImage, setCurrentImage] = useState("");
-
+  const [content, setContent] = useState("");
   // Form state
   const [form, setForm] = useState({
     title: "",
-    content: "",
     category: "",
   });
   const [errors, setErrors] = useState({
     title: "",
-    content: "",
     category: "",
   });
 
@@ -111,18 +110,16 @@ function BlogModify() {
   const resetForm = () => {
     setForm({
       title: "",
-      content: "",
       category: "",
     });
-
+    setContent(""); // Reset ReactQuill content
     setErrors({
       title: "",
       content: "",
       category: "",
     });
-
-    setFiles({ image: null }); // ✅ reset uploaded image
-    setCurrentImage(""); // ✅ reset preview
+    setFiles({ image: null });
+    setCurrentImage("");
     setEditingId(null);
   };
   const handleFileChange = (e) => {
@@ -179,11 +176,11 @@ function BlogModify() {
 
       setForm({
         title: blogData.title,
-        content: blogData.content,
         category: blogData.category?._id || blogData.category || "",
       });
 
-      // ✅ Set current image from DB
+      setContent(blogData.content || ""); // Set ReactQuill content
+
       if (blogData.image) {
         setCurrentImage(`http://localhost:3500/blogs/${blogData.image}`);
       } else {
@@ -198,7 +195,6 @@ function BlogModify() {
       setLoading(false);
     }
   };
-
   const cancelForm = () => {
     resetForm();
     setShowForm(false);
@@ -270,7 +266,7 @@ function BlogModify() {
     try {
       const formData = new FormData();
       formData.append("title", form.title);
-      formData.append("content", form.content);
+      formData.append("content", content);
       formData.append("category", form.category);
 
       if (files.image) {
@@ -409,7 +405,112 @@ function BlogModify() {
                   </motion.p>
                 )}
               </div>
+              {/* Image Upload */}
+              <div className="border-t border-gray-200 pt-6">
+                <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
+                  <FiImage className="mr-2 text-gray-600" />
+                  Blog Image
+                </h3>
 
+                <div className="flex flex-col md:flex-row items-start gap-6">
+                  {/* Image Preview Box */}
+                  <div className="relative flex-shrink-0">
+                    {files.image || currentImage ? (
+                      <div className="relative group">
+                        <div className="w-full md:w-56 h-40 rounded-lg overflow-hidden border-2 border-dashed border-gray-300 bg-gray-50 shadow-sm">
+                          <img
+                            src={
+                              files.image
+                                ? URL.createObjectURL(files.image)
+                                : currentImage
+                            }
+                            alt="Blog preview"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = "/placeholder-image.jpg";
+                            }}
+                          />
+                        </div>
+
+                        {/* Edit Button */}
+                        <motion.label
+                          whileHover={{ scale: 1.1, rotate: -5 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="absolute bottom-2 right-2 bg-white p-2 rounded-full shadow-md border border-gray-300 cursor-pointer hover:bg-gray-50 transition-colors"
+                          title="Change image"
+                        >
+                          <FiEdit className="text-gray-700 text-lg" />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileChange}
+                            className="hidden"
+                            name="image"
+                          />
+                        </motion.label>
+
+                        {/* Remove Button */}
+                        <motion.button
+                          onClick={removeImage}
+                          whileHover={{ scale: 1.1, rotate: 10 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md border border-gray-200 hover:bg-red-50 text-red-500"
+                          type="button"
+                          title="Remove image"
+                        >
+                          <FiTrash2 className="text-lg" />
+                        </motion.button>
+                      </div>
+                    ) : (
+                      <label className="cursor-pointer flex flex-col items-center justify-center w-56 h-40 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 transition-colors p-4 text-center">
+                        <FiImage className="text-3xl text-gray-400 mb-2" />
+                        <span className="text-sm font-medium text-gray-600">
+                          Upload Blog Image
+                        </span>
+                        <span className="text-xs text-gray-500 mt-1">
+                          JPG, PNG, or WebP
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileChange}
+                          className="hidden"
+                          name="image"
+                        />
+                      </label>
+                    )}
+                  </div>
+
+                  {/* File Info */}
+                  <div className="flex-1">
+                    <div className="text-sm text-gray-600 bg-gray-50 p-4 rounded-lg">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">
+                        Image Details
+                      </h4>
+                      {files.image ? (
+                        <>
+                          <div className="font-medium mb-1">New upload:</div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="truncate max-w-xs">
+                              {files.image.name}
+                            </span>
+                            <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full">
+                              {(files.image.size / 1024).toFixed(1)} KB
+                            </span>
+                          </div>
+                        </>
+                      ) : null}
+
+                      <div className="text-xs text-gray-500 mt-3">
+                        <p>• Recommended size: 800×450px (16:9 ratio)</p>
+                        <p>• Maximum file size: 5MB</p>
+                        <p>• Formats: JPG, PNG, WebP</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
               {/* Category */}
               <div className="space-y-2">
                 <label className="flex items-center text-sm font-medium text-gray-700">
@@ -447,16 +548,34 @@ function BlogModify() {
                 <label className="flex items-center text-sm font-medium text-gray-700">
                   <FiFileText className="mr-2 text-gray-500" /> Content *
                 </label>
-                <textarea
-                  name="content"
-                  value={form.content}
-                  onChange={handleChange}
-                  onBlur={() => validateField("content", form.content)}
-                  className={`w-full px-4 py-3 rounded-lg border ${
-                    errors.content ? "border-red-500" : "border-gray-300"
-                  } focus:border-gray-500 transition-all min-h-[200px]`}
-                  placeholder="Write your blog content here..."
-                />
+                <div className="border border-gray-300 rounded-lg bg-white">
+                  <ReactQuill
+                    theme="snow"
+                    value={content}
+                    onChange={setContent}
+                    modules={{
+                      toolbar: [
+                        [{ header: [1, 2, 3, false] }],
+                        ["bold", "italic", "underline", "strike", "blockquote"],
+                        [{ list: "ordered" }, { list: "bullet" }],
+                        ["link", "image"],
+                        ["clean"],
+                      ],
+                    }}
+                    formats={[
+                      "header",
+                      "bold",
+                      "italic",
+                      "underline",
+                      "strike",
+                      "blockquote",
+                      "list",
+                      "bullet",
+                      "link",
+                      "image",
+                    ]}
+                  />
+                </div>
                 {errors.content && (
                   <motion.p
                     initial={{ opacity: 0, y: -5 }}
@@ -466,70 +585,6 @@ function BlogModify() {
                     {errors.content}
                   </motion.p>
                 )}
-              </div>
-              {/* Image Upload */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Blog Image (JPG/PNG, max 5MB)
-                </label>
-                <div className="relative flex-shrink-0">
-                  {files.image || currentImage ? (
-                    <div className="relative w-full md:w-48 h-32 rounded-md border border-gray-200 bg-gray-100">
-                      <img
-                        src={
-                          files.image
-                            ? URL.createObjectURL(files.image)
-                            : currentImage
-                        }
-                        alt="Blog preview"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = "/placeholder-image.jpg";
-                        }}
-                      />
-
-                      {/* Delete Button */}
-                      <motion.button
-                        onClick={(e) => removeImage(e)} // pass event
-                        whileHover={{ scale: 1.1, rotate: 10 }}
-                        whileTap={{ scale: 0.9 }}
-                        className="absolute -top-2 -right-2 bg-white p-1.5 rounded-full shadow-md border border-gray-200 hover:bg-red-50 text-red-500"
-                        type="button"
-                      >
-                        <FiTrash2 className="text-[16px]" />
-                      </motion.button>
-
-                      {/* Edit Button */}
-                      <motion.label
-                        whileHover={{ scale: 1.1, rotate: -5 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="absolute -bottom-2 -right-2 bg-white p-1 rounded-full shadow-md border border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors"
-                      >
-                        <FiEdit2 className="text-gray-600 text-[16px]" />
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFileChange}
-                          className="hidden"
-                          name="image"
-                        />
-                      </motion.label>
-                    </div>
-                  ) : (
-                    <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg transition-colors w-56 flex justify-center items-center border border-gray-300 hover:border-gray-500">
-                      <FiUpload className="inline mr-2" />
-                      Upload Image
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        className="hidden"
-                        name="image"
-                      />
-                    </label>
-                  )}
-                </div>
               </div>
 
               <div className="pt-4">

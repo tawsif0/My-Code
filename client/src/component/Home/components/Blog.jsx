@@ -13,7 +13,7 @@ const blogImages = [
   "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
   "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
   "https://images.unsplash.com/photo-1523240795612-9a054b0db644?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
-  "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+  "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
 ];
 
 const Blog = () => {
@@ -21,100 +21,64 @@ const Blog = () => {
   const [showAllPosts, setShowAllPosts] = useState(false);
   const [ref, inView] = useInView({
     threshold: 0.1,
-    triggerOnce: true
+    triggerOnce: true,
   });
 
   const blogPosts = [
     {
       id: 1,
       title: "5 Steps to Secure a Canadian Student Visa",
-      excerpt:
+      content:
         "A comprehensive guide to navigating the Canadian student visa process with tips to avoid common mistakes.",
       category: "visa-guides",
       date: "June 10, 2025",
-      readTime: "8 min read",
-      image: blogImages[0]
+      image: blogImages[0],
     },
     {
       id: 2,
       title: "IELTS vs TOEFL: Which Suits Your Profile?",
-      excerpt:
+      content:
         "Compare both English proficiency tests to determine which one aligns better with your strengths and goals.",
       category: "exam-strategies",
       date: "May 28, 2025",
-      readTime: "6 min read",
-      image: blogImages[1]
+      image: blogImages[1],
     },
     {
       id: 3,
       title: "2025 Scholarship Deadlines for Top EU Universities",
-      excerpt:
+      content:
         "Don't miss these important deadlines for fully-funded scholarships across Europe's best institutions.",
       category: "scholarships",
       date: "May 15, 2025",
-      readTime: "5 min read",
-      image: blogImages[2]
+      image: blogImages[2],
     },
     {
       id: 4,
       title: "Why Germany is the New Hotspot for International Students",
-      excerpt:
+      content:
         "Exploring the benefits of studying in Germany including tuition-free education and post-study work options.",
       category: "country-spotlights",
       date: "April 30, 2025",
-      readTime: "7 min read",
-      image: blogImages[3]
+      image: blogImages[3],
     },
     {
       id: 5,
       title: "GRE Quantitative: Advanced Problem Solving Techniques",
-      excerpt:
+      content:
         "Master these strategies to tackle the most challenging GRE math problems with confidence.",
       category: "exam-strategies",
       date: "April 22, 2025",
-      readTime: "9 min read",
-      image: blogImages[4]
+      image: blogImages[4],
     },
     {
       id: 6,
       title: "Australia Student Visa: Complete Document Checklist",
-      excerpt:
+      content:
         "Everything you need to prepare for a successful Australian student visa application.",
       category: "visa-guides",
       date: "April 15, 2025",
-      readTime: "6 min read",
-      image: blogImages[5]
+      image: blogImages[5],
     },
-    {
-      id: 7,
-      title: "Fully Funded Scholarships in Scandinavia",
-      excerpt:
-        "Discover Nordic countries' generous scholarship programs for international students.",
-      category: "scholarships",
-      date: "March 28, 2025",
-      readTime: "5 min read",
-      image: blogImages[6]
-    },
-    {
-      id: 8,
-      title: "Student Life in Japan: What to Expect",
-      excerpt:
-        "Cultural insights and practical tips for international students planning to study in Japan.",
-      category: "country-spotlights",
-      date: "March 15, 2025",
-      readTime: "8 min read",
-      image: blogImages[7]
-    },
-    {
-      id: 9,
-      title: "TOEFL Speaking: How to Score 26+",
-      excerpt:
-        "Proven techniques to improve your TOEFL speaking score with practice exercises.",
-      category: "exam-strategies",
-      date: "February 28, 2025",
-      readTime: "7 min read",
-      image: blogImages[8]
-    }
   ];
 
   const categories = [
@@ -122,7 +86,7 @@ const Blog = () => {
     { id: "visa-guides", name: "Visa Guides" },
     { id: "country-spotlights", name: "Country Spotlights" },
     { id: "exam-strategies", name: "Exam Strategies" },
-    { id: "scholarships", name: "Scholarships" }
+    { id: "scholarships", name: "Scholarships" },
   ];
 
   const filteredPosts =
@@ -141,9 +105,9 @@ const Blog = () => {
       opacity: 1,
       transition: {
         staggerChildren: 0.1,
-        when: "beforeChildren"
-      }
-    }
+        when: "beforeChildren",
+      },
+    },
   };
 
   const itemVariants = {
@@ -154,9 +118,9 @@ const Blog = () => {
       transition: {
         type: "spring",
         stiffness: 100,
-        damping: 10
-      }
-    }
+        damping: 10,
+      },
+    },
   };
 
   const headerVariants = {
@@ -167,9 +131,9 @@ const Blog = () => {
       transition: {
         type: "spring",
         stiffness: 100,
-        delay: 0.2
-      }
-    }
+        delay: 0.2,
+      },
+    },
   };
 
   return (
@@ -267,7 +231,7 @@ const Blog = () => {
                   {post.title}
                 </h3>
 
-                <p className="mb-4 text-gray-600 flex-grow">{post.excerpt}</p>
+                <p className="mb-4 text-gray-600 flex-grow">{post.content}</p>
 
                 <div className="flex justify-between items-center pt-4 border-t border-gray-100">
                   <span className="text-xs text-gray-500">{post.readTime}</span>

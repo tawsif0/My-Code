@@ -5,19 +5,20 @@ import axios from "axios";
 import { toast } from "react-hot-toast";
 import { motion } from "framer-motion";
 import { FiType, FiFileText, FiX, FiImage, FiUpload } from "react-icons/fi";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
 function BlogCreate() {
   const [files, setFiles] = useState({ image: null });
   const [form, setForm] = useState({
     title: "",
-    content: "",
     category: "",
   });
   const [errors, setErrors] = useState({
     title: "",
-    content: "",
     category: "",
   });
+  const [contentHtml, setContentHtml] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
@@ -100,10 +101,14 @@ function BlogCreate() {
   const validateForm = () => {
     let isValid = true;
     isValid = validateField("title", form.title) && isValid;
-    isValid = validateField("content", form.content) && isValid;
     isValid = validateField("category", form.category) && isValid;
 
-    // Check for image
+    if (!contentHtml || contentHtml === "<p><br></p>") {
+      setErrors((prev) => ({ ...prev, content: "Blog content is required" }));
+      toast.error("Blog content is required");
+      isValid = false;
+    }
+
     if (!files.image) {
       toast.error("Blog image is required");
       isValid = false;
@@ -131,7 +136,7 @@ function BlogCreate() {
     try {
       const formData = new FormData();
       formData.append("title", form.title);
-      formData.append("content", form.content);
+      formData.append("content", contentHtml);
       formData.append("category", form.category);
       formData.append("image", files.image);
 
@@ -226,7 +231,82 @@ function BlogCreate() {
                 </motion.p>
               )}
             </div>
+            {/* Blog Image Upload */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Blog Image (JPG/PNG, max 5MB)
+              </label>
 
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[100px] text-center hover:bg-gray-50 transition-colors relative">
+                {files.image ? (
+                  <div className="flex flex-col md:flex-row items-center justify-between">
+                    {/* Image Preview */}
+                    <img
+                      src={URL.createObjectURL(files.image)}
+                      alt="Preview"
+                      className="w-32 h-20 object-cover rounded-lg mr-4 mb-2 md:mb-0"
+                    />
+
+                    <div className="flex-1 flex flex-col md:flex-row items-center justify-between w-full">
+                      <p className="text-gray-900 text-sm truncate max-w-xs">
+                        {files.image.name}
+                      </p>
+                      <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full">
+                        {(files.image.size / 1024).toFixed(1)} KB
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setFiles({ image: null })}
+                        className="text-gray-400 hover:text-red-500 ml-2 transition-colors duration-200"
+                      >
+                        <FiX className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="block cursor-pointer">
+                    <p className="text-gray-500 text-sm mb-1">
+                      Click to upload blog image
+                    </p>
+                    <p className="text-xs text-gray-400">JPG, PNG or SVG</p>
+                    <input
+                      type="file"
+                      name="image"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      accept=".jpg,.jpeg,.png"
+                    />
+                  </label>
+                )}
+              </div>
+
+              {/* Image Details Panel */}
+              <div className="flex-1 mt-2">
+                <div className="text-sm text-gray-600 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">
+                    Image Details
+                  </h4>
+                  {files.image ? (
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="truncate max-w-xs">
+                        {files.image.name}
+                      </span>
+                      <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full">
+                        {(files.image.size / 1024).toFixed(1)} KB
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="text-gray-500">No blog image selected</div>
+                  )}
+
+                  <div className="text-xs text-gray-500 mt-3 space-y-1">
+                    <p>• Recommended size: 800×450px (16:9 ratio)</p>
+                    <p>• Maximum file size: 5MB</p>
+                    <p>• Formats: JPG, PNG</p>
+                  </div>
+                </div>
+              </div>
+            </div>
             {/* Category */}
             <div className="space-y-2">
               <label className="flex items-center text-sm font-medium text-gray-700">
@@ -273,16 +353,45 @@ function BlogCreate() {
               <label className="flex items-center text-sm font-medium text-gray-700">
                 <FiFileText className="mr-2 text-gray-500" /> Content *
               </label>
-              <textarea
-                name="content"
-                value={form.content}
-                onChange={handleChange}
-                onBlur={() => validateField("content", form.content)}
-                className={`w-full px-4 py-3 rounded-lg border ${
-                  errors.content ? "border-red-500" : "border-gray-300"
-                } focus:border-gray-500 transition-all min-h-[200px]`}
+
+              <ReactQuill
+                value={contentHtml}
+                onChange={setContentHtml}
                 placeholder="Write your blog content here..."
+                className="bg-white min-h-[200px]"
+                modules={{
+                  toolbar: [
+                    [{ header: [1, 2, 3, false] }],
+                    ["bold", "italic", "underline", "strike", "blockquote"],
+                    [{ list: "ordered" }, { list: "bullet" }],
+                    ["link", "image"],
+                    ["clean"],
+                  ],
+                }}
+                formats={[
+                  "header",
+                  "bold",
+                  "italic",
+                  "underline",
+                  "strike",
+                  "blockquote",
+                  "list",
+                  "bullet",
+                  "link",
+                  "image",
+                ]}
+                onBlur={() => {
+                  if (!contentHtml || contentHtml === "<p><br></p>") {
+                    setErrors((prev) => ({
+                      ...prev,
+                      content: "Blog content is required",
+                    }));
+                  } else {
+                    setErrors((prev) => ({ ...prev, content: "" }));
+                  }
+                }}
               />
+
               {errors.content && (
                 <motion.p
                   initial={{ opacity: 0, y: -5 }}
@@ -292,44 +401,6 @@ function BlogCreate() {
                   {errors.content}
                 </motion.p>
               )}
-            </div>
-            {/* Blog Image Upload */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Blog Image (JPG/PNG/SVG, max 5MB)
-              </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[60px] text-center hover:bg-gray-50 transition-colors">
-                {files.image ? (
-                  <div className="flex items-center justify-between">
-                    <p className="text-gray-900 text-sm truncate max-w-[180px]">
-                      {files.image.name}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setFiles((prev) => ({ ...prev, image: null }))
-                      }
-                      className="text-gray-400 hover:text-red-500 ml-2 transition-colors duration-200"
-                    >
-                      <FiX className="h-4 w-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <label className="block cursor-pointer">
-                    <p className="text-gray-500 text-sm mb-1">
-                      Click to upload blog image
-                    </p>
-                    <p className="text-xs text-gray-400">JPG, PNG or SVG</p>
-                    <input
-                      type="file"
-                      name="image"
-                      onChange={handleFileChange}
-                      className="hidden"
-                      accept=".jpg,.jpeg,.png,.svg"
-                    />
-                  </label>
-                )}
-              </div>
             </div>
 
             <div className="pt-4">

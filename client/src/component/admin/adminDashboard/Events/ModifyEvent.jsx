@@ -13,11 +13,8 @@ import {
 import { toast } from "react-hot-toast";
 import axios from "axios";
 // Draft.js imports
-import { EditorState, convertToRaw, ContentState } from "draft-js";
-import { Editor } from "react-draft-wysiwyg";
-import draftToHtml from "draftjs-to-html";
-import htmlToDraft from "html-to-draftjs";
-import "react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 const ModifyEvent = () => {
   const base_url = import.meta.env.VITE_API_KEY_Base_URL;
   const [events, setEvents] = useState([]);
@@ -27,7 +24,7 @@ const ModifyEvent = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [editingEvent, setEditingEvent] = useState(null); // store the event being edited
   const [showEditForm, setShowEditForm] = useState(false);
-  const [editorState, setEditorState] = useState(EditorState.createEmpty());
+  const [description, setDescription] = useState("");
   const eventsPerPage = 8;
   const [previewImage, setPreviewImage] = useState(null);
 
@@ -41,22 +38,9 @@ const ModifyEvent = () => {
   const handleEditClick = (event) => {
     setEditingEvent(event);
     setShowEditForm(event._id);
-
-    // Convert existing HTML description back into Draft.js editor state
-    if (event.description) {
-      const blocksFromHtml = htmlToDraft(event.description);
-      if (blocksFromHtml) {
-        const { contentBlocks, entityMap } = blocksFromHtml;
-        const contentState = ContentState.createFromBlockArray(
-          contentBlocks,
-          entityMap
-        );
-        setEditorState(EditorState.createWithContent(contentState));
-      }
-    } else {
-      setEditorState(EditorState.createEmpty());
-    }
+    setDescription(event.description || "");
   };
+
   // Fetch events
   useEffect(() => {
     const fetchEvents = async () => {
@@ -123,13 +107,7 @@ const ModifyEvent = () => {
   };
   const handleEnd = async (id) => {
     try {
-      const response = await axios.put(
-        `${base_url}/api/events/${id}/end`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }
-      );
+      const response = await axios.put(`${base_url}/api/events/${id}/end`);
       setEvents(
         events.map((event) =>
           event._id === id ? { ...event, eventStatus: "ended" } : event
@@ -158,10 +136,7 @@ const ModifyEvent = () => {
       }
 
       // Convert Draft.js content to HTML before saving
-      const rawContentState = convertToRaw(editorState.getCurrentContent());
-      const descriptionHtml = draftToHtml(rawContentState);
-
-      formData.append("description", descriptionHtml);
+      formData.append("description", description);
 
       if (editingEvent.imageFile) {
         formData.append("image", editingEvent.imageFile);
@@ -510,151 +485,40 @@ const ModifyEvent = () => {
                                     Description *
                                   </label>
                                   <div className="border border-gray-300 rounded-lg bg-white">
-                                    <Editor
-                                      editorState={editorState}
-                                      onEditorStateChange={setEditorState}
-                                      wrapperClassName="demo-wrapper"
-                                      editorClassName="p-3 min-h-[150px]"
-                                      toolbarClassName="border-b border-gray-200"
-                                      toolbar={{
-                                        options: [
-                                          "inline",
-                                          "blockType",
-                                          "fontSize",
-                                          "fontFamily",
-                                          "list",
-                                          "textAlign",
-                                          "colorPicker",
-                                          "link",
-                                          "embedded",
-                                          "emoji",
-                                          "image",
-                                          "remove",
-                                          "history",
-                                        ],
-                                        inline: {
-                                          inDropdown: false,
-                                          className: undefined,
-                                          component: undefined,
-                                          dropdownClassName: undefined,
-                                          options: [
+                                    <ReactQuill
+                                      theme="snow"
+                                      value={description}
+                                      onChange={setDescription}
+                                      modules={{
+                                        toolbar: [
+                                          [{ header: [1, 2, 3, false] }],
+                                          [
                                             "bold",
                                             "italic",
                                             "underline",
-                                            "strikethrough",
-                                            "monospace",
-                                            "superscript",
-                                            "subscript",
+                                            "strike",
+                                            "blockquote",
                                           ],
-                                        },
-                                        blockType: {
-                                          inDropdown: true,
-                                          options: [
-                                            "Normal",
-                                            "H1",
-                                            "H2",
-                                            "H3",
-                                            "H4",
-                                            "H5",
-                                            "H6",
-                                            "Blockquote",
-                                            "Code",
+                                          [
+                                            { list: "ordered" },
+                                            { list: "bullet" },
                                           ],
-                                          className: undefined,
-                                          component: undefined,
-                                          dropdownClassName: undefined,
-                                        },
-                                        fontSize: {
-                                          options: [
-                                            8, 9, 10, 11, 12, 14, 16, 18, 24,
-                                            30, 36, 48, 60, 72, 96,
-                                          ],
-                                          className: undefined,
-                                          component: undefined,
-                                          dropdownClassName: undefined,
-                                        },
-                                        list: {
-                                          inDropdown: false,
-                                          className: undefined,
-                                          component: undefined,
-                                          dropdownClassName: undefined,
-                                          options: [
-                                            "unordered",
-                                            "ordered",
-                                            "indent",
-                                            "outdent",
-                                          ],
-                                        },
-                                        textAlign: {
-                                          inDropdown: false,
-                                          className: undefined,
-                                          component: undefined,
-                                          dropdownClassName: undefined,
-                                          options: [
-                                            "left",
-                                            "center",
-                                            "right",
-                                            "justify",
-                                          ],
-                                        },
-                                        link: {
-                                          inDropdown: false,
-                                          className: undefined,
-                                          component: undefined,
-                                          popupClassName: undefined,
-                                          dropdownClassName: undefined,
-                                          showOpenOptionOnHover: true,
-                                          defaultTargetOption: "_blank",
-                                          options: ["link", "unlink"],
-                                          linkCallback: undefined,
-                                          unlinkCallback: undefined,
-                                        },
+                                          ["link", "image"],
+                                          ["clean"],
+                                        ],
                                       }}
-                                      placeholder="Edit event description"
-                                      handlePastedText={(
-                                        text,
-                                        html,
-                                        editorState,
-                                        onChange
-                                      ) => {
-                                        // Return false to allow default paste behavior with formatting preservation
-                                        return false;
-                                      }}
-                                      handlePastedFiles={() => false}
-                                      stripPastedStyles={false}
-                                      spellCheck={true}
-                                      readOnly={false}
-                                      tabIndex={1}
-                                      ariaLabel="Event description editor"
-                                      ariaOwneeID="editor"
-                                      ariaActiveDescendantID="editor"
-                                      ariaAutoComplete="none"
-                                      ariaDescribedBy="editor"
-                                      ariaExpanded={false}
-                                      ariaHaspopup={false}
-                                      customStyleMap={{
-                                        STRIKETHROUGH: {
-                                          textDecoration: "line-through",
-                                        },
-                                        SUPERSCRIPT: {
-                                          verticalAlign: "super",
-                                          fontSize: "80%",
-                                        },
-                                        SUBSCRIPT: {
-                                          verticalAlign: "sub",
-                                          fontSize: "80%",
-                                        },
-                                      }}
-                                      blockStyleFn={(contentBlock) => {
-                                        const type = contentBlock.getType();
-                                        if (type === "blockquote") {
-                                          return "editor-blockquote";
-                                        }
-                                        if (type === "code-block") {
-                                          return "editor-code-block";
-                                        }
-                                        return null;
-                                      }}
+                                      formats={[
+                                        "header",
+                                        "bold",
+                                        "italic",
+                                        "underline",
+                                        "strike",
+                                        "blockquote",
+                                        "list",
+                                        "bullet",
+                                        "link",
+                                        "image",
+                                      ]}
                                     />
                                   </div>
                                 </div>

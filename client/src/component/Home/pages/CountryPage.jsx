@@ -7,7 +7,8 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useRef } from "react";
 import "./Countries.css";
-import { allCountries, countryFlags } from "./CountryData";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -16,12 +17,32 @@ const Countries = () => {
     window.scrollTo(0, 0);
   }, []);
 
+  const [countries, setCountries] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedCountries, setSelectedCountries] = useState([]);
   const [comparisonMode, setComparisonMode] = useState(false);
   const [activeDetail, setActiveDetail] = useState(null);
   const heroRef = useRef(null);
   const scrollIndicatorRef = useRef(null);
   const contentRef = useRef(null);
+
+  const fetchCountries = async () => {
+    try {
+      const { data } = await axios.get("http://localhost:3500/api/countries");
+      setCountries(data);
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching countries:", err);
+      toast.error(
+        err.response?.data?.message || err.message || "Failed to load countries"
+      );
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCountries();
+  }, []);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -95,10 +116,18 @@ const Countries = () => {
   };
 
   const selectedCountryData = () => {
-    return allCountries.filter((country) =>
-      selectedCountries.includes(country.id)
+    return countries.filter((country) =>
+      selectedCountries.includes(country._id)
     );
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-[#004080] text-xl">Loading countries...</div>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -198,16 +227,16 @@ const Countries = () => {
               variants={staggerContainer()}
               className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8"
             >
-              {allCountries.map((country, index) => (
+              {countries.map((country, index) => (
                 <motion.div
-                  key={country.id}
+                  key={country._id}
                   variants={fadeIn("up", "tween", index * 0.1, 0.5)}
                   whileHover={{
                     y: -10,
                     boxShadow: "0 15px 30px rgba(0, 64, 128, 0.2)",
                   }}
                   className={`bg-white/80 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden border-2 transition-all duration-300 ${
-                    selectedCountries.includes(country.id)
+                    selectedCountries.includes(country._id)
                       ? "border-[#ffd700]"
                       : "border-transparent"
                   } hover:shadow-xl flex flex-col`}
@@ -215,60 +244,72 @@ const Countries = () => {
                   <div className="flex flex-col justify-between h-full p-6">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center">
-                        <span className="mr-2 flex items-center justify-center w-6 h-6">
-                          {countryFlags[country.id]}
+                        <span className="mr-3 flex items-center justify-center w-8 h-5 relative">
+                          {country.flag ? (
+                            <img
+                              src={`http://localhost:3500/api/countries/flag/${country.flag}`}
+                              alt={`${country.name} flag`}
+                              className="w-8 h-5 object-cover shadow-md border border-gray-200 hover:scale-110 transition-transform duration-300"
+                            />
+                          ) : (
+                            <div className="w-8 h-5 flex items-center justify-center bg-gray-100 text-gray-400 shadow-md border border-gray-200">
+                              🏳️
+                            </div>
+                          )}
                         </span>
+
                         <h3 className="text-xl font-bold text-[#004080]">
                           {country.name}
                         </h3>
                       </div>
                       <button
-                        onClick={() => toggleCountrySelection(country.id)}
+                        onClick={() => toggleCountrySelection(country._id)}
                         className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          selectedCountries.includes(country.id)
+                          selectedCountries.includes(country._id)
                             ? "bg-[#ff0000] text-[#ffffff] hover:bg-[#ff0005]/80"
                             : "bg-[#ffd700] text-[#004080] hover:bg-[#ffd705]/80"
                         }`}
                       >
-                        {selectedCountries.includes(country.id)
+                        {selectedCountries.includes(country._id)
                           ? "Remove"
                           : "Compare"}
                       </button>
                     </div>
                     <ul className="space-y-2">
-                      {country.highlights.map((highlight, i) => (
-                        <li key={i} className="flex items-start">
-                          <svg
-                            className="h-5 w-5 text-[#ffd700] mr-2 mt-0.5 flex-shrink-0"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 13l4 4L19 7"
-                            />
-                          </svg>
-                          <span className="text-[#004080]">{highlight}</span>
-                        </li>
-                      ))}
+                      {country.highlights &&
+                        country.highlights.map((highlight, i) => (
+                          <li key={i} className="flex items-start">
+                            <svg
+                              className="h-5 w-5 text-[#ffd700] mr-2 mt-0.5 flex-shrink-0"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                            <span className="text-[#004080]">{highlight}</span>
+                          </li>
+                        ))}
                     </ul>
                     <button
                       onClick={() =>
                         setActiveDetail(
-                          activeDetail === country.id ? null : country.id
+                          activeDetail === country._id ? null : country._id
                         )
                       }
                       className="mt-6 w-full bg-[#004080]/10 hover:bg-[#004080]/20 text-[#004080] font-medium py-2 px-4 rounded-lg transition-colors duration-300"
                     >
-                      {activeDetail === country.id
+                      {activeDetail === country._id
                         ? "Hide Details"
                         : "View Details"}
                     </button>
 
-                    {activeDetail === country.id && (
+                    {activeDetail === country._id && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
@@ -280,9 +321,21 @@ const Countries = () => {
                           <h4 className="font-semibold text-[#004080] mb-2">
                             Visa Success Rate
                           </h4>
-                          <p className="text-[#004080]">
-                            {country.details.visaSuccessRate}
-                          </p>
+                          <p className="text-[#004080]">100%</p>
+
+                          {country.description &&
+                            country.description.length > 0 && (
+                              <>
+                                <h4 className="font-semibold text-[#004080] mb-2 mt-4">
+                                  Description
+                                </h4>
+                                <ul className="list-disc pl-5 text-[#004080]">
+                                  {country.description.map((desc, idx) => (
+                                    <li key={idx}>{desc}</li>
+                                  ))}
+                                </ul>
+                              </>
+                            )}
                         </div>
                       </motion.div>
                     )}
@@ -331,6 +384,24 @@ const ComparisonView = ({ countries }) => {
     );
   }
 
+  // Get all unique criteria across all countries
+  const allCriteria = [];
+  countries.forEach((country) => {
+    if (country.criteria && Array.isArray(country.criteria)) {
+      country.criteria.forEach((criterionObj) => {
+        if (
+          criterionObj.criteria &&
+          !allCriteria.find((c) => c._id === criterionObj.criteria._id)
+        ) {
+          allCriteria.push({
+            _id: criterionObj.criteria._id,
+            name: criterionObj.criteria.name,
+          });
+        }
+      });
+    }
+  });
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -346,13 +417,21 @@ const ComparisonView = ({ countries }) => {
               </th>
               {countries.map((country) => (
                 <th
-                  key={country.id}
+                  key={country._id}
                   className="py-4 px-6 text-center font-semibold text-[#004080] bg-[#a0cbe8]/30"
                 >
                   <div className="flex flex-col items-center">
-                    <span className="flex items-center justify-center w-8 h-8 mb-2">
-                      {countryFlags[country.id]}
-                    </span>
+                    {country.flag ? (
+                      <img
+                        src={`http://localhost:3500/api/countries/flag/${country.flag}`}
+                        alt={`${country.name} flag`}
+                        className="w-8 h-6 object-contain mb-2"
+                      />
+                    ) : (
+                      <span className="flex items-center justify-center w-8 h-8 mb-2">
+                        🏳️
+                      </span>
+                    )}
                     <span>{country.name}</span>
                   </div>
                 </th>
@@ -360,102 +439,40 @@ const ComparisonView = ({ countries }) => {
             </tr>
           </thead>
           <tbody>
-            <tr className="border-b border-[#a0cbe8]/30">
-              <td className="py-4 px-6 font-medium text-[#004080]">
-                Tuition Fees
-              </td>
-              {countries.map((country) => (
-                <td
-                  key={country.id}
-                  className="py-4 px-6 text-center text-[#004080]"
-                >
-                  {country.details.educationCosts[0]}
+            {/* Criteria Rows */}
+            {allCriteria.map((criteria, index) => (
+              <tr
+                key={criteria._id}
+                className={
+                  index % 2 === 0
+                    ? "border-b border-[#a0cbe8]/30 bg-[#a0cbe8]/10"
+                    : "border-b border-[#a0cbe8]/30"
+                }
+              >
+                <td className="py-4 px-6 font-medium text-[#004080]">
+                  {criteria.name}
                 </td>
-              ))}
-            </tr>
-            <tr className="border-b border-[#a0cbe8]/30 bg-[#a0cbe8]/10">
-              <td className="py-4 px-6 font-medium text-[#004080]">
-                Work Rights
-              </td>
-              {countries.map((country) => (
-                <td
-                  key={country.id}
-                  className="py-4 px-6 text-center text-[#004080]"
-                >
-                  {country.details.workOpportunities[0]}
-                </td>
-              ))}
-            </tr>
-            <tr className="border-b border-[#a0cbe8]/30">
-              <td className="py-4 px-6 font-medium text-[#004080]">
-                Visa Process Time
-              </td>
-              {countries.map((country) => (
-                <td
-                  key={country.id}
-                  className="py-4 px-6 text-center text-[#004080]"
-                >
-                  {country.details.visaProcess[
-                    country.details.visaProcess.length - 1
-                  ].replace("Processing Time: ", "")}
-                </td>
-              ))}
-            </tr>
-            <tr className="border-b border-[#a0cbe8]/30 bg-[#a0cbe8]/10">
-              <td className="py-4 px-6 font-medium text-[#004080]">
-                Post-Study Options
-              </td>
-              {countries.map((country) => (
-                <td
-                  key={country.id}
-                  className="py-4 px-6 text-center text-[#004080]"
-                >
-                  {country.highlights.find(
-                    (h) =>
-                      h.includes("Post-Study") || h.includes("after graduation")
-                  ) || "Varies"}
-                </td>
-              ))}
-            </tr>
-            <tr className="border-b border-[#a0cbe8]/30">
-              <td className="py-4 px-6 font-medium text-[#004080]">
-                Scholarships
-              </td>
-              {countries.map((country) => (
-                <td
-                  key={country.id}
-                  className="py-4 px-6 text-center text-[#004080]"
-                >
-                  {country.details.scholarships[0]}
-                </td>
-              ))}
-            </tr>
-            <tr className="border-b border-[#a0cbe8]/30 bg-[#a0cbe8]/10">
-              <td className="py-4 px-6 font-medium text-[#004080]">
-                Accommodation
-              </td>
-              {countries.map((country) => (
-                <td
-                  key={country.id}
-                  className="py-4 px-6 text-center text-[#004080]"
-                >
-                  {country.details.accommodation[0]}
-                </td>
-              ))}
-            </tr>
-            <tr>
-              <td className="py-4 px-6 font-medium text-[#004080]">
-                Visa Success Rate
-              </td>
-              {countries.map((country) => (
-                <td
-                  key={country.id}
-                  className="py-4 px-6 text-center text-[#004080]"
-                >
-                  {country.details.visaSuccessRate}
-                </td>
-              ))}
-            </tr>
+                {countries.map((country) => {
+                  const countryCriterion = country.criteria?.find(
+                    (c) => c.criteria && c.criteria._id === criteria._id
+                  );
+                  return (
+                    <td
+                      key={country._id}
+                      className="py-4 px-6 text-center text-[#004080]"
+                    >
+                      {countryCriterion ? (
+                        <div className="text-center">
+                          {countryCriterion.description || "N/A"}
+                        </div>
+                      ) : (
+                        "N/A"
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

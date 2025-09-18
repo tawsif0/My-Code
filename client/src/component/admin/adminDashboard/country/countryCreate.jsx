@@ -10,11 +10,16 @@ import {
   FiX,
   FiPlus,
   FiTrash2,
+  FiUploadCloud,
+  FiInfo,
 } from "react-icons/fi";
 
 function CountryCreate() {
-  const [criteriaOptions, setCriteriaOptions] = useState([]);
+  const [criterias, setCriterias] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [highlights, setHighlights] = useState([""]);
+  const [highlightErrors, setHighlightErrors] = useState([""]);
+
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -35,18 +40,12 @@ function CountryCreate() {
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const token = localStorage.getItem("token");
-  const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
-
   useEffect(() => {
     const fetchCriterias = async () => {
       setLoading(true);
       try {
-        const { data } = await axios.get(
-          "http://localhost:3500/api/criterias",
-          { headers: authHeaders }
-        );
-        setCriteriaOptions(data);
+        const { data } = await axios.get("http://localhost:3500/api/criterias");
+        setCriterias(data); // ✅ FIXED: use setCriterias instead of setCriteriaOptions
       } catch (err) {
         toast.error(
           err.response?.data?.message ||
@@ -59,35 +58,64 @@ function CountryCreate() {
     };
 
     fetchCriterias();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Validation function
-  const validateField = (name, value, index = 0) => {
+  const validateField = (name, value, index = -1) => {
     let error = "";
 
     switch (name) {
       case "name":
-        if (!value) error = "Country name is required";
+        if (!value || !value.trim()) error = "Country name is required";
         break;
       case "criteria":
         if (!value) error = "Criteria selection is required";
+        break;
+      case "highlight":
+        if (!value || !value.trim()) error = "Highlight cannot be empty";
         break;
       default:
         break;
     }
 
     if (index >= 0) {
-      // For criteria fields array
-      const newFieldErrors = [...fieldErrors];
-      newFieldErrors[index] = { ...newFieldErrors[index], [name]: error };
-      setFieldErrors(newFieldErrors);
+      // For criteria fields
+      if (name === "criteria") {
+        const newFieldErrors = [...fieldErrors];
+        newFieldErrors[index] = { ...newFieldErrors[index], [name]: error };
+        setFieldErrors(newFieldErrors);
+      } else if (name === "highlight") {
+        const newHighlightErrors = [...highlightErrors];
+        newHighlightErrors[index] = error;
+        setHighlightErrors(newHighlightErrors);
+      }
     } else {
       // For main form
       setErrors((prev) => ({ ...prev, [name]: error }));
     }
 
     return !error;
+  };
+
+  const addHighlight = () => {
+    setHighlights([...highlights, ""]);
+    setHighlightErrors([...highlightErrors, ""]);
+  };
+
+  const removeHighlight = (index) => {
+    const newHighlights = [...highlights];
+    newHighlights.splice(index, 1);
+    setHighlights(newHighlights);
+
+    const newErrors = [...highlightErrors];
+    newErrors.splice(index, 1);
+    setHighlightErrors(newErrors);
+  };
+
+  const handleHighlightChange = (value, index) => {
+    const newHighlights = [...highlights];
+    newHighlights[index] = value;
+    setHighlights(newHighlights);
   };
 
   const handleChange = (e, index) => {
@@ -171,7 +199,13 @@ function CountryCreate() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    // Validate form
+    let isValid = validateForm();
+    highlights.forEach((h, index) => {
+      isValid = validateField("highlight", h, index) && isValid;
+    });
+
+    if (!isValid) {
       toast.error("Please fix all errors before submitting");
       return;
     }
@@ -180,17 +214,20 @@ function CountryCreate() {
     const toastId = toast.loading("Creating country...");
 
     try {
-      // Prepare form data for image upload
       const formData = new FormData();
       formData.append("name", form.name);
 
-      // Add criteria and descriptions as arrays
-      criteriaFields.forEach((field, index) => {
-        formData.append(`criteria[${index}]`, field.criteria);
-        formData.append(`description[${index}]`, field.description);
+      // 🔧 Append criteria & descriptions as arrays
+      criteriaFields.forEach((field) => {
+        formData.append("criteria", field.criteria);
+        formData.append("description", field.description);
       });
 
-      // Add flag file if exists
+      // 🔧 Append highlights as array
+      highlights.forEach((h) => {
+        formData.append("highlights", h);
+      });
+
       if (files.flag) {
         formData.append("flag", files.flag);
       }
@@ -198,21 +235,16 @@ function CountryCreate() {
       await axios.post("http://localhost:3500/api/countries", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          ...authHeaders,
         },
       });
 
       // Reset form
-      setForm({
-        name: "",
-        description: "",
-        criteria: "",
-      });
+      setForm({ name: "" });
       setCriteriaFields([{ criteria: "", description: "" }]);
       setFieldErrors([{ criteria: "", description: "" }]);
-      setFiles({
-        flag: null,
-      });
+      setFiles({ flag: null });
+      setHighlights([]);
+      setHighlightErrors([]);
 
       toast.success("Country created successfully", { id: toastId });
     } catch (err) {
@@ -244,7 +276,7 @@ function CountryCreate() {
       <div className="flex justify-center items-center h-screen">
         <div className="flex flex-col items-center">
           <div className="w-12 h-12 border-2 border-gray-200 border-t-2 border-t-black rounded-full animate-spin"></div>
-          <p className="mt-4 text-gray-600">Loading criterias...</p>
+          <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
     );
@@ -255,9 +287,9 @@ function CountryCreate() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen flex flex-col items-center p-6"
+      className="min-h-screen flex flex-col items-center p-6 bg-gray-50"
     >
-      <div className="w-full max-w-full">
+      <div className="w-full">
         <div className="w-full mb-8 pb-6 border-b border-gray-200">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
             Country Creation
@@ -280,171 +312,297 @@ function CountryCreate() {
             <p className="text-gray-600">Fill the form to add a new country</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-8">
             {/* Country Name */}
+            <div className="space-y-3">
+              <label className="flex items-center text-sm font-medium text-gray-700">
+                <FiMap className="mr-2 text-gray-500" /> Country Name *
+              </label>
+              <input
+                name="name"
+                type="text"
+                value={form.name}
+                onChange={(e) => handleChange(e)}
+                onBlur={() => validateField("name", form.name)}
+                placeholder="Enter country name"
+                className={`w-full px-4 py-3 rounded-lg border ${
+                  errors.name ? "border-red-500" : "border-gray-300"
+                }  focus:border-gray-500 hover:border-gray-500 transition-all`}
+              />
+              {errors.name && (
+                <motion.p
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-sm text-red-500 flex items-center mt-1"
+                >
+                  <FiInfo className="mr-1" /> {errors.name}
+                </motion.p>
+              )}
+            </div>
+
+            {/* Flag Upload */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="flex items-center text-sm font-medium text-gray-700">
-                  <FiMap className="mr-2 text-gray-500" /> Country Name *
-                </label>
-                <input
-                  name="name"
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => handleChange(e)}
-                  onBlur={() => validateField("name", form.name)}
-                  placeholder="Enter country name"
-                  className={`w-full px-4 py-3 rounded-lg border ${
-                    errors.name ? "border-red-500" : "border-gray-300"
-                  } focus:border-gray-500 transition-all`}
-                />
-                {errors.name && (
-                  <motion.p
-                    initial={{ opacity: 0, y: -5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-sm text-red-500"
-                  >
-                    {errors.name}
-                  </motion.p>
-                )}
-              </div>
-              {/* Flag Upload */}
-              <div className="space-y-2">
+              {/* Upload Section */}
+              <div className="space-y-3">
                 <label className="block text-sm font-medium text-gray-700">
-                  Flag Image (JPG/PNG/SVG, max 5MB)
+                  Flag Image (JPG/PNG, max 5MB)
                 </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[60px] text-center hover:bg-gray-50 transition-colors">
-                  {files.flag ? (
-                    <div className="flex items-center justify-between">
-                      <p className="text-gray-900 text-sm truncate max-w-[180px]">
-                        {files.flag.name}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setFiles((prev) => ({ ...prev, flag: null }))
-                        }
-                        className="text-gray-400 hover:text-red-500 ml-2 transition-colors duration-200"
-                      >
-                        <FiX className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="block cursor-pointer">
-                      <p className="text-gray-500 text-sm mb-1">
-                        Click to upload flag image
-                      </p>
-                      <p className="text-xs text-gray-400">JPG, PNG or SVG</p>
-                      <input
-                        type="file"
-                        name="flag"
-                        onChange={handleFileChange}
-                        className="hidden"
-                        accept=".jpg,.jpeg,.png,.svg"
-                      />
-                    </label>
-                  )}
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer">
+                  <label className="block cursor-pointer">
+                    {files.flag ? (
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="relative mb-3">
+                          <img
+                            src={URL.createObjectURL(files.flag)}
+                            alt="Flag preview"
+                            className="h-24 object-contain rounded-md border border-gray-200"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFiles((prev) => ({ ...prev, flag: null }))
+                            }
+                            className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-md text-gray-400 hover:text-red-500 transition-colors duration-200"
+                          >
+                            <FiX className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <p className="text-gray-900 text-sm truncate max-w-[180px]">
+                          {files.flag.name}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {(files.flag.size / 1024).toFixed(1)} KB
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="py-5">
+                        <FiUploadCloud className="mx-auto h-10 w-10 text-gray-400 mb-3" />
+                        <p className="text-gray-500 text-sm mb-1">
+                          Click to upload flag image
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          JPG, PNG (max 5MB)
+                        </p>
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      name="flag"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      accept=".jpg,.jpeg,.png,.svg"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Details Section */}
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700 opacity-0">
+                  Flag Details
+                </label>
+                <div className="text-sm text-gray-600 bg-gray-50 p-5 rounded-xl h-full">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                    <FiInfo className="mr-2" /> Flag Requirements
+                  </h4>
+                  <div className="space-y-2 text-xs text-gray-500">
+                    <p className="flex items-start">
+                      <span className="inline-block w-2 h-2 bg-gray-400 rounded-full mt-1 mr-2"></span>
+                      Recommended dimensions: 320×200px
+                    </p>
+                    <p className="flex items-start">
+                      <span className="inline-block w-2 h-2 bg-gray-400 rounded-full mt-1 mr-2"></span>
+                      Maximum file size: 5MB
+                    </p>
+                    <p className="flex items-start">
+                      <span className="inline-block w-2 h-2 bg-gray-400 rounded-full mt-1 mr-2"></span>
+                      Formats: JPG, PNG, SVG
+                    </p>
+                    <p className="flex items-start">
+                      <span className="inline-block w-2 h-2 bg-gray-400 rounded-full mt-1 mr-2"></span>
+                      For best results, use high-quality images
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-            {/* Criteria and Description Fields */}
-            {criteriaFields.map((field, index) => (
-              <div
-                key={index}
-                className="border border-gray-200 rounded-lg p-4 relative"
-              >
-                {criteriaFields.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeCriteriaField(index)}
-                    className="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-colors duration-200"
-                  >
-                    <FiTrash2 className="h-4 w-4" />
-                  </button>
-                )}
 
-                <div className="space-y-4">
-                  {/* Criteria Dropdown */}
-                  <div className="space-y-2">
-                    <label className="flex items-center text-sm font-medium text-gray-700">
-                      <FiType className="mr-2 text-gray-500" /> Criteria *
-                    </label>
-                    <select
-                      name="criteria"
-                      value={field.criteria}
-                      onChange={(e) => handleChange(e, index)}
-                      onBlur={() =>
-                        validateField("criteria", field.criteria, index)
-                      }
-                      className={`w-full px-4 py-3 rounded-lg border ${
-                        fieldErrors[index]?.criteria
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      } focus:border-gray-500 transition-all text-gray-900`}
+            {/* Highlights Section */}
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-gray-700">
+                Highlights *
+              </label>
+
+              <div className="space-y-3">
+                {highlights.map((highlight, index) => (
+                  <div key={index} className="flex items-center space-x-3">
+                    {/* Number */}
+                    <span className="font-semibold w-6 text-right">
+                      {index + 1}.
+                    </span>
+
+                    {/* Input */}
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        value={highlight}
+                        onChange={(e) =>
+                          handleHighlightChange(e.target.value, index)
+                        }
+                        onBlur={() =>
+                          validateField("highlight", highlight, index)
+                        }
+                        placeholder={`Enter highlight #${index + 1}`}
+                        className={`w-full px-4 py-2.5 rounded-lg border ${
+                          highlightErrors[index]
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        } focus:border-gray-500 hover:border-gray-500 transition-all`}
+                      />
+                      {highlightErrors[index] && (
+                        <motion.p
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="text-sm text-red-500 flex items-center mt-1"
+                        >
+                          <FiInfo className="mr-1" /> {highlightErrors[index]}
+                        </motion.p>
+                      )}
+                    </div>
+
+                    {/* Delete Button */}
+                    <button
+                      type="button"
+                      onClick={() => removeHighlight(index)}
+                      className="text-gray-400 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-gray-100"
                     >
-                      <option value="">Select a criteria</option>
-                      {criteriaOptions.map((criteria) => (
-                        <option key={criteria._id} value={criteria._id}>
-                          {criteria.name}
-                        </option>
-                      ))}
-                    </select>
-                    {fieldErrors[index]?.criteria && (
-                      <motion.p
-                        initial={{ opacity: 0, y: -5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-sm text-red-500"
-                      >
-                        {fieldErrors[index].criteria}
-                      </motion.p>
-                    )}
+                      <FiTrash2 />
+                    </button>
                   </div>
-
-                  {/* Description */}
-                  <div className="space-y-2">
-                    <label className="flex items-center text-sm font-medium text-gray-700">
-                      <FiFileText className="mr-2 text-gray-500" /> Description
-                    </label>
-                    <textarea
-                      name="description"
-                      value={field.description}
-                      onChange={(e) => handleChange(e, index)}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-gray-500 transition-all"
-                      placeholder="Enter criteria description"
-                      rows="3"
-                    />
-                  </div>
-                </div>
+                ))}
               </div>
-            ))}
 
-            {/* Add Criteria Button */}
-            <div className="flex justify-center">
               <motion.button
+                type="button"
+                onClick={addHighlight}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                type="button"
-                onClick={addCriteriaField}
-                className="flex items-center justify-center py-2 px-4 rounded-lg font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all"
+                className="flex items-center justify-center py-2.5 px-4 rounded-lg font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all w-full md:w-auto"
               >
-                <FiPlus className="mr-2" />
-                Add Another Criteria
+                <FiPlus className="mr-2" /> Add Highlight
               </motion.button>
             </div>
 
-            <div className="pt-4">
-              <p className="text-sm text-gray-500 mb-4">* Mandatory fields</p>
+            {/* Criteria and Description Fields */}
+            <div className="space-y-5">
+              <h3 className="text-lg font-medium text-gray-800 border-b pb-2">
+                Criteria Information
+              </h3>
+              {criteriaFields.map((field, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="border border-gray-200 rounded-xl p-5 relative bg-white shadow-sm"
+                >
+                  {criteriaFields.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeCriteriaField(index)}
+                      className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors duration-200 p-1.5 rounded-md hover:bg-gray-100"
+                    >
+                      <FiTrash2 className="h-4 w-4" />
+                    </button>
+                  )}
+
+                  <div className="space-y-4">
+                    {/* Criteria Dropdown */}
+                    <div className="space-y-2">
+                      <label className="flex items-center text-sm font-medium text-gray-700">
+                        <span className="mr-2 font-semibold">{index + 1}.</span>
+                        Criteria *
+                      </label>
+                      <select
+                        name="criteria"
+                        value={field.criteria}
+                        onChange={(e) => handleChange(e, index)}
+                        onBlur={() =>
+                          validateField("criteria", field.criteria, index)
+                        }
+                        className={`w-full px-4 py-2.5 rounded-lg border ${
+                          fieldErrors[index]?.criteria
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        } focus:border-gray-500 hover:border-gray-500 transition-all`}
+                      >
+                        <option value="">-- Select Criteria --</option>
+                        {criterias
+                          .filter((criteria) => {
+                            return (
+                              field.criteria === criteria._id ||
+                              !criteriaFields.some(
+                                (f) => f.criteria === criteria._id
+                              )
+                            );
+                          })
+                          .map((c) => (
+                            <option key={c._id} value={c._id}>
+                              {c.name}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+
+                    {/* Description */}
+                    <div className="space-y-2">
+                      <label className="flex items-center text-sm font-medium text-gray-700">
+                        <FiFileText className="mr-2 text-gray-500" />{" "}
+                        Description
+                      </label>
+                      <textarea
+                        name="description"
+                        value={field.description}
+                        onChange={(e) => handleChange(e, index)}
+                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-gray-500 hover:border-gray-500 transition-all"
+                        placeholder="Enter criteria description"
+                        rows="3"
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+
+              {/* Add Criteria Button */}
+              <div className="flex justify-center pt-2">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  type="button"
+                  onClick={addCriteriaField}
+                  className="flex items-center justify-center py-2.5 px-4 rounded-lg font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all"
+                >
+                  <FiPlus className="mr-2" />
+                  Add Another Criteria
+                </motion.button>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-gray-200">
+              <p className="text-sm text-gray-500 mb-4 flex items-center">
+                <FiInfo className="mr-1.5" /> Fields marked with * are mandatory
+              </p>
               <div className="flex space-x-3">
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   type="submit"
                   disabled={isSubmitting}
-                  className={`flex-1 py-3 px-4 rounded-lg font-medium text-white ${
+                  className={`flex-1 py-3.5 px-4 rounded-lg font-medium text-white ${
                     isSubmitting
                       ? "bg-gray-600 cursor-not-allowed"
-                      : "bg-gray-700 hover:bg-gray-700"
-                  } transition-all shadow-md flex items-center justify-center`}
+                      : "bg-gray-700 hover:bg-gray-800 shadow-md"
+                  } transition-all flex items-center justify-center`}
                 >
                   {isSubmitting ? (
                     <>

@@ -50,7 +50,7 @@ const upload = multer({
 router.get("/", async (req, res) => {
   try {
     const countries = await Country.find()
-      .populate("criteria", "name")
+      .populate("criteria.criteria", "name") // <-- populate nested field
       .sort({ createdAt: -1 });
     res.status(200).json(countries);
   } catch (err) {
@@ -63,9 +63,9 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const country = await Country.findById(req.params.id).populate(
-      "criteria",
+      "criteria.criteria",
       "name"
-    );
+    ); // <-- populate nested field
     if (!country) {
       return res.status(404).json({ message: "Country not found" });
     }
@@ -82,16 +82,30 @@ router.get("/:id", async (req, res) => {
 // POST new country
 router.post("/", upload.single("flag"), async (req, res) => {
   try {
-    const { name, description, criteria } = req.body;
+    const { name, criteria, description, highlights } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ message: "Country name is required" });
     }
 
-    // normalize criteria into array
+    // Normalize arrays
     let criteriaArray = Array.isArray(criteria) ? criteria : [criteria];
+    let descriptionArray = Array.isArray(description)
+      ? description
+      : [description];
+    let highlightsArray = Array.isArray(highlights)
+      ? highlights
+      : highlights
+      ? [highlights]
+      : [];
 
-    // Validate all criterias exist
+    if (criteriaArray.length !== descriptionArray.length) {
+      return res
+        .status(400)
+        .json({ message: "Criteria and description mismatch" });
+    }
+
+    // Validate criteria existence
     const validCriterias = await Criteria.find({ _id: { $in: criteriaArray } });
     if (validCriterias.length !== criteriaArray.length) {
       return res
@@ -99,28 +113,27 @@ router.post("/", upload.single("flag"), async (req, res) => {
         .json({ message: "One or more criterias are invalid" });
     }
 
-    // Check duplicates (same country name + same criteria)
-    const duplicate = await Country.findOne({
-      name: name.trim(),
-      criteria: { $in: criteriaArray },
-    });
+    // Check duplicates by name
+    const duplicate = await Country.findOne({ name: name.trim() });
     if (duplicate) {
-      return res
-        .status(400)
-        .json({ message: "This criteria is already used for this country" });
+      return res.status(400).json({ message: "Country already exists" });
     }
+
+    // Pair criteria with description
+    const criteriaWithDesc = criteriaArray.map((c, i) => ({
+      criteria: c,
+      description: descriptionArray[i]?.trim() || "",
+    }));
 
     const newCountry = new Country({
       name: name.trim(),
-      description: Array.isArray(description)
-        ? description.map((d) => d.trim())
-        : [String(description).trim()],
-      criteria: criteriaArray,
+      criteria: criteriaWithDesc,
+      highlights: highlightsArray,
       flag: req.file ? req.file.filename : null,
     });
 
     await newCountry.save();
-    await newCountry.populate("criteria", "name");
+    await newCountry.populate("criteria.criteria", "name");
 
     res
       .status(201)
@@ -135,14 +148,26 @@ router.post("/", upload.single("flag"), async (req, res) => {
 router.put("/:id", upload.single("flag"), async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, criteria } = req.body;
+    const { name, criteria, description, highlights } = req.body;
 
     const country = await Country.findById(id);
     if (!country) {
       return res.status(404).json({ message: "Country not found" });
     }
 
+    // Normalize arrays
     let criteriaArray = Array.isArray(criteria) ? criteria : [criteria];
+    let descriptionArray = Array.isArray(description)
+      ? description
+      : [description];
+    let highlightsArray = Array.isArray(highlights) ? highlights : [highlights];
+
+    // Ensure criteria and description match in length
+    if (criteriaArray.length !== descriptionArray.length) {
+      return res
+        .status(400)
+        .json({ message: "Each criteria must have a description" });
+    }
 
     // Validate all criterias exist
     const validCriterias = await Criteria.find({ _id: { $in: criteriaArray } });
@@ -156,26 +181,31 @@ router.put("/:id", upload.single("flag"), async (req, res) => {
     const duplicate = await Country.findOne({
       _id: { $ne: id },
       name: name.trim(),
-      criteria: { $in: criteriaArray },
+      "criteria.criteria": { $in: criteriaArray },
     });
     if (duplicate) {
-      return res
-        .status(400)
-        .json({ message: "This criteria is already used for this country" });
+      return res.status(400).json({
+        message: "This criteria is already used for this country",
+      });
     }
 
+    // ✅ CORRECTED: Create proper criteria objects
+    const criteriaWithDesc = criteriaArray.map((c, i) => ({
+      criteria: c,
+      description: descriptionArray[i]?.trim() || "",
+    }));
+
+    // ✅ Update country fields with proper structure
     country.name = name.trim();
-    country.description = Array.isArray(description)
-      ? description.map((d) => d.trim())
-      : [String(description).trim()];
-    country.criteria = criteriaArray;
+    country.criteria = criteriaWithDesc; // Use the properly formatted array
+    country.highlights = highlightsArray.map((h) => h.trim());
 
     if (req.file) {
       country.flag = req.file.filename;
     }
 
     await country.save();
-    await country.populate("criteria", "name");
+    await country.populate("criteria.criteria", "name");
 
     res.status(200).json({ message: "Country updated successfully", country });
   } catch (err) {

@@ -8,18 +8,21 @@ const countrySchema = new mongoose.Schema(
       trim: true,
       unique: true,
     },
-    description: {
-      type: [String], // allow array of strings
-      default: [], // default empty array
-    },
     criteria: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Criteria",
-        required: true,
+        criteria: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Criteria",
+          required: true,
+        },
+        description: {
+          type: String,
+          default: "",
+          trim: true,
+        },
       },
     ],
-
+    highlights: { type: [String], default: [] },
     flag: {
       type: String,
       default: null,

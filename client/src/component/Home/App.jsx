@@ -28,7 +28,7 @@ function ScrollToTop() {
     if (mainContainer) {
       mainContainer.scrollTo({
         top: 0,
-        behavior: "smooth"
+        behavior: "smooth",
       });
     }
 
@@ -44,7 +44,7 @@ function ScrollToTop() {
 
 export default function AppRoutes() {
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen">
       {/* Global Background Elements */}
       <div className="fixed inset-0 -z-10 overflow-hidden">
         {/* Color Blobs */}

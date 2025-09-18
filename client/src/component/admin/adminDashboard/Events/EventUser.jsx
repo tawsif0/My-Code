@@ -58,6 +58,7 @@ function EventUsers() {
 
   useEffect(() => {
     fetchEventUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Filter events and users based on search term
