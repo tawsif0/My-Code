@@ -11,7 +11,7 @@ import {
   FiUser,
   FiMail,
   FiPhone,
-  FiAward,
+  FiAward
 } from "react-icons/fi";
 
 const TeacherList = () => {
@@ -41,7 +41,7 @@ const TeacherList = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.delete(`http://localhost:3500/api/admin/teachers/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }
       });
 
       setTeachers((prev) => prev.filter((teacher) => teacher.id !== id));
@@ -73,7 +73,7 @@ const TeacherList = () => {
   const statusColors = {
     Approved: "bg-green-100 text-green-800",
     Pending: "bg-yellow-100 text-yellow-800",
-    Rejected: "bg-red-100 text-red-800",
+    Rejected: "bg-red-100 text-red-800"
   };
 
   return (
@@ -192,7 +192,7 @@ const TeacherList = () => {
                           <div className="flex-shrink-0 h-16 w-16 rounded-full bg-gray-600 text-white flex items-center justify-center font-bold shadow-xl transition-all duration-300 hover:scale-110">
                             {teacher?.profile_photo ? (
                               <img
-                                src={`${base_url}/uploads/teachers/${teacher?.profile_photo}`}
+                                src={`${base_url}/teachers/${teacher?.profile_photo}`}
                                 alt="Profile"
                                 className="w-full h-full object-cover rounded-full border-4 border-white"
                               />

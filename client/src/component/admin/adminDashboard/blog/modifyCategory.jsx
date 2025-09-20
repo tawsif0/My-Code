@@ -41,20 +41,20 @@ function ModifyBlogCategory() {
       fetchCategories();
     };
 
-    window.addEventListener('blogCategoryUpdated', handleCategoryUpdate);
+    window.addEventListener("blogCategoryUpdated", handleCategoryUpdate);
 
     // Cleanup event listener
     return () => {
-      window.removeEventListener('blogCategoryUpdated', handleCategoryUpdate);
+      window.removeEventListener("blogCategoryUpdated", handleCategoryUpdate);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleDelete = async (id) => {
     const toastId = toast.loading("Deleting category...");
     try {
       await axios.delete(`http://localhost:3500/api/blog-categories/${id}`, {
-        headers: authHeaders,
+        headers: authHeaders
       });
       toast.success("Category deleted", { id: toastId });
       fetchCategories();
@@ -90,8 +90,8 @@ function ModifyBlogCategory() {
         {
           headers: {
             "Content-Type": "application/json",
-            ...authHeaders,
-          },
+            ...authHeaders
+          }
         }
       );
       toast.success("Category updated", { id: toastId });
@@ -134,7 +134,7 @@ function ModifyBlogCategory() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-              Blog Category List & Modifications
+              Modify Blog Category List
             </h1>
             <p className="text-gray-600 mt-2">
               Modify the categories for organizing blog posts

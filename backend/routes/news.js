@@ -29,7 +29,7 @@ const newsStorage = multer.diskStorage({
     }
 
     cb(null, finalName);
-  },
+  }
 });
 
 const newsUpload = multer({
@@ -47,36 +47,18 @@ const newsUpload = multer({
     } else {
       cb(new Error("Only image files are allowed (JPEG, JPG, PNG, GIF, WebP)"));
     }
-  },
+  }
 });
 
 // ✅ GET all news (pagination optional)
 router.get("/", async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
     const news = await News.find()
       .populate("category", "name")
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit))
-      .lean();
-
-    const total = await News.countDocuments();
-
-    res.status(200).json({
-      news,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(total / parseInt(limit)),
-        totalNews: total,
-        limit: parseInt(limit),
-      },
-    });
+      .sort({ createdAt: -1 });
+    res.status(200).json({ news }); // ✅ corrected
   } catch (err) {
-    console.error("Error fetching news:", err);
-    res.status(500).json({ message: "Error retrieving news" });
+    res.status(500).json({ message: "Error fetching news" }); // updated message
   }
 });
 
@@ -96,7 +78,26 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ message: "Error retrieving news post" });
   }
 });
+router.get("/related/:categoryId", async (req, res) => {
+  try {
+    const { categoryId } = req.params;
+    const { limit = 3, exclude } = req.query;
 
+    let query = { category: categoryId };
+    if (exclude) {
+      query._id = { $ne: exclude };
+    }
+
+    const relatedNews = await News.find(query)
+      .populate("category", "name")
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(relatedNews);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching related news" });
+  }
+});
 // ✅ POST create news
 router.post("/", newsUpload.single("image"), async (req, res) => {
   try {
@@ -121,7 +122,7 @@ router.post("/", newsUpload.single("image"), async (req, res) => {
     const newsData = {
       title: title.trim(),
       description: description.trim(),
-      category,
+      category
     };
     if (imageFile) {
       newsData.image = imageFile.filename;
@@ -133,7 +134,7 @@ router.post("/", newsUpload.single("image"), async (req, res) => {
 
     res.status(201).json({
       message: "News post created successfully",
-      news: newNews,
+      news: newNews
     });
   } catch (err) {
     console.error("Error creating news:", err);
@@ -185,7 +186,7 @@ router.put("/:id", newsUpload.single("image"), async (req, res) => {
 
     res.status(200).json({
       message: "News post updated successfully",
-      news: newsItem,
+      news: newsItem
     });
   } catch (err) {
     console.error("Error updating news:", err);
@@ -239,8 +240,8 @@ router.get("/category/:categoryId", async (req, res) => {
         currentPage: parseInt(page),
         totalPages: Math.ceil(total / parseInt(limit)),
         totalNews: total,
-        limit: parseInt(limit),
-      },
+        limit: parseInt(limit)
+      }
     });
   } catch (err) {
     console.error("Error fetching news by category:", err);

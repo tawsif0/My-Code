@@ -13,7 +13,7 @@ import {
   FiCheck,
   FiXCircle,
   FiChevronDown,
-  FiChevronUp,
+  FiChevronUp
 } from "react-icons/fi";
 
 import toast from "react-hot-toast";
@@ -46,8 +46,8 @@ const Studentpaper = () => {
         `${base_url}/api/teacher/all-submissions`,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("teacherToken")}`,
-          },
+            Authorization: `Bearer ${localStorage.getItem("teacherToken")}`
+          }
         }
       );
       setSubmissions(response.data.data);
@@ -70,7 +70,7 @@ const Studentpaper = () => {
         question: answer.question,
         marks: Number(answer.marks),
         feedback: answer.feedback,
-        isCorrect: answer.marks >= answer.maxMarks * 0.5,
+        isCorrect: answer.marks >= answer.maxMarks * 0.5
       }));
 
       const response = await axios.put(
@@ -78,12 +78,12 @@ const Studentpaper = () => {
         {
           studentEmail: selectedSubmission.student.email,
           contentItemId: contentItemId,
-          answers: answersToSubmit,
+          answers: answersToSubmit
         },
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("teacherToken")}`,
-          },
+            Authorization: `Bearer ${localStorage.getItem("teacherToken")}`
+          }
         }
       );
 
@@ -128,7 +128,7 @@ const Studentpaper = () => {
   const toggleQuestionExpansion = (questionId) => {
     setExpandedQuestions((prev) => ({
       ...prev,
-      [questionId]: !prev[questionId],
+      [questionId]: !prev[questionId]
     }));
   };
 
@@ -157,7 +157,7 @@ const Studentpaper = () => {
         maxMarks: answer.maxMarks,
         studentAnswer: answer.studentAnswer,
         correctAnswer: answer.correctAnswer,
-        isCorrect: answer.isCorrect || false,
+        isCorrect: answer.isCorrect || false
       };
 
       // Auto-expand the first question using answerKey
@@ -197,8 +197,8 @@ const Studentpaper = () => {
         isCorrect:
           field === "marks"
             ? Number(value) >= gradingData[question].maxMarks * 0.5
-            : gradingData[question].isCorrect,
-      },
+            : gradingData[question].isCorrect
+      }
     };
 
     // Calculate new totals
@@ -231,7 +231,7 @@ const Studentpaper = () => {
 
     return {
       marks: isCorrect ? answerData.maxMarks : 0,
-      isCorrect: isCorrect,
+      isCorrect: isCorrect
     };
   };
   const autoGradeMCQ = (answerKey) => {
@@ -256,7 +256,7 @@ const Studentpaper = () => {
         updatedGradingData[answerKey] = {
           ...answer,
           marks: autoGradeResult.marks,
-          isCorrect: autoGradeResult.isCorrect,
+          isCorrect: autoGradeResult.isCorrect
         };
       }
       newTotal += updatedGradingData[answerKey].marks || 0;
@@ -572,7 +572,7 @@ const Studentpaper = () => {
                                 resetGradingData[answerKey] = {
                                   ...gradingData[answerKey],
                                   marks: 0,
-                                  isCorrect: false,
+                                  isCorrect: false
                                 };
                               });
                               setGradingData(resetGradingData);
@@ -671,12 +671,15 @@ const Studentpaper = () => {
                                     Student Answer:
                                   </h4>
                                   <div className="p-3 bg-white rounded border border-gray-200">
-                                    <p className="text-sm text-gray-800 break-words">
-                                      {formatAnswer(
-                                        answer.studentAnswer,
-                                        answer.questionType
-                                      )}
-                                    </p>
+                                    <div
+                                      className="prose prose-lg max-w-none text-sm text-gray-600 mt-1"
+                                      dangerouslySetInnerHTML={{
+                                        __html: formatAnswer(
+                                          answer.studentAnswer,
+                                          answer.questionType
+                                        )
+                                      }}
+                                    />
                                   </div>
                                 </div>
                                 {answer.correctAnswer !== undefined &&
@@ -691,12 +694,15 @@ const Studentpaper = () => {
                                           : "Expected Answer:"}
                                       </h4>
                                       <div className="p-3 bg-white rounded border border-gray-200">
-                                        <p className="text-sm text-gray-800 break-words">
-                                          {formatAnswer(
-                                            answer.correctAnswer,
-                                            answer.questionType
-                                          )}
-                                        </p>
+                                        <div
+                                          className="prose prose-lg max-w-none text-sm text-gray-600 mt-1"
+                                          dangerouslySetInnerHTML={{
+                                            __html: formatAnswer(
+                                              answer.correctAnswer,
+                                              answer.questionType
+                                            )
+                                          }}
+                                        />
                                       </div>
                                     </div>
                                   )}

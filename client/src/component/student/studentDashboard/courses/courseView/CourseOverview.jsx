@@ -13,7 +13,7 @@ import {
   FiVideo,
   FiFileText,
   FiAward,
-  FiYoutube,
+  FiYoutube
 } from "react-icons/fi";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -61,13 +61,13 @@ const CourseOverview = ({ courseId, setActiveView }) => {
           ...courseData,
           thumbnail: courseData.thumbnail?.path
             ? `${base_url}/courses/${courseData.thumbnail.path}`
-            : "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+            : "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
         });
 
         setInstructor(
           courseInstructor || {
             full_name: "Unknown Instructor",
-            _id: null,
+            _id: null
           }
         );
       } catch (error) {
@@ -85,7 +85,30 @@ const CourseOverview = ({ courseId, setActiveView }) => {
   }, [courseId, base_url, setActiveView]);
 
   const toggleDescription = () => setExpanded(!expanded);
+  useEffect(() => {
+    const fetchRatings = async () => {
+      try {
+        const response = await axios.get(
+          `${base_url}/api/course-player/${courseId}/ratings`
+        );
 
+        if (response.data.success) {
+          // Update course with populated ratings
+          setCourse((prev) => ({
+            ...prev,
+            ratings: response.data.ratings,
+            averageRating: response.data.averageRating
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching ratings:", error);
+      }
+    };
+
+    if (courseId) {
+      fetchRatings();
+    }
+  }, [courseId, base_url]);
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -189,7 +212,7 @@ const CourseOverview = ({ courseId, setActiveView }) => {
                                 month: "short",
                                 day: "numeric",
                                 hour: "2-digit",
-                                minute: "2-digit",
+                                minute: "2-digit"
                               }
                             )}
                           </span>
@@ -234,8 +257,10 @@ const CourseOverview = ({ courseId, setActiveView }) => {
               }`}
             >
               <div
-                className="prose prose-sm text-gray-700"
-                dangerouslySetInnerHTML={{ __html: course.description }}
+                className="prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{
+                  __html: course.description
+                }}
               />
               {!expanded && (
                 <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent"></div>
@@ -363,7 +388,7 @@ const CourseOverview = ({ courseId, setActiveView }) => {
               <div className="w-12 h-12 rounded-full bg-indigo-100 overflow-hidden flex items-center justify-center mr-4">
                 {instructor?.profile_photo ? (
                   <img
-                    src={`${base_url}/uploads/teachers/${instructor.profile_photo}`}
+                    src={`${base_url}/teachers/${instructor.profile_photo}`}
                     alt={instructor.full_name}
                     className="w-full h-full object-cover"
                     onError={(e) => {

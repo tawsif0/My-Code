@@ -10,25 +10,30 @@ import {
   FiImage,
   FiUpload,
   FiLink,
-  FiTrash2,
+  FiTrash2
 } from "react-icons/fi";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
 function NewsCreate() {
   const [form, setForm] = useState({
     title: "",
-    description: "",
-    category: "",
+    category: ""
   });
   const [errors, setErrors] = useState({
     title: "",
     description: "",
     category: "",
+    image: "" // <-- add this for the news image
   });
+
+  const [descriptionHtml, setDescriptionHtml] = useState("");
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [files, setFiles] = useState({
-    image: null,
+    image: null
   });
 
   const token = localStorage.getItem("token");
@@ -112,7 +117,7 @@ function NewsCreate() {
       "image/png",
       "image/jpg",
       "image/gif",
-      "image/webp",
+      "image/webp"
     ];
     if (!validTypes.includes(file.type)) {
       toast.error("Only JPG, PNG, GIF, or WebP images are allowed");
@@ -125,19 +130,44 @@ function NewsCreate() {
       return;
     }
 
+    // Set file
     setFiles((prev) => ({ ...prev, [name]: file }));
+
+    // Clear image error
+    setErrors((prev) => ({ ...prev, image: "" }));
 
     // Create preview
     const reader = new FileReader();
-
     reader.readAsDataURL(file);
   };
 
   const validateForm = () => {
     let isValid = true;
+
+    // validate title
     isValid = validateField("title", form.title) && isValid;
-    isValid = validateField("description", form.description) && isValid;
+
+    // validate description (ReactQuill)
+    if (!descriptionHtml || descriptionHtml === "<p><br></p>") {
+      setErrors((prev) => ({
+        ...prev,
+        description: "News description is required"
+      }));
+      isValid = false;
+    } else {
+      setErrors((prev) => ({ ...prev, description: "" }));
+    }
+
+    // validate category
     isValid = validateField("category", form.category) && isValid;
+
+    // validate image
+    if (!files.image) {
+      setErrors((prev) => ({ ...prev, image: "News image is required" }));
+      isValid = false;
+    } else {
+      setErrors((prev) => ({ ...prev, image: "" }));
+    }
 
     return isValid;
   };
@@ -157,7 +187,7 @@ function NewsCreate() {
       // Prepare form data for image upload
       const formData = new FormData();
       formData.append("title", form.title);
-      formData.append("description", form.description);
+      formData.append("description", descriptionHtml);
       formData.append("category", form.category);
 
       // Add image file if exists
@@ -168,18 +198,18 @@ function NewsCreate() {
       await axios.post("http://localhost:3500/api/news", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          ...authHeaders,
-        },
+          ...authHeaders
+        }
       });
 
       // Reset form
       setForm({
         title: "",
-        description: "",
-        category: "",
+        category: ""
       });
+      setDescriptionHtml("");
       setFiles({
-        image: null,
+        image: null
       });
 
       toast.success("News post created successfully", { id: toastId });
@@ -313,16 +343,53 @@ function NewsCreate() {
               <label className="flex items-center text-sm font-medium text-gray-700">
                 <FiFileText className="mr-2 text-gray-500" /> Description *
               </label>
-              <textarea
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-                onBlur={() => validateField("description", form.description)}
-                className={`w-full px-4 py-3 rounded-lg border ${
+
+              <div
+                className={`bg-white min-h-[200px] rounded-lg border ${
                   errors.description ? "border-red-500" : "border-gray-300"
-                } focus:border-gray-500 transition-all min-h-[200px]`}
-                placeholder="Write your news description here..."
-              />
+                }`}
+              >
+                <ReactQuill
+                  value={descriptionHtml}
+                  onChange={(val) => {
+                    setDescriptionHtml(val);
+                    if (val && val !== "<p><br></p>") {
+                      setErrors((prev) => ({ ...prev, description: "" }));
+                    }
+                  }}
+                  placeholder="Write your news description here..."
+                  modules={{
+                    toolbar: [
+                      [{ header: [1, 2, 3, false] }],
+                      ["bold", "italic", "underline", "strike", "blockquote"],
+                      [{ list: "ordered" }, { list: "bullet" }],
+                      ["link", "image"],
+                      ["clean"]
+                    ]
+                  }}
+                  formats={[
+                    "header",
+                    "bold",
+                    "italic",
+                    "underline",
+                    "strike",
+                    "blockquote",
+                    "list",
+                    "bullet",
+                    "link",
+                    "image"
+                  ]}
+                  onBlur={() => {
+                    if (!descriptionHtml || descriptionHtml === "<p><br></p>") {
+                      setErrors((prev) => ({
+                        ...prev,
+                        description: "News description is required"
+                      }));
+                    }
+                  }}
+                />
+              </div>
+
               {errors.description && (
                 <motion.p
                   initial={{ opacity: 0, y: -5 }}
@@ -337,41 +404,99 @@ function NewsCreate() {
             {/* Image Upload */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
-                News Image (JPG/PNG/GIF/WebP, max 5MB)
+                News Image{" "}
+                <span className="text-gray-500">
+                  (JPG/PNG/GIF/WebP, max 5MB)
+                </span>
               </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[60px] text-center hover:bg-gray-50 transition-colors">
+
+              {/* Upload Box */}
+              <label
+                htmlFor="newsImage"
+                className={`border-2 border-dashed rounded-lg p-4 min-h-[140px] flex flex-col items-center justify-center text-center transition-colors relative cursor-pointer 
+      ${
+        errors.image
+          ? "border-red-500 bg-red-50/30"
+          : "border-gray-300 hover:bg-gray-50"
+      }`}
+              >
                 {files.image ? (
-                  <div className="flex items-center justify-between">
-                    <p className="text-gray-900 text-sm truncate max-w-[180px]">
-                      {files.image.name}
-                    </p>
+                  <div className="w-full flex flex-col items-center">
+                    {/* Image Preview */}
+                    <img
+                      src={URL.createObjectURL(files.image)}
+                      alt="Preview"
+                      className="w-full max-w-[280px] h-40 object-cover rounded-lg shadow-md border mb-3"
+                    />
+
+                    {/* File Info */}
+                    <div className="flex items-center justify-between w-full max-w-[280px]">
+                      <p className="text-gray-900 text-sm truncate">
+                        {files.image.name}
+                      </p>
+                      <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full">
+                        {(files.image.size / 1024).toFixed(1)} KB
+                      </span>
+                    </div>
+
+                    {/* Remove Button */}
                     <button
                       type="button"
-                      onClick={() =>
-                        setFiles((prev) => ({ ...prev, image: null }))
-                      }
-                      className="text-gray-400 hover:text-red-500 ml-2 transition-colors duration-200"
+                      onClick={(e) => {
+                        e.stopPropagation(); // prevent opening file picker
+                        setFiles((prev) => ({ ...prev, image: null }));
+                      }}
+                      className="absolute top-2 right-2 bg-white border rounded-full p-1 text-gray-500 hover:text-red-500 hover:bg-red-50 transition"
                     >
                       <FiX className="h-4 w-4" />
                     </button>
                   </div>
                 ) : (
-                  <label className="block cursor-pointer">
-                    <p className="text-gray-500 text-sm mb-1">
-                      Click to upload news image
+                  <div className="flex flex-col items-center">
+                    <FiUpload className="h-6 w-6 text-gray-400 mb-2" />
+                    <p className="text-gray-500 text-sm">
+                      Click or drag & drop
                     </p>
-                    <p className="text-xs text-gray-400">
-                      JPG, PNG, GIF or WebP
-                    </p>
-                    <input
-                      type="file"
-                      name="image"
-                      onChange={handleFileChange}
-                      className="hidden"
-                      accept=".jpg,.jpeg,.png,.gif,.webp"
-                    />
-                  </label>
+                    <p className="text-xs text-gray-400">JPG, PNG (max 5MB)</p>
+                  </div>
                 )}
+
+                {/* Hidden File Input */}
+                <input
+                  id="newsImage"
+                  type="file"
+                  name="image"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  accept=".jpg,.jpeg,.png,.gif,.webp"
+                />
+              </label>
+              {errors.image && (
+                <motion.p
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-sm text-red-500 mt-1"
+                >
+                  {errors.image}
+                </motion.p>
+              )}
+
+              {/* Helper Text */}
+              <div className="text-xs text-gray-500 mt-2 space-y-1 bg-gray-50 p-4 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">
+                  Image Details
+                </h4>
+                <p>
+                  • Recommended size:{" "}
+                  <span className="font-medium">800×450px (16:9 ratio)</span>
+                </p>
+                <p>
+                  • Maximum file size: <span className="font-medium">5MB</span>
+                </p>
+                <p>
+                  • Supported formats:{" "}
+                  <span className="font-medium">JPG, PNG, GIF, WebP</span>
+                </p>
               </div>
             </div>
 

@@ -30,7 +30,7 @@ const blogStorage = multer.diskStorage({
     }
 
     cb(null, finalName);
-  },
+  }
 });
 
 const upload = multer({
@@ -48,7 +48,7 @@ const upload = multer({
     } else {
       cb(new Error("Only image files are allowed (JPEG, JPG, PNG, GIF, WebP)"));
     }
-  },
+  }
 });
 
 // --- Routes ---
@@ -71,7 +71,7 @@ router.post("/", upload.single("image"), async (req, res) => {
       title,
       content,
       category,
-      image: req.file.filename,
+      image: req.file.filename
     });
 
     await blog.save();
@@ -107,7 +107,27 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ message: "Error fetching blog" });
   }
 });
+// Get related blogs by category
+router.get("/related/:categoryId", async (req, res) => {
+  try {
+    const { categoryId } = req.params;
+    const { limit = 3, exclude } = req.query;
 
+    let query = { category: categoryId };
+    if (exclude) {
+      query._id = { $ne: exclude };
+    }
+
+    const relatedBlogs = await Blog.find(query)
+      .populate("category", "name")
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(relatedBlogs);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching related blogs" });
+  }
+});
 // Update Blog
 router.put("/:id", upload.single("image"), async (req, res) => {
   try {

@@ -19,16 +19,20 @@ import {
   FiBarChart,
   FiCopy,
   FiLink,
-  FiUser,
+  FiFile,
   FiUsers,
   FiCalendar,
-  FiAlertCircle
+  FiAlertCircle,
+  FiDownload,
+  FiStar,
+  FiMessageCircle
 } from "react-icons/fi";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import ReactPlayer from "react-player";
-
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 const CoursePlayer = ({ courseId, setActiveView }) => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -52,12 +56,9 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
   const [showCopyLink, setShowCopyLink] = useState(false);
   const [copied, setCopied] = useState(false);
   const [awaitingGrading, setAwaitingGrading] = useState(false);
-  const [timeWatched, setTimeWatched] = useState(0); // Track time watched in seconds
-  const [lastTrackedTime, setLastTrackedTime] = useState(0); // Last time we sent to backend
   const videoRef = useRef(null);
   const videoContainerRef = useRef(null);
   const youtubeIframeRef = useRef(null);
-  const timeTrackingInterval = useRef(null);
   const base_url = import.meta.env.VITE_API_KEY_Base_URL;
   const studentdata = JSON.parse(localStorage.getItem("studentData"));
   const [hasNextContent, setHasNextContent] = useState(false);
@@ -67,9 +68,12 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
   const [review, setReview] = useState("");
   const [isSubmittingRating, setIsSubmittingRating] = useState(false);
   const [hoverRating, setHoverRating] = useState(0);
+  const currentItem = course?.content[currentContent];
+  const [showWaitingModal, setShowWaitingModal] = useState(false);
+
   // Get auth headers
   const getAuthHeaders = () => {
-    const token = localStorage.getItem("authToken");
+    const token = localStorage.getItem("studentToken");
     return {
       headers: {
         Authorization: `Bearer ${token}`
@@ -161,123 +165,76 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
       recordAccess();
     }
   }, [course, courseId, base_url]);
-
   useEffect(() => {
-    if (!course) return;
+    if (!course || !currentItem || currentItem.type !== "quiz") return;
 
-    const currentItem = course.content[currentContent];
+    // If quiz is awaiting grading, poll for status updates
+    if (currentItem.gradingStatus === "partially-graded" || awaitingGrading) {
+      const pollInterval = setInterval(async () => {
+        try {
+          const response = await axios.get(
+            `${base_url}/api/course-player/${courseId}/quiz-status/${currentItem._id}?user_id=${studentdata.id}`,
+            getAuthHeaders()
+          );
 
-    if (currentItem?.type === "quiz") {
-      // Only auto-open if it's a new quiz navigation, not when reopening
-      if (!showQuiz) {
-        setShowQuiz(true);
-      }
-      setIsPlaying(false);
+          if (response.data.success) {
+            // If quiz has been graded, update state
+            if (response.data.gradingStatus === "manually-graded") {
+              setAwaitingGrading(false);
+              setQuizScore(response.data.score);
 
-      // Only set as submitted if it's actually completed with answers
-      if (
-        currentItem?.completed &&
-        currentItem?.answers &&
-        currentItem.answers.length > 0
-      ) {
-        setQuizSubmitted(true);
-        setQuizScore(currentItem.score);
-        setAwaitingGrading(currentItem.gradingStatus === "partially-graded");
+              // Update course data with new status
+              setCourse((prevCourse) => {
+                const updatedContent = [...prevCourse.content];
+                const contentIndex = updatedContent.findIndex(
+                  (item) => item._id === currentItem._id
+                );
 
-        // Pre-populate answers if already submitted
-        const submittedAnswers = {};
-        currentItem.answers.forEach((answer) => {
-          submittedAnswers[answer.questionId] = answer.answer;
-        });
-        setQuizAnswers(submittedAnswers);
-      } else {
-        // Only reset quiz state if not completed
-        if (!currentItem.completed) {
-          setQuizSubmitted(false);
-          setQuizAnswers({});
-          setQuizScore(null);
-          setAwaitingGrading(false);
+                if (contentIndex !== -1) {
+                  updatedContent[contentIndex] = {
+                    ...updatedContent[contentIndex],
+                    completed: response.data.completed,
+                    score: response.data.score,
+                    gradingStatus: response.data.gradingStatus,
+                    percentage: response.data.percentage,
+                    passed: response.data.passed
+                  };
+                }
+
+                return {
+                  ...prevCourse,
+                  content: updatedContent
+                };
+              });
+
+              // Update progress state
+              setProgress((prev) => ({
+                ...prev,
+                [currentItem._id]: {
+                  ...prev[currentItem._id],
+                  completed: response.data.completed,
+                  score: response.data.score,
+                  gradingStatus: response.data.gradingStatus
+                }
+              }));
+
+              // Check if course is now completed
+              if (response.data.courseCompleted) {
+                setCourseCompleted(true);
+              }
+
+              clearInterval(pollInterval);
+            }
+          }
+        } catch (error) {
+          console.error("Error polling quiz status:", error);
         }
-      }
-    } else {
-      setShowQuiz(false);
-      setIsPlaying(true);
+      }, 10000); // Poll every 10 seconds
+
+      return () => clearInterval(pollInterval);
     }
-  }, [currentContent, course]);
-
-  useEffect(() => {
-    if (!course) return;
-
-    const currentItem = course.content[currentContent];
-    if (!currentItem || currentItem.type === "quiz") return;
-
-    if (isPlaying) {
-      timeTrackingInterval.current = setInterval(() => {
-        setTimeWatched((prev) => prev + 1);
-      }, 1000);
-    } else {
-      clearInterval(timeTrackingInterval.current);
-    }
-
-    return () => {
-      clearInterval(timeTrackingInterval.current);
-    };
-  }, [isPlaying, currentContent, course]);
-
-  // Send time updates to backend periodically
-  useEffect(() => {
-    if (!course || timeWatched <= lastTrackedTime) return;
-
-    const currentItem = course.content[currentContent];
-    if (!currentItem || currentItem.type === "quiz") return;
-
-    const shouldSendUpdate =
-      timeWatched - lastTrackedTime >= 10 ||
-      (timeWatched > 0 && timeWatched !== lastTrackedTime);
-
-    if (shouldSendUpdate) {
-      const trackTime = async (courseId) => {
-        await axios.post(
-          `${base_url}/api/course-player/${courseId}/track-video-time`,
-          {
-            contentItemId: currentItem._id,
-            secondsWatched: timeWatched,
-            totalDuration: currentItem.duration || 0,
-            user_id: studentdata.id
-          },
-          getAuthHeaders()
-        );
-        setLastTrackedTime(timeWatched);
-      };
-
-      trackTime(courseId);
-    }
-  }, [timeWatched, lastTrackedTime, currentContent, course, id, base_url]);
-
-  useEffect(() => {
-    return () => {
-      if (timeWatched > lastTrackedTime) {
-        const currentItem = course?.content[currentContent];
-        if (currentItem && currentItem.type !== "quiz") {
-          axios
-            .post(
-              `${base_url}/api/course-player/${courseId}/track-video-time`,
-              {
-                contentItemId: currentItem._id,
-                secondsWatched: timeWatched,
-                totalDuration: currentItem.duration || 0,
-                user_id: studentdata.id
-              },
-              getAuthHeaders()
-            )
-            .catch((error) => {
-              console.error("Error tracking final watch time:", error);
-            });
-        }
-      }
-      clearInterval(timeTrackingInterval.current);
-    };
-  }, [currentContent]);
+  }, [course, currentItem, awaitingGrading, courseId, base_url]);
+  // Add this useEffect to fetch ratings with user data
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -329,7 +286,6 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
       videoRef.current.load();
       setIsPlaying(true);
       setCurrentTime(0);
-      setTimeWatched(0);
     }
 
     return () => {
@@ -373,34 +329,8 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
     if (!course) return;
 
     if (currentContent < course.content.length - 1) {
-      const currentItem = course.content[currentContent];
-      try {
-        await axios.post(
-          `${base_url}/api/course-player/${id}/track-video-time`,
-          {
-            contentItemId: currentItem._id,
-            secondsWatched: timeWatched,
-            totalDuration: currentItem.duration || 0,
-            user_id: studentdata.id
-          },
-          getAuthHeaders()
-        );
-      } catch (error) {
-        console.error("Error tracking progress:", error);
-      }
-
       setCurrentContent(currentContent + 1);
       setCurrentTime(0);
-      setTimeWatched(0);
-      setLastTrackedTime(0);
-      setProgress((prev) => ({
-        ...prev,
-        [currentItem._id]: {
-          ...prev[currentItem._id],
-          completed: true,
-          progress: 100
-        }
-      }));
     }
   };
 
@@ -408,8 +338,6 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
     if (currentContent > 0) {
       setCurrentContent(currentContent - 1);
       setCurrentTime(0);
-      setTimeWatched(0);
-      setLastTrackedTime(0);
     }
   };
 
@@ -443,15 +371,20 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
       setCertificateUrl(response.data.certificateUrl || null);
 
       const isFullyGraded = response.data.gradingStatus !== "partially-graded";
-      setCourseCompleted(isFullyGraded && response.data.courseCompleted);
+
+      // Only mark as completed if fully graded OR if it's an auto-graded quiz that passed
+      const shouldMarkCompleted =
+        isFullyGraded ||
+        (response.data.passed && !response.data.needsManualGrading);
+
       setAwaitingGrading(response.data.gradingStatus === "partially-graded");
 
-      // Update the course state to reflect the quiz completion
+      // Update the course state
       setCourse((prevCourse) => {
         const updatedContent = [...prevCourse.content];
         updatedContent[currentContent] = {
           ...updatedContent[currentContent],
-          completed: true,
+          completed: shouldMarkCompleted,
           score: response.data.score,
           gradingStatus: response.data.gradingStatus,
           answers: response.data.answers
@@ -467,10 +400,16 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
         ...prev,
         [quiz._id]: {
           ...prev[quiz._id],
-          completed: true,
-          progress: 100
+          completed: shouldMarkCompleted,
+          progress: 100,
+          gradingStatus: response.data.gradingStatus
         }
       }));
+
+      // Check if course is now completed
+      if (response.data.courseCompleted) {
+        setCourseCompleted(true);
+      }
 
       // Show success message based on grading status
       toast.success(
@@ -480,11 +419,17 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
           ? "Quiz submitted - awaiting teacher grading for some questions"
           : "Quiz submitted - review your answers"
       );
+
+      // Close modal after successful submission
+      setTimeout(() => {
+        setShowQuiz(false);
+      }, 1500);
     } catch (error) {
       console.error("Error submitting quiz:", error);
       toast.error("Failed to submit quiz");
     }
   };
+
   useEffect(() => {
     if (course) {
       setHasNextContent(currentContent < course.content.length - 1);
@@ -507,9 +452,19 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
     if (!course) return 0;
 
     const totalItems = course.content.length;
-    const completedItems = Object.values(progress).filter(
-      (item) => item?.completed
-    ).length;
+    const completedItems = course.content.filter((item) => {
+      const progressItem = progress[item._id];
+
+      // For quizzes, only count as completed if fully graded
+      if (item.type === "quiz") {
+        return (
+          progressItem?.completed &&
+          progressItem.gradingStatus !== "partially-graded"
+        );
+      }
+      return progressItem?.completed || item.completed;
+    }).length;
+
     return Math.round((completedItems / totalItems) * 100);
   };
 
@@ -693,47 +648,31 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
       setIsSubmittingRating(false);
     }
   };
-  // Add this function to mark live sessions as completed
-  const markLiveSessionCompleted = async (contentItemId) => {
-    try {
-      const response = await axios.post(
-        `${base_url}/api/course-player/${courseId}/complete-live-session`,
-        {
-          contentItemId,
-          user_id: studentdata.id,
-          attended: true
-        },
-        getAuthHeaders()
-      );
+  useEffect(() => {
+    const fetchRatings = async () => {
+      try {
+        const response = await axios.get(
+          `${base_url}/api/course-player/${courseId}/ratings`,
+          getAuthHeaders()
+        );
 
-      if (response.data.success) {
-        // Update progress locally
-        setProgress((prev) => ({
-          ...prev,
-          [contentItemId]: {
-            ...prev[contentItemId],
-            completed: true,
-            progress: 100
-          }
-        }));
-
-        // Update course data
-        setCourse((prev) => ({
-          ...prev,
-          content: prev.content.map((item) =>
-            item._id === contentItemId
-              ? { ...item, completed: true, attendanceStatus: "present" }
-              : item
-          )
-        }));
-
-        toast.success("Live session marked as attended");
+        if (response.data.success) {
+          // Update course with populated ratings
+          setCourse((prev) => ({
+            ...prev,
+            ratings: response.data.ratings,
+            averageRating: response.data.averageRating
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching ratings:", error);
       }
-    } catch (error) {
-      console.error("Error marking live session as completed:", error);
-      toast.error("Failed to update attendance");
+    };
+
+    if (courseId) {
+      fetchRatings();
     }
-  };
+  }, [courseId, base_url]);
   // Add this useEffect to properly detect course completion
   useEffect(() => {
     if (course && course.content && course.content.length > 0) {
@@ -764,6 +703,8 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
       }
     }
   }, [course, progress, courseCompleted, showRatingModal, studentdata.id]);
+  // Add this useEffect to your CoursePlayer component
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -805,7 +746,6 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
     );
   }
 
-  const currentItem = course.content[currentContent];
   const overallProgress = calculateOverallProgress();
 
   return (
@@ -821,7 +761,6 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
           </button>
         </div>
       </header>
-
       {/* Main content */}
       <div className="flex-1 flex flex-col lg:flex-row">
         {/* Video/content area - Left side */}
@@ -844,6 +783,40 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                       referrerPolicy="strict-origin-when-cross-origin"
                       title={currentItem.title || "YouTube Video"}
+                      onLoad={() => {
+                        // Mark YouTube video as completed when it loads
+                        if (
+                          currentItem.type === "tutorial" &&
+                          currentItem.youtubeLink
+                        ) {
+                          const markAsCompleted = async () => {
+                            try {
+                              await axios.post(
+                                `${base_url}/api/course-player/${courseId}/track-tutorial-time`,
+                                {
+                                  contentItemId: currentItem._id,
+                                  user_id: studentdata.id
+                                },
+                                getAuthHeaders()
+                              );
+                              setProgress((prev) => ({
+                                ...prev,
+                                [currentItem._id]: {
+                                  ...prev[currentItem._id],
+                                  completed: true,
+                                  progress: 100
+                                }
+                              }));
+                            } catch (error) {
+                              console.error(
+                                "Error marking YouTube tutorial as completed:",
+                                error
+                              );
+                            }
+                          };
+                          markAsCompleted();
+                        }
+                      }}
                     />
 
                     {/* YouTube info overlay */}
@@ -863,7 +836,6 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
                       onClick={togglePlay}
                       onTimeUpdate={(e) => {
                         setCurrentTime(e.target.currentTime);
-                        setTimeWatched(Math.floor(e.target.currentTime));
                       }}
                       onDurationChange={(e) => {
                         if (!currentItem.duration) {
@@ -882,8 +854,38 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
                       onWaiting={() => {
                         setIsPlaying(false);
                       }}
-                      onPlaying={() => {
+                      onPlay={() => {
                         setIsPlaying(true);
+                        // Mark as completed immediately when video starts playing
+                        if (currentItem.type === "tutorial") {
+                          const markAsCompleted = async () => {
+                            try {
+                              await axios.post(
+                                `${base_url}/api/course-player/${courseId}/track-tutorial-time`,
+                                {
+                                  contentItemId: currentItem._id,
+                                  user_id: studentdata.id
+                                },
+                                getAuthHeaders()
+                              );
+                              // Update local state to reflect completion
+                              setProgress((prev) => ({
+                                ...prev,
+                                [currentItem._id]: {
+                                  ...prev[currentItem._id],
+                                  completed: true,
+                                  progress: 100
+                                }
+                              }));
+                            } catch (error) {
+                              console.error(
+                                "Error marking tutorial as completed:",
+                                error
+                              );
+                            }
+                          };
+                          markAsCompleted();
+                        }
                       }}
                       onEnded={() => {
                         setProgress((prev) => ({
@@ -913,19 +915,6 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
                 {/* Custom controls overlay - only for non-YouTube videos */}
                 {!currentItem.youtubeLink && (
                   <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4">
-                    {/* Top bar with filename and watch time */}
-                    <div className="flex justify-between items-center mb-2">
-                      {currentItem.content?.filename && (
-                        <div className="text-white text-sm font-medium bg-black/50 px-3 py-1 rounded-full truncate max-w-[70%]">
-                          {currentItem.content.filename}
-                        </div>
-                      )}
-                      <div className="text-white text-sm bg-black/50 px-3 py-1 rounded-full">
-                        Watched: {formatTime(timeWatched)} /
-                        {formatTime(currentItem.duration || 0)}
-                      </div>
-                    </div>
-
                     {/* Progress bar with hover time preview */}
                     <div className="relative w-full h-2 bg-gray-600 rounded-full mb-3 group/progress">
                       <div
@@ -1073,15 +1062,34 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
                   <h2 className="text-2xl font-bold !text-white mb-2">
                     {currentItem.title}
                   </h2>
-                  <p className="text-gray-300 mb-6">
-                    {currentItem.description.replace(/<[^>]+>/g, "")}
-                  </p>
-                  {progress[currentItem._id]?.completed && (
+                  <div
+                    className="prose prose-lg max-w-none text-sm text-gray-300 mb-6  line-clamp-1"
+                    dangerouslySetInnerHTML={{
+                      __html: currentItem.description
+                    }}
+                  />
+                  {/* Show attendance status from teacher */}
+                  {currentItem.attendanceStatus === "present" && (
                     <div className="mt-4 bg-green-100 text-green-800 px-4 py-2 rounded-lg">
                       <FiCheck className="inline mr-2" />
-                      Attendance confirmed
+                      Attendance confirmed by teacher
                     </div>
                   )}
+
+                  {currentItem.attendanceStatus === "absent" && (
+                    <div className="mt-4 bg-red-100 text-red-800 px-4 py-2 rounded-lg">
+                      <FiX className="inline mr-2" />
+                      Marked absent by teacher
+                    </div>
+                  )}
+
+                  {!currentItem.attendanceStatus ||
+                    (currentItem.attendanceStatus === "pending" && (
+                      <div className="mt-4 bg-yellow-100 text-yellow-800 px-4 py-2 rounded-lg">
+                        <FiClock className="inline mr-2" />
+                        Attendance pending teacher confirmation
+                      </div>
+                    ))}
 
                   <div className="bg-white rounded-lg p-4 mb-6">
                     <div className="flex items-center justify-between mb-3">
@@ -1178,6 +1186,263 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
               </div>
             </div>
           )}
+          {course.attachments && course.attachments.length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h3 className="font-semibold text-lg mb-4">Course Attachments</h3>
+              <div className="space-y-3">
+                {course.attachments.map((file) => {
+                  // Calculate file size in appropriate format
+                  const fileSize =
+                    file.size > 0
+                      ? file.size >= 1024 * 1024
+                        ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+                        : `${(file.size / 1024).toFixed(1)} KB`
+                      : "0.0 KB";
+
+                  // Function to handle file download
+                  {
+                    /* const handleDownload = async () => {
+                    try {
+                      // Show loading state
+                      toast.loading(`Downloading ${file.filename}...`);
+
+                      // Create a temporary link element
+                      const link = document.createElement("a");
+                      link.href = `${base_url}/courses/${file.path}`;
+                      link.download = file.filename;
+                      link.target = "_blank";
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+
+                      // Dismiss loading toast and show success
+                      toast.dismiss();
+                      toast.success(`Download started: ${file.filename}`);
+                    } catch (error) {
+                      toast.dismiss();
+                      toast.error("Failed to download file");
+                      console.error("Download error:", error);
+                    }
+                  }; */
+                  }
+                  // Function to handle file download
+                  const handleDownload = async () => {
+                    try {
+                      toast.loading(`Downloading ${file.filename}...`);
+
+                      // Fetch the file as a blob
+                      const response = await fetch(
+                        `${base_url}/courses/${file.path}`,
+                        {
+                          method: "GET",
+                          headers: {
+                            // You can add Authorization header here if needed
+                          }
+                        }
+                      );
+
+                      if (!response.ok)
+                        throw new Error("Network response was not ok");
+
+                      const blob = await response.blob();
+                      const url = window.URL.createObjectURL(blob);
+
+                      // Create a temporary link
+                      const link = document.createElement("a");
+                      link.href = url;
+                      link.download = file.filename; // Force download
+                      document.body.appendChild(link);
+                      link.click();
+
+                      // Clean up
+                      link.remove();
+                      window.URL.revokeObjectURL(url);
+
+                      toast.dismiss();
+                      toast.success(`Download started: ${file.filename}`);
+                    } catch (error) {
+                      toast.dismiss();
+                      toast.error("Failed to download file");
+                      console.error("Download error:", error);
+                    }
+                  };
+
+                  return (
+                    <div
+                      key={file._id}
+                      className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors border border-gray-100"
+                    >
+                      <div className="flex items-center flex-1">
+                        <div className="p-2 bg-gray-100 rounded-lg mr-3">
+                          <FiFile className="text-gray-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {file.filename}
+                          </p>
+                          <p className="text-xs text-gray-500">{fileSize}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleDownload}
+                        className="ml-3 p-2 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors"
+                        title={`Download ${file.filename}`}
+                      >
+                        <FiDownload className="w-4 h-4" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          <div className="mt-8 p-6 bg-white rounded-2xl shadow-sm border border-gray-200">
+            <h3 className="font-bold text-2xl mb-6 text-gray-800">
+              Student Reviews
+            </h3>
+
+            {course.averageRating > 0 ? (
+              <div className="space-y-6">
+                {/* Rating Summary */}
+                <div className="flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl shadow-sm">
+                  <div className="flex items-center">
+                    <div className="text-4xl font-bold text-yellow-500 mr-4">
+                      {course.averageRating &&
+                      typeof course.averageRating === "number" ? (
+                        <div className="text-4xl font-bold text-yellow-500 mr-4">
+                          {course.averageRating.toFixed(1)}
+                        </div>
+                      ) : (
+                        <div className="text-4xl font-bold text-gray-400 mr-4">
+                          0.0
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <div className="flex mb-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <span
+                            key={star}
+                            className={`text-xl ${
+                              star <= Math.round(course.averageRating || 0)
+                                ? "text-yellow-400"
+                                : "text-gray-300"
+                            }`}
+                          >
+                            ★
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        Based on {course.ratings?.length || 0} reviews
+                      </p>
+                    </div>
+                  </div>
+                  <div className="w-14 h-14 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                    <span className="text-white font-bold text-lg">
+                      {course.averageRating &&
+                      typeof course.averageRating === "number"
+                        ? course.averageRating.toFixed(1)
+                        : "0.0"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Reviews Carousel */}
+                {course.ratings?.length > 0 && (
+                  <div className="relative overflow-hidden">
+                    <div className="flex space-x-6 py-4 carousel-container">
+                      {/* Duplicate reviews for infinite effect */}
+                      {[...course.ratings, ...course.ratings]
+                        .slice(0, 20)
+                        .map((rating, index) => (
+                          <div
+                            key={`${rating._id}-${index}`}
+                            className="flex-shrink-0 w-80 bg-white rounded-2xl shadow-lg border border-gray-100 p-6 carousel-item"
+                          >
+                            {/* Student Info */}
+                            <div className="flex items-center mb-4">
+                              <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-blue-500 rounded-full flex items-center justify-center mr-3">
+                                {rating.user?.profile_picture ? (
+                                  <img
+                                    src={`${base_url}/students/${rating.user.profile_picture}`}
+                                    alt={rating.user.full_name || "Student"}
+                                    className="w-12 h-12 rounded-full object-cover"
+                                    onError={(e) => {
+                                      e.target.style.display = "none";
+                                      e.target.nextSibling.style.display =
+                                        "flex";
+                                    }}
+                                  />
+                                ) : (
+                                  <span className="text-white font-bold text-lg">
+                                    {rating.user?.full_name
+                                      ?.charAt(0)
+                                      ?.toUpperCase() ||
+                                      (typeof rating.user === "string"
+                                        ? "S"
+                                        : "A")}
+                                  </span>
+                                )}
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-gray-800">
+                                  {typeof rating.user === "object"
+                                    ? rating.user?.full_name ||
+                                      "Anonymous Student"
+                                    : "Anonymous Student"}
+                                </h4>
+                                <div className="flex items-center">
+                                  <div className="flex text-yellow-400 mr-2">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                      <span key={star} className="text-sm">
+                                        {star <= rating.rating ? "★" : "☆"}
+                                      </span>
+                                    ))}
+                                  </div>
+                                  <span className="text-xs text-gray-500">
+                                    {rating.createdAt
+                                      ? new Date(
+                                          rating.createdAt
+                                        ).toLocaleDateString()
+                                      : "Recent"}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Review Text */}
+                            <div className="bg-gray-50 rounded-xl p-4">
+                              <p className="text-gray-700 text-sm leading-relaxed">
+                                {rating.review && rating.review.trim() !== ""
+                                  ? rating.review.length > 120
+                                    ? `${rating.review.substring(0, 120)}...`
+                                    : rating.review
+                                  : "Awesome Course! Loved it"}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+
+                    {/* Gradient Overlays */}
+                    <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-white to-transparent z-10"></div>
+                    <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-white to-transparent z-10"></div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-gray-50 rounded-2xl">
+                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FiStar className="text-gray-400 w-8 h-8" />
+                </div>
+                <p className="text-gray-500 text-lg">No reviews yet</p>
+                <p className="text-gray-400 text-sm mt-1">
+                  Be the first to share your experience!
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Content tracking - Right side */}
@@ -1203,13 +1468,41 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
                   key={item._id}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  className={`p-4 rounded-xl cursor-pointer border transition-all ${
+                    currentContent === index
+                      ? "border-indigo-300 bg-indigo-50"
+                      : "border-gray-200 hover:border-gray-300"
+                  } ${
+                    progress[item._id]?.completed
+                      ? "bg-green-50 border-green-200" // Green for completed items
+                      : progress[item._id]?.gradingStatus ===
+                          "partially-graded" ||
+                        item.gradingStatus === "partially-graded"
+                      ? "bg-yellow-50 border-yellow-200" // Yellow for quizzes awaiting grading
+                      : ""
+                  }`}
                   onClick={() => {
                     setCurrentContent(index);
-                    setTimeWatched(0);
-                    setLastTrackedTime(0);
-
-                    // Only reset quiz state if it's a different quiz OR if current quiz hasn't been submitted
                     if (item.type === "quiz") {
+                      // Check if quiz is already completed - don't open modal if completed
+                      if (item.completed || progress[item._id]?.completed) {
+                        // Don't open the modal for completed quizzes
+                        setShowQuiz(false);
+                        return;
+                      }
+
+                      // Check if quiz is awaiting grading
+                      if (
+                        (progress[item._id]?.gradingStatus ===
+                          "partially-graded" ||
+                          item.gradingStatus === "partially-graded") &&
+                        !progress[item._id]?.completed
+                      ) {
+                        setShowWaitingModal(true);
+                        setShowQuiz(false);
+                        return;
+                      }
+
                       const isDifferentQuiz = currentContent !== index;
                       const isCurrentQuizCompleted = item.completed;
 
@@ -1226,37 +1519,21 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
                       setIsPlaying(true);
                     }
                   }}
-                  className={`p-4 rounded-xl cursor-pointer border transition-all ${
-                    currentContent === index
-                      ? "border-indigo-300 bg-indigo-50"
-                      : "border-gray-200 hover:border-gray-300"
-                  } ${
-                    progress[item._id]?.completed
-                      ? item.type === "quiz" &&
-                        item.gradingStatus === "partially-graded"
-                        ? "bg-yellow-50 border-yellow-200" // Yellow for quizzes awaiting grading
-                        : "bg-green-50 border-green-200" // Green for completed items and fully graded quizzes
-                      : ""
-                  }`}
                 >
                   <div className="flex items-start">
                     <div className="flex-shrink-0 relative">
                       {progress[item._id]?.completed ? (
-                        // Show different icons based on grading status for quizzes
-                        item.type === "quiz" &&
+                        // Green checkmark for completed items
+                        <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                          <FiCheck className="text-green-600 text-lg" />
+                        </div>
+                      ) : progress[item._id]?.gradingStatus ===
+                          "partially-graded" ||
                         item.gradingStatus === "partially-graded" ? (
-                          // Yellow alert icon for quizzes awaiting grading
-                          <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
-                            <FiAlertCircle className="text-yellow-600 text-lg" />
-                          </div>
-                        ) : (
-                          // Green checkmark for completed items and fully graded quizzes
-                          <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                            <FiCheck className="text-green-600 text-lg" />
-                          </div>
-                        )
+                        <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
+                          <FiAlertCircle className="text-yellow-600 text-lg" />
+                        </div>
                       ) : (
-                        // Default icon for incomplete items
                         <div
                           className={`w-10 h-10 rounded-full flex items-center justify-center ${
                             currentContent === index
@@ -1274,7 +1551,6 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
                         </div>
                       )}
                     </div>
-
                     <div className="ml-4 flex-1">
                       <div className="flex justify-between items-center space-x-2">
                         <h3
@@ -1297,9 +1573,12 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
                         )}
                       </div>
 
-                      <p className="text-sm text-gray-600 mt-1">
-                        {item.description.replace(/<[^>]+>/g, "")}
-                      </p>
+                      <div
+                        className="prose prose-lg max-w-none text-sm text-gray-600 mt-1  line-clamp-1"
+                        dangerouslySetInnerHTML={{
+                          __html: item.description
+                        }}
+                      />
                       {item.type === "tutorial" && (
                         <span className="inline-block mt-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
                           Tutorial Video
@@ -1343,60 +1622,9 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
                 </button>
               </div>
             )}
-            <div className="mt-6">
-              <h3 className="font-bold text-lg mb-3">Course Ratings</h3>
-              {course.averageRating > 0 ? (
-                <div className="space-y-3">
-                  <div className="flex items-center">
-                    <div className="text-2xl font-bold text-yellow-500 mr-2">
-                      {course.averageRating.toFixed(1)}
-                    </div>
-                    <div className="flex">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <span
-                          key={star}
-                          className={`text-lg ${
-                            star <= Math.round(course.averageRating)
-                              ? "text-yellow-400"
-                              : "text-gray-300"
-                          }`}
-                        >
-                          ★
-                        </span>
-                      ))}
-                    </div>
-                    <span className="text-sm text-gray-600 ml-2">
-                      ({course.ratings?.length || 0} ratings)
-                    </span>
-                  </div>
-
-                  {course.ratings?.slice(0, 3).map((rating) => (
-                    <div key={rating._id} className="border-t pt-3">
-                      <div className="flex items-center mb-1">
-                        <div className="flex text-yellow-400">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <span key={star} className="text-sm">
-                              {star <= rating.rating ? "★" : "☆"}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      {rating.review && (
-                        <p className="text-sm text-gray-600 mt-1">
-                          {rating.review}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-sm">No ratings yet</p>
-              )}
-            </div>
           </div>
         </div>
       </div>
-
       {/* Quiz Modal */}
       <AnimatePresence>
         {showQuiz && currentItem?.type === "quiz" && (
@@ -1410,378 +1638,377 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 20, opacity: 0 }}
-              className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
             >
-              <div className="p-8">
-                <div className="flex justify-between items-center mb-6">
+              <div className="p-6 border-b border-gray-200 bg-white sticky top-0 z-10">
+                <div className="flex justify-between items-center">
                   <div>
-                    <h2 className="text-2xl font-bold">{currentItem.title}</h2>
-                    <p className="text-gray-600">
-                      {currentItem.description.replace(/<[^>]+>/g, "")}
-                    </p>
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      {currentItem.title}
+                    </h2>
+                    {currentItem.description && (
+                      <div
+                        className="prose prose-lg max-w-none text-sm text-gray-600 mt-1 line-clamp-1"
+                        dangerouslySetInnerHTML={{
+                          __html: currentItem.description
+                        }}
+                      />
+                    )}
                   </div>
                   <button
                     onClick={closeQuiz}
-                    className="text-gray-500 hover:text-gray-700 p-2"
+                    className="text-gray-500 hover:text-gray-700 p-2 transition-colors"
                   >
                     <FiX size={24} />
                   </button>
                 </div>
+              </div>
 
+              <div className="flex-1 overflow-y-auto">
                 {!quizSubmitted && !currentItem.completed ? (
-                  <div className="space-y-8">
-                    {currentItem.questions?.map((question, qIndex) => {
-                      const previousAnswer = currentItem.answers?.find(
-                        (a) => a.questionId === question._id
-                      );
-                      const isSubmitted = quizSubmitted || previousAnswer;
-
-                      return (
-                        <div key={question._id} className="mb-6">
+                  <div className="p-6">
+                    <div className="space-y-8">
+                      {currentItem.questions?.map((question, qIndex) => (
+                        <div
+                          key={question._id}
+                          className="bg-white rounded-lg border border-gray-200 p-6"
+                        >
                           <div className="flex items-start mb-4">
-                            <div className="bg-indigo-100 text-indigo-800 w-8 h-8 rounded-full flex items-center justify-center font-medium mr-3 flex-shrink-0">
+                            <div className="bg-indigo-100 text-indigo-800 w-8 h-8 rounded-full flex items-center justify-center font-medium mr-4 flex-shrink-0">
                               {qIndex + 1}
                             </div>
-                            <div>
-                              <h3 className="text-lg font-medium mt-1">
+                            <div className="flex-1">
+                              <h3 className="text-lg font-medium text-gray-900">
                                 {question.question}
                               </h3>
                               <p className="text-sm text-gray-500 mt-1">
                                 {question.marks} mark
                                 {question.marks !== 1 ? "s" : ""}
                               </p>
-                              {previousAnswer && (
-                                <div
-                                  className={`mt-2 text-sm p-2 rounded ${
-                                    previousAnswer.isCorrect
-                                      ? "bg-green-100 text-green-800"
-                                      : "bg-red-100 text-red-800"
-                                  }`}
-                                >
-                                  Your previous answer:{" "}
-                                  {Array.isArray(previousAnswer.answer)
-                                    ? previousAnswer.answer
-                                        .map((a) => question.options[a])
-                                        .join(", ")
-                                    : question.type === "mcq-single"
-                                    ? question.options[previousAnswer.answer]
-                                    : previousAnswer.answer}
-                                </div>
-                              )}
                             </div>
                           </div>
 
                           {question.type === "mcq-single" && (
-                            <div className="space-y-3 ml-11">
-                              {question.options?.map((option, oIndex) => {
-                                const isChecked =
-                                  quizAnswers[question._id] === oIndex ||
-                                  previousAnswer?.answer === oIndex;
-                                const isCorrectAnswer =
-                                  question.correctAnswer === oIndex;
-
-                                return (
-                                  <label
-                                    key={oIndex}
-                                    className={`flex items-center space-x-3 p-4 border rounded-xl cursor-pointer transition-colors ${
-                                      isChecked
-                                        ? previousAnswer?.isCorrect
-                                          ? "border-green-500 bg-green-50"
-                                          : "border-indigo-500 bg-indigo-50"
-                                        : isCorrectAnswer && previousAnswer
-                                        ? "border-green-500 bg-green-50"
-                                        : "border-gray-200 hover:border-gray-400"
-                                    } ${previousAnswer ? "opacity-70" : ""}`}
-                                  >
-                                    <input
-                                      type="radio"
-                                      name={`question-${question._id}`}
-                                      checked={isChecked}
-                                      onChange={() =>
-                                        !previousAnswer &&
-                                        handleAnswerChange(question._id, oIndex)
-                                      }
-                                      disabled={!!previousAnswer}
-                                      className="h-5 w-5 text-indigo-600 focus:border-indigo-500"
-                                    />
-                                    <span>{option}</span>
-                                    {previousAnswer && isCorrectAnswer && (
-                                      <span className="ml-auto text-green-600">
-                                        <FiCheck />
-                                      </span>
-                                    )}
-                                  </label>
-                                );
-                              })}
+                            <div className="space-y-3 ml-12">
+                              {question.options?.map((option, oIndex) => (
+                                <label
+                                  key={oIndex}
+                                  className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg cursor-pointer transition-all hover:border-indigo-300 hover:bg-indigo-50"
+                                >
+                                  <input
+                                    type="radio"
+                                    name={`question-${question._id}`}
+                                    checked={
+                                      quizAnswers[question._id] === oIndex
+                                    }
+                                    onChange={() =>
+                                      handleAnswerChange(question._id, oIndex)
+                                    }
+                                    className="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                                  />
+                                  <span className="text-gray-700">
+                                    {option}
+                                  </span>
+                                </label>
+                              ))}
                             </div>
                           )}
 
                           {question.type === "mcq-multiple" && (
-                            <div className="space-y-3 ml-11">
-                              {question.options?.map((option, oIndex) => {
-                                const isChecked =
-                                  (quizAnswers[question._id] || []).includes(
-                                    oIndex
-                                  ) || previousAnswer?.answer?.includes(oIndex);
-                                const isCorrectAnswer =
-                                  question.correctAnswer?.includes(oIndex);
-
-                                return (
-                                  <label
-                                    key={oIndex}
-                                    className={`flex items-center space-x-3 p-4 border rounded-xl cursor-pointer transition-colors ${
-                                      isChecked
-                                        ? previousAnswer?.isCorrect
-                                          ? "border-green-500 bg-green-50"
-                                          : "border-indigo-500 bg-indigo-50"
-                                        : isCorrectAnswer && previousAnswer
-                                        ? "border-green-500 bg-green-50"
-                                        : "border-gray-200 hover:border-gray-400"
-                                    } ${previousAnswer ? "opacity-70" : ""}`}
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={isChecked}
-                                      onChange={() => {
-                                        if (!previousAnswer) {
-                                          const currentAnswers =
-                                            quizAnswers[question._id] || [];
-                                          const newAnswers =
-                                            currentAnswers.includes(oIndex)
-                                              ? currentAnswers.filter(
-                                                  (a) => a !== oIndex
-                                                )
-                                              : [...currentAnswers, oIndex];
-                                          handleAnswerChange(
-                                            question._id,
-                                            newAnswers
-                                          );
-                                        }
-                                      }}
-                                      disabled={!!previousAnswer}
-                                      className="h-5 w-5 text-indigo-600 focus:border-indigo-500"
-                                    />
-                                    <span>{option}</span>
-                                    {previousAnswer && isCorrectAnswer && (
-                                      <span className="ml-auto text-green-600">
-                                        <FiCheck />
-                                      </span>
-                                    )}
-                                  </label>
-                                );
-                              })}
+                            <div className="space-y-3 ml-12">
+                              {question.options?.map((option, oIndex) => (
+                                <label
+                                  key={oIndex}
+                                  className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg cursor-pointer transition-all hover:border-indigo-300 hover:bg-indigo-50"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={(
+                                      quizAnswers[question._id] || []
+                                    ).includes(oIndex)}
+                                    onChange={() => {
+                                      const currentAnswers =
+                                        quizAnswers[question._id] || [];
+                                      const newAnswers =
+                                        currentAnswers.includes(oIndex)
+                                          ? currentAnswers.filter(
+                                              (a) => a !== oIndex
+                                            )
+                                          : [...currentAnswers, oIndex];
+                                      handleAnswerChange(
+                                        question._id,
+                                        newAnswers
+                                      );
+                                    }}
+                                    className="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                  />
+                                  <span className="text-gray-700">
+                                    {option}
+                                  </span>
+                                </label>
+                              ))}
                             </div>
                           )}
 
                           {(question.type === "short-answer" ||
                             question.type === "broad-answer") && (
-                            <div className="ml-11">
-                              <textarea
-                                value={
-                                  quizAnswers[question._id] ||
-                                  previousAnswer?.answer ||
-                                  ""
-                                }
-                                onChange={(e) =>
-                                  !previousAnswer &&
-                                  handleAnswerChange(
-                                    question._id,
-                                    e.target.value
-                                  )
-                                }
-                                disabled={!!previousAnswer}
-                                className={`w-full p-4 border rounded-lg  focus:border-indigo-500 ${
-                                  previousAnswer
-                                    ? previousAnswer.isCorrect
-                                      ? "border-green-500 bg-green-50"
-                                      : "border-red-500 bg-red-50"
-                                    : "border-gray-300"
-                                }`}
-                                rows={question.type === "short-answer" ? 4 : 6}
-                                placeholder={
-                                  previousAnswer
-                                    ? "Your previous answer is shown above"
-                                    : question.type === "short-answer"
-                                    ? "Type your answer here..."
-                                    : "Type your detailed answer here..."
-                                }
-                              />
-                              {previousAnswer && (
-                                <div className="mt-2 p-2 bg-blue-50 rounded-lg text-sm text-blue-800">
-                                  <span className="font-medium">
-                                    Correct answer:
-                                  </span>{" "}
-                                  {question.correctAnswer}
+                            <div className="ml-12">
+                              {question.type === "short-answer" ? (
+                                <textarea
+                                  value={quizAnswers[question._id] || ""}
+                                  onChange={(e) =>
+                                    handleAnswerChange(
+                                      question._id,
+                                      e.target.value
+                                    )
+                                  }
+                                  className="w-full p-4 border border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none"
+                                  rows={4}
+                                  placeholder="Type your answer here..."
+                                />
+                              ) : (
+                                <div className="mb-8">
+                                  <ReactQuill
+                                    theme="snow"
+                                    value={quizAnswers[question._id] || ""}
+                                    onChange={(value) =>
+                                      handleAnswerChange(question._id, value)
+                                    }
+                                    placeholder="Type your detailed answer here..."
+                                    modules={{
+                                      toolbar: [
+                                        ["bold", "italic", "underline"],
+                                        [
+                                          { list: "ordered" },
+                                          { list: "bullet" }
+                                        ],
+                                        ["clean"]
+                                      ]
+                                    }}
+                                  />
                                 </div>
                               )}
                             </div>
                           )}
                         </div>
-                      );
-                    })}
-
-                    <div className="flex justify-end mt-8">
-                      <button
-                        onClick={submitQuiz}
-                        className="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors"
-                      >
-                        Submit Quiz
-                      </button>
+                      ))}
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-8">
+                  <div className="p-8">
                     {currentItem.gradingStatus === "partially-graded" ||
                     awaitingGrading ? (
-                      <>
-                        <div className="inline-flex items-center justify-center w-24 h-24 bg-yellow-100 rounded-full mb-6">
-                          <FiAlertCircle className="text-yellow-600 text-4xl" />
+                      <div className="text-center">
+                        <div className="inline-flex items-center justify-center w-20 h-20 bg-yellow-100 rounded-full mb-6">
+                          <FiClock className="text-yellow-600 text-3xl" />
                         </div>
-                        <h3 className="text-2xl font-bold mb-4">
+                        <h3 className="text-2xl font-bold text-gray-900 mb-4">
                           Quiz Submitted for Grading
                         </h3>
-                        <p className="text-gray-600 mb-6">
-                          Some of your answers require teacher review. We'll
-                          notify you when grading is complete.
+                        <p className="text-gray-600 mb-6 text-lg">
+                          Your quiz has been submitted and is awaiting teacher
+                          grading. You will be notified when grading is
+                          complete.
                         </p>
-                      </>
+                        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 max-w-2xl mx-auto">
+                          <div className="flex">
+                            <div className="flex-shrink-0">
+                              <FiAlertCircle className="h-5 w-5 text-yellow-400" />
+                            </div>
+                            <div className="ml-3">
+                              <p className="text-sm text-yellow-700">
+                                <strong>Note:</strong> Your course cannot be
+                                completed until all quizzes are graded by your
+                                teacher.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     ) : (
-                      <>
-                        <div className="inline-flex items-center justify-center w-24 h-24 bg-green-100 rounded-full mb-6">
-                          <FiCheck className="text-green-600 text-4xl" />
+                      <div className="space-y-8">
+                        <div className="text-center">
+                          <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-6">
+                            <FiCheck className="text-green-600 text-3xl" />
+                          </div>
+                          <div className="text-4xl font-bold text-gray-900 mb-2">
+                            {currentItem.score || quizScore}/
+                            {currentItem.questions?.reduce(
+                              (total, q) => total + (q.marks || 1),
+                              0
+                            ) || 0}
+                          </div>
+                          <p className="text-xl text-gray-600 mb-8">
+                            {(currentItem.score || quizScore) ===
+                            (currentItem.questions?.reduce(
+                              (total, q) => total + (q.marks || 1),
+                              0
+                            ) || 0)
+                              ? "Perfect score! 🎉"
+                              : (currentItem.score || quizScore) >=
+                                (currentItem.questions?.reduce(
+                                  (total, q) => total + (q.marks || 1),
+                                  0
+                                ) || 0) /
+                                  2
+                              ? "Well done! You passed! ✅"
+                              : "Keep practicing! You'll do better next time. 💪"}
+                          </p>
                         </div>
-                        <div className="text-4xl font-bold mb-2">
-                          {currentItem.score || quizScore}/
-                          {currentItem.questions?.reduce(
-                            (total, q) => total + (q.marks || 1),
-                            0
-                          ) || 0}
-                        </div>
-                        <p className="text-xl mb-6">
-                          {(currentItem.score || quizScore) ===
-                          (currentItem.questions?.reduce(
-                            (total, q) => total + (q.marks || 1),
-                            0
-                          ) || 0)
-                            ? "Perfect score! You're amazing!"
-                            : (currentItem.score || quizScore) >=
-                              (currentItem.questions?.reduce(
-                                (total, q) => total + (q.marks || 1),
-                                0
-                              ) || 0) /
-                                2
-                            ? "Well done! You passed the quiz."
-                            : "Keep practicing! Review the material and try again."}
-                        </p>
 
-                        {/* Show correct answers for learning - ONLY when grading is complete */}
-                        <div className="text-left space-y-6 mb-8">
-                          {currentItem.questions?.map((question, qIndex) => {
-                            const userAnswer = quizAnswers[question._id];
-                            const answerRecord = currentItem.answers?.find(
-                              (a) => a.questionId === question._id
-                            );
-                            const isCorrect = answerRecord?.isCorrect;
-                            const needsGrading =
-                              answerRecord?.needsManualGrading;
-                            const marksObtained =
-                              answerRecord?.marksObtained || 0;
-                            const maxMarks = question.marks || 1;
+                        {currentItem.gradingStatus === "manually-graded" && (
+                          <div className="space-y-6">
+                            <h4 className="text-xl font-semibold text-gray-900 border-b pb-2">
+                              Quiz Review
+                            </h4>
+                            {currentItem.questions?.map((question, qIndex) => {
+                              const userAnswer = quizAnswers[question._id];
+                              const answerRecord = currentItem.answers?.find(
+                                (a) => a.questionId === question._id
+                              );
+                              const isCorrect = answerRecord?.isCorrect;
+                              const marksObtained =
+                                answerRecord?.marksObtained || 0;
+                              const maxMarks = question.marks || 1;
 
-                            return (
-                              <div
-                                key={question._id}
-                                className="border border-gray-200 rounded-xl p-5 relative"
-                              >
-                                {/* Question number and grade badge */}
-                                <div className="flex justify-between items-center mb-4">
-                                  <div className="bg-indigo-100 text-indigo-800 w-8 h-8 rounded-full flex items-center justify-center font-medium">
-                                    {qIndex + 1}
+                              return (
+                                <div
+                                  key={question._id}
+                                  className={`border rounded-xl p-6 ${
+                                    isCorrect
+                                      ? "border-green-200 bg-green-50"
+                                      : "border-red-200 bg-red-50"
+                                  }`}
+                                >
+                                  <div className="flex justify-between items-center mb-4">
+                                    <div className="flex items-center">
+                                      <div
+                                        className={`w-8 h-8 rounded-full flex items-center justify-center font-medium mr-3 ${
+                                          isCorrect
+                                            ? "bg-green-100 text-green-800"
+                                            : "bg-red-100 text-red-800"
+                                        }`}
+                                      >
+                                        {qIndex + 1}
+                                      </div>
+                                      <h5 className="text-lg font-medium text-gray-900">
+                                        {question.question}
+                                      </h5>
+                                    </div>
+                                    <div
+                                      className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                        isCorrect
+                                          ? "bg-green-100 text-green-800"
+                                          : "bg-red-100 text-red-800"
+                                      }`}
+                                    >
+                                      {marksObtained}/{maxMarks}
+                                    </div>
                                   </div>
-                                  <div
-                                    className={`px-3 py-1 rounded-full text-sm font-medium ${
-                                      isCorrect
-                                        ? "bg-green-100 text-green-800"
-                                        : needsGrading
-                                        ? "bg-yellow-100 text-yellow-800"
-                                        : "bg-red-100 text-red-800"
-                                    }`}
-                                  >
-                                    {marksObtained}/{maxMarks}
-                                  </div>
-                                </div>
 
-                                <div className="flex items-start">
-                                  <div>
-                                    <h4 className="font-medium text-lg">
-                                      {question.question}
-                                    </h4>
-                                    <p className="text-sm text-gray-600 mt-1">
-                                      <span className="font-bold !text-gray-900">
+                                  <div className="space-y-3 ml-11">
+                                    <div className="bg-white p-4 rounded-lg border">
+                                      <p className="text-sm font-medium text-gray-700 mb-1">
                                         Your answer:
-                                      </span>{" "}
-                                      {Array.isArray(userAnswer)
-                                        ? userAnswer
-                                            .map((a) => question.options[a])
-                                            .join(", ")
-                                        : question.type === "mcq-single"
-                                        ? question.options[userAnswer]
-                                        : userAnswer || "No answer provided"}
-                                    </p>
-                                    {!needsGrading && (
-                                      <p className="text-sm text-gray-600 mt-2">
-                                        <span className="font-bold !text-gray-900">
-                                          {question.type === "mcq-single" ||
-                                          question.type === "mcq-multiple"
-                                            ? "Correct answer:"
-                                            : "Expected answer:"}
-                                        </span>{" "}
-                                        {Array.isArray(question.correctAnswer)
-                                          ? question.correctAnswer
-                                              .map((a) => question.options[a])
-                                              .join(", ")
-                                          : question.type === "mcq-single"
-                                          ? question.options[
-                                              question.correctAnswer
-                                            ]
-                                          : question.expectedAnswer ||
-                                            question.correctAnswer ||
-                                            "No expected answer provided"}
                                       </p>
-                                    )}
-                                    {needsGrading && (
-                                      <div className="mt-2 p-3 bg-yellow-50 rounded-lg text-sm text-yellow-800">
-                                        <span className="font-medium">
-                                          Status:
-                                        </span>{" "}
-                                        Awaiting teacher grading
+                                      <div
+                                        className="prose prose-lg max-w-none text-sm text-gray-900"
+                                        dangerouslySetInnerHTML={{
+                                          __html: Array.isArray(userAnswer)
+                                            ? userAnswer
+                                                .map((a) => question.options[a])
+                                                .join(", ")
+                                            : question.type === "mcq-single"
+                                            ? question.options[userAnswer] ||
+                                              "No answer provided"
+                                            : userAnswer || "No answer provided"
+                                        }}
+                                      />
+                                    </div>
+
+                                    <div className="bg-white p-4 rounded-lg border">
+                                      <p className="text-sm font-medium text-gray-700 mb-1">
+                                        {question.type === "mcq-single" ||
+                                        question.type === "mcq-multiple"
+                                          ? "Correct answer:"
+                                          : "Expected answer:"}
+                                      </p>
+                                      <div
+                                        className="prose prose-lg max-w-none text-sm text-gray-900"
+                                        dangerouslySetInnerHTML={{
+                                          __html: Array.isArray(
+                                            question.correctAnswer
+                                          )
+                                            ? question.correctAnswer
+                                                .map((a) => question.options[a])
+                                                .join(", ")
+                                            : question.type === "mcq-single"
+                                            ? question.options[
+                                                question.correctAnswer
+                                              ]
+                                            : question.expectedAnswer ||
+                                              question.correctAnswer ||
+                                              "No expected answer provided"
+                                        }}
+                                      />
+                                    </div>
+
+                                    {answerRecord?.teacherFeedback && (
+                                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                        <p className="text-sm font-medium text-blue-700 mb-1">
+                                          Teacher feedback:
+                                        </p>
+                                        <p className="text-blue-900">
+                                          {answerRecord.teacherFeedback}
+                                        </p>
                                       </div>
                                     )}
+
                                     {question.explanation && (
-                                      <div className="mt-2 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
-                                        <span className="font-medium">
+                                      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                        <p className="text-sm font-medium text-gray-700 mb-1">
                                           Explanation:
-                                        </span>{" "}
-                                        {question.explanation}
+                                        </p>
+                                        <p className="text-gray-900">
+                                          {question.explanation}
+                                        </p>
                                       </div>
                                     )}
                                   </div>
                                 </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     )}
+                  </div>
+                )}
+              </div>
+
+              {!quizSubmitted && !currentItem.completed ? (
+                <div className="p-6 border-t border-gray-200 bg-gray-50 sticky bottom-0">
+                  <div className="flex justify-end">
+                    <button
+                      onClick={submitQuiz}
+                      className="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors shadow-sm"
+                    >
+                      Submit Quiz
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-6 border-t border-gray-200 bg-gray-50 sticky bottom-0">
+                  <div className="flex justify-center">
                     <button
                       onClick={continueLearning}
-                      className="px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium transition-colors"
+                      className="px-8 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium transition-colors shadow-sm"
                     >
                       {hasNextContent ? "Continue Learning" : "Close Quiz"}
                     </button>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
@@ -1863,6 +2090,41 @@ const CoursePlayer = ({ courseId, setActiveView }) => {
                     {isSubmittingRating ? "Submitting..." : "Submit Review"}
                   </button>
                 </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* Waiting for Grading Modal */}
+      <AnimatePresence>
+        {showWaitingModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          >
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 20, opacity: 0 }}
+              className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6"
+            >
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-100 rounded-full mb-4">
+                  <FiClock className="text-yellow-600 text-2xl" />
+                </div>
+                <h2 className="text-2xl font-bold mb-2">Quiz Under Review</h2>
+                <p className="text-gray-600 mb-6">
+                  Your quiz submission is being reviewed by the instructor.
+                  Please check back later for your results.
+                </p>
+                <button
+                  onClick={() => setShowWaitingModal(false)}
+                  className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  OK
+                </button>
               </div>
             </motion.div>
           </motion.div>

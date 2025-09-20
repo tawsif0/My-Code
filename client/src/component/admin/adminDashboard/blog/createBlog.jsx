@@ -12,26 +12,22 @@ function BlogCreate() {
   const [files, setFiles] = useState({ image: null });
   const [form, setForm] = useState({
     title: "",
-    category: "",
+    category: ""
   });
   const [errors, setErrors] = useState({
     title: "",
-    category: "",
+    category: ""
   });
   const [contentHtml, setContentHtml] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
-  const token = localStorage.getItem("token");
-  const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
-
   // Fetch categories from the backend
   const fetchCategories = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:3500/api/blog-categories",
-        { headers: authHeaders }
+        "http://localhost:3500/api/blog-categories"
       );
       setCategories(response.data);
     } catch (err) {
@@ -61,7 +57,6 @@ function BlogCreate() {
     return () => {
       window.removeEventListener("blogCategoryUpdated", handleCategoryUpdate);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Validation function
@@ -105,12 +100,10 @@ function BlogCreate() {
 
     if (!contentHtml || contentHtml === "<p><br></p>") {
       setErrors((prev) => ({ ...prev, content: "Blog content is required" }));
-      toast.error("Blog content is required");
       isValid = false;
     }
 
     if (!files.image) {
-      toast.error("Blog image is required");
       isValid = false;
     }
 
@@ -126,7 +119,6 @@ function BlogCreate() {
     }
 
     if (!files.image) {
-      toast.error("Please upload an image");
       return;
     }
 
@@ -142,14 +134,14 @@ function BlogCreate() {
 
       await axios.post("http://localhost:3500/api/blogs", formData, {
         headers: {
-          "Content-Type": "multipart/form-data",
-          ...authHeaders,
-        },
+          "Content-Type": "multipart/form-data"
+        }
       });
 
       // Reset form
-      setForm({ title: "", content: "", category: "" });
+      setForm({ title: "", category: "" });
       setFiles({ image: null });
+      setContentHtml("");
 
       toast.success("Blog post created successfully", { id: toastId });
     } catch (err) {
@@ -354,43 +346,51 @@ function BlogCreate() {
                 <FiFileText className="mr-2 text-gray-500" /> Content *
               </label>
 
-              <ReactQuill
-                value={contentHtml}
-                onChange={setContentHtml}
-                placeholder="Write your blog content here..."
-                className="bg-white min-h-[200px]"
-                modules={{
-                  toolbar: [
-                    [{ header: [1, 2, 3, false] }],
-                    ["bold", "italic", "underline", "strike", "blockquote"],
-                    [{ list: "ordered" }, { list: "bullet" }],
-                    ["link", "image"],
-                    ["clean"],
-                  ],
-                }}
-                formats={[
-                  "header",
-                  "bold",
-                  "italic",
-                  "underline",
-                  "strike",
-                  "blockquote",
-                  "list",
-                  "bullet",
-                  "link",
-                  "image",
-                ]}
-                onBlur={() => {
-                  if (!contentHtml || contentHtml === "<p><br></p>") {
-                    setErrors((prev) => ({
-                      ...prev,
-                      content: "Blog content is required",
-                    }));
-                  } else {
-                    setErrors((prev) => ({ ...prev, content: "" }));
-                  }
-                }}
-              />
+              <div
+                className={`bg-white min-h-[200px] rounded-lg border ${
+                  errors.content ? "border-red-500" : "border-gray-300"
+                }`}
+              >
+                <ReactQuill
+                  value={contentHtml}
+                  onChange={(val) => {
+                    setContentHtml(val);
+                    if (val && val !== "<p><br></p>") {
+                      setErrors((prev) => ({ ...prev, content: "" }));
+                    }
+                  }}
+                  placeholder="Write your blog content here..."
+                  modules={{
+                    toolbar: [
+                      [{ header: [1, 2, 3, false] }],
+                      ["bold", "italic", "underline", "strike", "blockquote"],
+                      [{ list: "ordered" }, { list: "bullet" }],
+                      ["link", "image"],
+                      ["clean"]
+                    ]
+                  }}
+                  formats={[
+                    "header",
+                    "bold",
+                    "italic",
+                    "underline",
+                    "strike",
+                    "blockquote",
+                    "list",
+                    "bullet",
+                    "link",
+                    "image"
+                  ]}
+                  onBlur={() => {
+                    if (!contentHtml || contentHtml === "<p><br></p>") {
+                      setErrors((prev) => ({
+                        ...prev,
+                        content: "Blog content is required"
+                      }));
+                    }
+                  }}
+                />
+              </div>
 
               {errors.content && (
                 <motion.p

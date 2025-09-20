@@ -19,20 +19,20 @@ import {
   FiFlag,
   FiEdit,
   FiBookOpen,
-  FiPhoneCall,
+  FiPhoneCall
 } from "react-icons/fi";
 
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { useAdmin } from "../../../context/useAdmin";
+import { useAuth } from "../../../context/useAuth";
 
 const Sidebar = ({
   activeView,
   setActiveView,
   notificationCount = 0,
-  setNotificationCount,
+  setNotificationCount
 }) => {
   const base_url = import.meta.env.VITE_API_KEY_Base_URL;
   const [isOpen, setIsOpen] = useState(true);
@@ -41,12 +41,12 @@ const Sidebar = ({
   const role = localStorage.getItem("role") || ""; // Default empty string
   const navigate = useNavigate();
   const admin_info = JSON.parse(localStorage.getItem("admin") || "null"); // Safe parsing
-  const { userData = {}, loading, error, fetchUserProfile } = useAdmin();
+  const { adminData, adminLoading, adminError, fetchAdminProfile } = useAuth();
   const token = localStorage.getItem("token");
 
   useEffect(() => {
     if (admin_info?._id && token) {
-      fetchUserProfile();
+      fetchAdminProfile();
     }
   }, []);
   useEffect(() => {
@@ -54,7 +54,7 @@ const Sidebar = ({
       const response = await axios.get(
         `${base_url}/api/admin/notifications/count`,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token}` }
         }
       );
       setNotificationCount(response.data.count);
@@ -73,8 +73,8 @@ const Sidebar = ({
       icon: <FiHome />,
       children: [
         { name: "Create Hero ", component: "createHero" },
-        { name: "Modify Hero ", component: "modifyHero" },
-      ],
+        { name: "Modify Hero ", component: "modifyHero" }
+      ]
     },
     {
       name: "Events",
@@ -82,8 +82,8 @@ const Sidebar = ({
       children: [
         { name: "Create Event", component: "createEvent" },
         { name: "Modify Event", component: "modifyEvent" },
-        { name: "Event Users", component: "eventUser" },
-      ],
+        { name: "Event Users", component: "eventUser" }
+      ]
     },
     {
       name: "Country",
@@ -92,8 +92,8 @@ const Sidebar = ({
         { name: "Criteria ", component: "criteriaCountry" },
         { name: "Modify & List Ctiterias ", component: "modifyListCtiterias" },
         { name: "Country Create ", component: "createCountry" },
-        { name: "Modify Country ", component: "modifyCountry" },
-      ],
+        { name: "Modify Country ", component: "modifyCountry" }
+      ]
     },
     {
       name: "Blog",
@@ -102,8 +102,8 @@ const Sidebar = ({
         { name: "Blog Category ", component: "categoryBlog" },
         { name: "Modify Blog Category ", component: "modifyBlogCategory" },
         { name: "Blog Create ", component: "createBlog" },
-        { name: "Modify Blog ", component: "modifyBlog" },
-      ],
+        { name: "Modify Blog ", component: "modifyBlog" }
+      ]
     },
     {
       name: "News",
@@ -112,29 +112,29 @@ const Sidebar = ({
         { name: "News Category ", component: "categoryNews" },
         { name: "Modify News Category ", component: "modifyNewsCategory" },
         { name: "News Create ", component: "createNews" },
-        { name: "Modify News ", component: "modifyNews" },
-      ],
+        { name: "Modify News ", component: "modifyNews" }
+      ]
     },
     {
       name: "Contact User",
       icon: <FiPhoneCall />,
-      children: [{ name: "User List", component: "userList" }],
+      children: [{ name: "User List", component: "userList" }]
     },
     {
       name: "Teachers",
       icon: <FiUsers />,
       children: [
         { name: "Create Teacher", component: "TeacherRegistration" },
-        { name: "Teachers List ", component: "teacherList" },
-      ],
+        { name: "Teachers List ", component: "teacherList" }
+      ]
     },
     {
       name: "Students",
       icon: <FiUsers />,
       children: [
         { name: "Create Student", component: "StudentRegistration" },
-        { name: "Students List", component: "studentList" },
-      ],
+        { name: "Students List", component: "studentList" }
+      ]
     },
     {
       name: "Courses",
@@ -143,28 +143,28 @@ const Sidebar = ({
         { name: "Create Category ", component: "createCategory" },
         { name: "Modify & list Categories ", component: "modifyCategory" },
         { name: "Create Courses", component: "createCourse" },
-        { name: "Course List", component: "courseList" },
-      ],
+        { name: "Course List", component: "courseList" }
+      ]
     },
     {
       name: "Employees",
       icon: <FiUser />,
       children: [
         { name: "Create Employee", component: "employeeRegistration" },
-        { name: "Employee List", component: "employeeList" },
-      ],
+        { name: "Employee List", component: "employeeList" }
+      ]
     },
     {
       name: "Consultancy",
       icon: <FiBook />,
       children: [
-        { name: "Consultancy Mangement", component: "consultancyMangement" },
-      ],
+        { name: "Consultancy Mangement", component: "consultancyMangement" }
+      ]
     },
     {
       name: "Visa Processing",
       icon: <FiGlobe />,
-      children: [{ name: "Visa Requests", component: "visaRequests" }],
+      children: [{ name: "Visa Requests", component: "visaRequests" }]
     },
     {
       name: "notifications",
@@ -182,9 +182,9 @@ const Sidebar = ({
           )}
         </div>
       ),
-      component: "notifications",
+      component: "notifications"
     },
-    { name: "settings", icon: <FiSettings />, component: "settings" },
+    { name: "settings", icon: <FiSettings />, component: "settings" }
   ];
 
   // Safely add Subadmin menu only for Admins
@@ -194,14 +194,14 @@ const Sidebar = ({
       icon: <FiUsers />,
       children: [
         { name: "create subadmin", component: "subadminCreate" },
-        { name: "list subadmin", component: "subadminList" },
-      ],
+        { name: "list subadmin", component: "subadminList" }
+      ]
     });
   }
   const toggleMenu = (menuName) => {
     setExpandedMenus((prev) => ({
       ...prev,
-      [menuName]: !prev[menuName],
+      [menuName]: !prev[menuName]
     }));
   };
 
@@ -250,11 +250,11 @@ const Sidebar = ({
         ) : (
           <div
             className={`w-8 h-8 rounded-full ${
-              userData?.avatarColor ||
+              adminData?.avatarColor ||
               (role === "admin" ? "bg-gray-800" : "bg-gray-900")
             } text-white flex items-center justify-center font-bold shadow-md`}
           >
-            {userData?.username?.charAt(0)?.toUpperCase() ||
+            {adminData?.username?.charAt(0)?.toUpperCase() ||
               (role === "admin" ? "A" : "S")}
           </div>
         )}
@@ -364,11 +364,11 @@ const Sidebar = ({
         >
           <div
             className={`w-10 h-10 rounded-full text-white flex items-center justify-center font-bold shadow-md flex-shrink-0 ${
-              userData?.avatarColor ||
+              adminData?.avatarColor ||
               (role === "admin" ? "bg-gray-800" : "bg-gray-900")
             }`}
           >
-            {userData?.username?.charAt(0)?.toUpperCase() ||
+            {adminData?.username?.charAt(0)?.toUpperCase() ||
               (role === "admin" ? "A" : "S")}
           </div>
 
@@ -380,7 +380,7 @@ const Sidebar = ({
             >
               <div className="flex items-center justify-between">
                 <p className="text-sm font-[700] text-gray-900 truncate">
-                  {userData?.username}
+                  {adminData?.username}
                 </p>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -393,7 +393,7 @@ const Sidebar = ({
                 </motion.button>
               </div>
               <p className="text-xs text-gray-600 font-[600] truncate mt-0.5">
-                {userData?.email || "No email found"}
+                {adminData?.email || "No email found"}
               </p>
             </motion.div>
           )}

@@ -5,12 +5,12 @@ import { toast } from "react-toastify";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 
-const BlogPost = () => {
+const NewsPost = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [post, setPost] = useState(null);
+  const [news, setNews] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [relatedPosts, setRelatedPosts] = useState([]);
+  const [relatedNews, setRelatedNews] = useState([]);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [scrollY, setScrollY] = useState(0);
 
@@ -21,18 +21,18 @@ const BlogPost = () => {
   }, []);
 
   useEffect(() => {
-    const fetchBlogPost = async () => {
+    const fetchNewsPost = async () => {
       try {
         setLoading(true);
         const response = await axios.get(
-          `http://localhost:3500/api/blogs/${id}`
+          `http://localhost:3500/api/news/${id}`
         );
-        const blogPost = response.data;
-        setPost(blogPost);
+        const newsPost = response.data.data;
+        setNews(newsPost);
 
         // Process content to add link icons
-        if (blogPost.content) {
-          const processedContent = blogPost.content.replace(
+        if (newsPost.description) {
+          const processedContent = newsPost.description.replace(
             /<a\s+(?:[^>]*?\s+)?href=(["'])(.*?)\1[^>]*>(.*?)<\/a>/gi,
             (match, quote, href, text) => {
               // Remove any existing link icons to prevent duplicates
@@ -46,37 +46,39 @@ const BlogPost = () => {
       `;
             }
           );
-          blogPost.processedContent = processedContent;
+          newsPost.processedContent = processedContent;
         }
 
-        // Fetch related posts from the same category
+        // Fetch related news from the same category
         try {
           const relatedResponse = await axios.get(
-            `http://localhost:3500/api/blogs?category=${blogPost.category._id}`
+            `http://localhost:3500/api/news/related/${newsPost.category._id}?exclude=${id}&limit=3`
           );
-          // Filter out the current post and limit to 3
+          setRelatedNews(relatedResponse.data); // backend already limits
+
+          // Filter out the current news and limit to 3
           const filteredRelated = relatedResponse.data
-            .filter((p) => p._id !== id)
+            .filter((n) => n._id !== id)
             .slice(0, 3);
-          setRelatedPosts(filteredRelated);
+          setRelatedNews(filteredRelated);
         } catch (relatedError) {
-          console.error("Error fetching related posts:", relatedError);
-          setRelatedPosts([]);
+          console.error("Error fetching related news:", relatedError);
+          setRelatedNews([]);
         }
 
         setLoading(false);
       } catch (err) {
-        console.error("Error fetching blog post:", err);
+        console.error("Error fetching news post:", err);
         toast.error(
           err.response?.data?.message ||
             err.message ||
-            "Failed to load blog post"
+            "Failed to load news post"
         );
         setLoading(false);
       }
     };
 
-    fetchBlogPost();
+    fetchNewsPost();
   }, [id]);
 
   // Format date function
@@ -87,28 +89,22 @@ const BlogPost = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white relative overflow-hidden">
-        {/* background gradient animation */}
+      <div className="min-h-screen bg-white flex items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-gray-100 to-gray-200 animate-pulse"></div>
-
-        {/* loader container */}
-        <div className="relative z-10 flex flex-col items-center text-center">
-          {/* spinning rings */}
+        <div className="relative z-10 text-center">
           <div className="relative">
             <div className="w-20 h-20 border-4 border-gray-300 border-t-gray-500 rounded-full animate-spin mb-6"></div>
-            <div className="absolute inset-0 w-20 h-20 border-4 border-transparent border-t-gray-700 rounded-full animate-spin [animation-delay:150ms]"></div>
+            <div className="absolute inset-0 w-20 h-20 border-4 border-transparent border-t-gray-700 rounded-full animate-spin animation-delay-150"></div>
           </div>
-
-          {/* text */}
           <div className="text-gray-800 text-xl font-medium tracking-wide">
-            Loading incredible content...
+            Loading news content...
           </div>
         </div>
       </div>
     );
   }
 
-  if (!post) {
+  if (!news) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center p-8 bg-gray-100 rounded-3xl border border-gray-300">
@@ -130,10 +126,11 @@ const BlogPost = () => {
             </div>
           </div>
           <h1 className="text-3xl font-bold text-gray-800 mb-4">
-            Oops! Blog Not Found
+            Oops! News Not Found
           </h1>
           <p className="text-gray-600 mb-8">
-            The blog you're looking for has vanished into the digital void.
+            The news article you're looking for has vanished into the digital
+            void.
           </p>
           <button
             onClick={() => navigate(-1)}
@@ -178,7 +175,7 @@ const BlogPost = () => {
         <div className="flex flex-col-reverse xl:flex-row gap-8">
           {/* Left Column - Content */}
           <div className="lg:pr-8">
-            {/* Blog Header */}
+            {/* News Header */}
             <motion.header
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -188,12 +185,12 @@ const BlogPost = () => {
               <div className="cursor-pointer mt-4 mb-4 px-4 py-1.5 bg-gradient-to-r from-[#004080] via-[#013870] to-[#003161] text-white font-semibold rounded-full shadow-xl inline-flex items-center justify-center transform hover:scale-105 hover:shadow-2xl transition-all duration-300 group relative overflow-hidden">
                 {/* Pulsing dot */}
                 <span className="w-2.5 h-2.5 bg-white rounded-full mr-3 animate-ping-slow"></span>
-                <span className="relative z-10">{post.category.name}</span>
+                <span className="relative z-10">{news.category.name}</span>
                 <span className="absolute inset-0 bg-gradient-to-r from-white/10 via-white/20 to-white/10 opacity-0 group-hover:opacity-40 rounded-full transition-opacity duration-500 pointer-events-none"></span>
               </div>
 
               <h1 className="text-5xl md:text-7xl font-black text-gray-900 mb-6 mt-2 tracking-tight">
-                {post.title}
+                {news.title}
               </h1>
 
               <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-8 space-y-4 sm:space-y-0 text-gray-600 mb-8">
@@ -215,16 +212,16 @@ const BlogPost = () => {
                     </svg>
                   </div>
                   <time
-                    dateTime={post.createdAt}
+                    dateTime={news.createdAt}
                     className="font-medium text-sm sm:text-base"
                   >
-                    {formatDate(post.createdAt)}
+                    {formatDate(news.createdAt)}
                   </time>
                 </div>
               </div>
             </motion.header>
 
-            {/* Blog Content */}
+            {/* News Content */}
             <motion.article
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -235,7 +232,7 @@ const BlogPost = () => {
                 <div
                   className="prose prose-lg max-w-none"
                   dangerouslySetInnerHTML={{
-                    __html: post.processedContent || post.content
+                    __html: news.processedContent || news.description
                   }}
                 />
               </div>
@@ -265,7 +262,7 @@ const BlogPost = () => {
                       />
                     </svg>
                   </span>
-                  Share this blog
+                  Share this news
                 </h3>
 
                 {/* Use flex-wrap for mobile */}
@@ -314,8 +311,8 @@ const BlogPost = () => {
               </div>
             </motion.section>
 
-            {/* Related Posts */}
-            {relatedPosts.length > 0 && (
+            {/* Related News */}
+            {relatedNews.length > 0 && (
               <motion.section
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -323,15 +320,15 @@ const BlogPost = () => {
               >
                 <div className="mb-10">
                   <h2 className="text-4xl font-black text-gray-900 mb-4">
-                    More BLogs
+                    More News
                   </h2>
-                  <div className="h-1 w-20 bg-gradient-to-r from-gray-600 to-gray-800 rounded-full"></div>
+                  <div className="h-1 w-20 bg-gradient-to-r from-gray-600 to-gray-极客时间 800 rounded-full"></div>
                 </div>
 
                 <div className="space-y-6">
-                  {relatedPosts.map((relatedPost, index) => (
+                  {relatedNews.map((relatedItem, index) => (
                     <motion.article
-                      key={relatedPost._id}
+                      key={relatedItem._id}
                       initial={{ opacity: 0, x: -30 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.6, delay: index * 0.1 }}
@@ -339,27 +336,28 @@ const BlogPost = () => {
                       className="group relative overflow-hidden bg-gray-50 rounded-2xl border border-gray-200 hover:border-gray-300 transition-all duration-500 shadow-lg hover:shadow-xl"
                     >
                       <Link
-                        to={`/blog/${relatedPost._id}`}
+                        to={`/news/${relatedItem._id}`}
                         className="block p-6"
                       >
                         <div className="flex gap-6">
                           <div className="relative flex-shrink-0 overflow-hidden rounded-xl">
                             <img
-                              src={`http://localhost:3500/blogs/${relatedPost.image}`}
-                              alt={relatedPost.title}
+                              src={`http://localhost:3500/news/${relatedItem.image}`}
+                              alt={relatedItem.title}
                               className="w-32 h-32 object-cover group-hover:scale-110 transition-transform duration-500"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-gray-200 text-gray-700 border border-gray-300 mb-3">
-                              {relatedPost.category.name}
+                              {relatedItem.category.name}
                             </div>
                             <h3 className="text-xl font-bold text-gray-900 group-hover:text-gray-700 transition-all duration-300 line-clamp-2 mb-3">
-                              {relatedPost.title}
+                              {relatedItem.title}
                             </h3>
                             <div className="flex items-center text-sm text-gray-600">
-                              <time>{formatDate(relatedPost.createdAt)}</time>
+                              <time>{formatDate(relatedItem.createdAt)}</time>
+                              <span className="mx-3 w-1 h-1 bg-gray-400 rounded-full"></span>
                             </div>
                           </div>
                         </div>
@@ -380,31 +378,33 @@ const BlogPost = () => {
               className="sticky top-32"
               style={{ transform: `translateY(${scrollY * 0.1}px)` }}
             >
-              <div className="relative group w-full">
+              <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-gray-400 to-gray-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
                 <div className="cursor-pointer relative bg-white rounded-3xl overflow-hidden shadow-2xl border border-gray-200 w-full aspect-video lg:h-[250px]">
                   <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent z-10"></div>
                   {!isImageLoaded && (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                      <svg
-                        className="w-16 h-16 text-gray-400 animate-pulse"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1}
-                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
+                    <div className="aspect-w-4 aspect-h-5 flex items-center justify-center bg-gray-100">
+                      <div className="h-96 w-full flex items-center justify-center">
+                        <svg
+                          className="w-16 h-16 text-gray-400 animate-pulse"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1}
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
+                      </div>
                     </div>
                   )}
                   <img
-                    src={`http://localhost:3500/blogs/${post.image}`}
-                    alt={post.title}
-                    className={`w-full h-full object-cover transition-all duration-1000 group-hover:scale-105 ${
+                    src={`http://localhost:3500/news/${news.image}`}
+                    alt={news.title}
+                    className={`w-full h-auto object-cover transition-all duration-1000 group-hover:scale-105 ${
                       isImageLoaded ? "opacity-100" : "opacity-0"
                     }`}
                     onLoad={() => setIsImageLoaded(true)}
@@ -412,7 +412,7 @@ const BlogPost = () => {
                 </div>
               </div>
 
-              {/* Enhanced Blog Info Card */}
+              {/* Enhanced News Info Card */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -437,12 +437,12 @@ const BlogPost = () => {
                         />
                       </svg>
                     </span>
-                    Blog Insights
+                    News Insights
                   </h3>
                   <div className="space-y-4">
                     {[
-                      { label: "Category", value: post.category.name },
-                      { label: "Published", value: formatDate(post.createdAt) }
+                      { label: "Category", value: news.category.name },
+                      { label: "Published", value: formatDate(news.createdAt) }
                     ].map((item, index) => (
                       <motion.div
                         key={item.label}
@@ -470,4 +470,4 @@ const BlogPost = () => {
   );
 };
 
-export default BlogPost;
+export default NewsPost;

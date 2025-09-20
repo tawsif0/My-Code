@@ -13,10 +13,9 @@ const Events = () => {
   const [showAllEvents, setShowAllEvents] = useState(false);
   const [sectionRef, inView] = useInView({
     threshold: 0.1,
-    triggerOnce: true,
+    triggerOnce: true
   });
 
-  // Fetch only launched events from backend
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -35,7 +34,6 @@ const Events = () => {
   }, [base_url]);
 
   useEffect(() => {
-    // Make all event description links open in a new tab
     const links = document.querySelectorAll(".prose a");
     links.forEach((link) => {
       link.setAttribute("target", "_blank");
@@ -45,13 +43,11 @@ const Events = () => {
 
   const displayedEvents = showAllEvents ? events : events.slice(0, 3);
 
-  // Format date to be more readable
   const formatDate = (dateString) => {
     const options = { month: "short", day: "numeric", year: "numeric" };
     return new Date(dateString).toLocaleDateString("en-US", options);
   };
 
-  // Format time to 12-hour format
   const formatTime = (timeString) => {
     if (!timeString) return "";
     const [hours, minutes] = timeString.split(":");
@@ -61,16 +57,15 @@ const Events = () => {
     return `${formattedHour}:${minutes} ${ampm}`;
   };
 
-  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
         staggerChildren: 0.1,
-        when: "beforeChildren",
-      },
-    },
+        when: "beforeChildren"
+      }
+    }
   };
 
   const itemVariants = {
@@ -81,9 +76,9 @@ const Events = () => {
       transition: {
         type: "spring",
         stiffness: 100,
-        damping: 10,
-      },
-    },
+        damping: 10
+      }
+    }
   };
 
   const headerVariants = {
@@ -94,9 +89,9 @@ const Events = () => {
       transition: {
         type: "spring",
         stiffness: 100,
-        delay: 0.2,
-      },
-    },
+        delay: 0.2
+      }
+    }
   };
 
   const noEventsVariants = {
@@ -107,9 +102,9 @@ const Events = () => {
       transition: {
         type: "spring",
         stiffness: 100,
-        delay: 0.5,
-      },
-    },
+        delay: 0.5
+      }
+    }
   };
 
   if (loading) {
@@ -145,7 +140,6 @@ const Events = () => {
   return (
     <section ref={sectionRef} className="py-36">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
         <motion.div
           initial="hidden"
           animate={inView ? "visible" : "hidden"}
@@ -173,27 +167,28 @@ const Events = () => {
           </motion.p>
         </motion.div>
 
-        {/* Events Grid or No Events State */}
         {events.length > 0 ? (
           <>
             <motion.div
               initial="hidden"
               animate={inView ? "visible" : "hidden"}
               variants={containerVariants}
-              className={`grid gap-8 justify-center ${
-                displayedEvents.length === 1
-                  ? "grid-cols-1"
-                  : displayedEvents.length === 2
-                  ? "grid-cols-1 md:grid-cols-2"
-                  : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+              className={`${
+                displayedEvents.length === 2
+                  ? "flex flex-col lg:flex-row lg:justify-between w-full lg:px-20 lg:gap-7 gap-6"
+                  : displayedEvents.length === 1
+                  ? "flex justify-center"
+                  : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-center"
               }`}
             >
-              {displayedEvents.map((event) => (
+              {displayedEvents.map((event, index) => (
                 <motion.div
                   key={event._id}
                   variants={itemVariants}
                   whileHover={{ y: -5 }}
-                  className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col h-full w-full max-w-sm"
+                  className={`bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col h-full w-full sm:max-w-[300px] md:max-w-[350px] lg:max-w-sm
+        ${displayedEvents.length === 2 && index === 0 ? "lg:ml-auto" : ""}
+        ${displayedEvents.length === 2 && index === 1 ? "lg:mr-auto" : ""}`}
                 >
                   {/* Event Image */}
                   <div className="relative h-48">
@@ -215,7 +210,6 @@ const Events = () => {
                       {event.title}
                     </h3>
 
-                    {/* Date with Calendar Icon */}
                     <div className="flex items-center mb-3 text-gray-600">
                       <FiCalendar className="w-4 h-4 text-[#004080] mr-2 mt-0.5 flex-shrink-0" />
                       <span className="text-sm font-medium">
@@ -226,7 +220,6 @@ const Events = () => {
                       </span>
                     </div>
 
-                    {/* Time with Clock Icon */}
                     <div className="flex items-center mb-3 text-gray-600">
                       <FiClock className="w-4 h-4 text-[#004080] mr-2 mt-0.5 flex-shrink-0" />
                       <span className="text-sm font-medium">
@@ -241,7 +234,16 @@ const Events = () => {
                     </div>
 
                     <div
-                      className="mb-6 text-gray-700 flex-grow text-sm prose prose-sm max-w-none line-clamp-2"
+                      className="mb-6 text-gray-700 flex-grow text-sm prose prose-lg leading-relaxed
+    prose-headings:text-gray-900 prose-headings:font-bold
+    prose-p:mb-4 prose-img:rounded-xl prose-img:shadow-md
+    prose-ul:list-disc prose-ul:pl-6 prose-ul:mb-4
+    prose-ol:list-decimal prose-ol:pl-6 prose-ol:mb-4
+    prose-li:mb-2
+    prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-800 prose-a:inline-flex prose-a:items-center prose-a:gap-1
+    prose-strong:font-semibold prose-strong:text-gray-900
+    prose-blockquote:border-l-blue-600 prose-blockquote:bg-gray-100 prose-blockquote:px-6 prose-blockquote:py-4 prose-blockquote:rounded-r-lg
+                  max-w-none line-clamp-2"
                       dangerouslySetInnerHTML={{ __html: event.description }}
                     />
 
@@ -258,7 +260,6 @@ const Events = () => {
               ))}
             </motion.div>
 
-            {/* Show More/Less Button */}
             {events.length > 3 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -278,7 +279,6 @@ const Events = () => {
             )}
           </>
         ) : (
-          // No Events State
           <motion.div
             initial="hidden"
             animate={inView ? "visible" : "hidden"}

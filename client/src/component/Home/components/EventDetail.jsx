@@ -10,7 +10,7 @@ import {
   FiArrowLeft,
   FiUsers,
   FiDollarSign,
-  FiTag,
+  FiTag
 } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 
@@ -26,12 +26,12 @@ const EventDetail = () => {
     userName: "",
     userEmail: "",
     userPhone: "",
-    message: "",
+    message: ""
   });
   const [errors, setErrors] = useState({
     userName: "",
     userEmail: "",
-    userPhone: "",
+    userPhone: ""
   });
 
   // Fetch event details
@@ -67,7 +67,7 @@ const EventDetail = () => {
     const newErrors = {
       userName: "",
       userEmail: "",
-      userPhone: "",
+      userPhone: ""
     };
 
     // Name validation
@@ -304,12 +304,16 @@ const EventDetail = () => {
                 </h3>
                 <div
                   className="prose prose-lg max-w-none text-gray-700 leading-relaxed
-                    prose-ul:list-disc prose-ol:list-decimal prose-li:ml-5
-                    prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-800
-                    prose-headings:text-gray-900 prose-headings:font-bold
-                    prose-p:mb-4 prose-img:rounded-xl prose-img:shadow-md"
+    prose-headings:text-gray-900 prose-headings:font-bold
+    prose-p:mb-4 prose-img:rounded-xl prose-img:shadow-md
+    prose-ul:list-disc prose-ul:pl-6 prose-ul:mb-4
+    prose-ol:list-decimal prose-ol:pl-6 prose-ol:mb-4
+    prose-li:mb-2
+    prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-800 prose-a:inline-flex prose-a:items-center prose-a:gap-1
+    prose-strong:font-semibold prose-strong:text-gray-900
+    prose-blockquote:border-l-blue-600 prose-blockquote:bg-gray-100 prose-blockquote:px-6 prose-blockquote:py-4 prose-blockquote:rounded-r-lg"
                   dangerouslySetInnerHTML={{
-                    __html: event.description,
+                    __html: event.description
                   }}
                 />
               </motion.div>
@@ -352,7 +356,7 @@ const EventDetail = () => {
                         onChange={(e) => {
                           setFormData({
                             ...formData,
-                            userName: e.target.value,
+                            userName: e.target.value
                           });
                           if (errors.userName) {
                             setErrors({ ...errors, userName: "" });
@@ -391,7 +395,7 @@ const EventDetail = () => {
                         onChange={(e) => {
                           setFormData({
                             ...formData,
-                            userEmail: e.target.value,
+                            userEmail: e.target.value
                           });
                           if (errors.userEmail) {
                             setErrors({ ...errors, userEmail: "" });
@@ -430,7 +434,7 @@ const EventDetail = () => {
                         onChange={(e) => {
                           setFormData({
                             ...formData,
-                            userPhone: e.target.value,
+                            userPhone: e.target.value
                           });
                           if (errors.userPhone) {
                             setErrors({ ...errors, userPhone: "" });
@@ -469,7 +473,7 @@ const EventDetail = () => {
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            message: e.target.value,
+                            message: e.target.value
                           })
                         }
                         className="w-full px-5 py-2 rounded-xl border-2 border-gray-300 focus:border-[#004080] bg-white hover:border-gray-400 transition-all duration-300 focus:outline-none focus:ring-0 resize-none shadow-sm hover:shadow-md"
@@ -483,7 +487,7 @@ const EventDetail = () => {
                     <motion.button
                       whileHover={{
                         scale: 1.02,
-                        boxShadow: "0 20px 40px rgba(0,0,0,0.12)",
+                        boxShadow: "0 20px 40px rgba(0,0,0,0.12)"
                       }}
                       whileTap={{ scale: 0.98 }}
                       type="submit"
@@ -521,11 +525,6 @@ const EventDetail = () => {
                         </span>
                       )}
                     </motion.button>
-
-                    <p className="text-xs text-gray-500 text-center mt-4">
-                      By registering, you agree to receive event updates via
-                      email
-                    </p>
                   </div>
                 </form>
               </div>

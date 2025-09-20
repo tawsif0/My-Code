@@ -9,7 +9,7 @@ import {
   FiChevronDown,
   FiChevronUp,
   FiLogOut,
-  FiLayers,
+  FiLayers
 } from "react-icons/fi";
 import axios from "axios";
 import { toast } from "react-hot-toast";
@@ -26,7 +26,7 @@ const Sidebar = ({ activeView, setActiveView }) => {
     email: "",
     role: "",
     avatar: "",
-    profile_photo: "",
+    profile_photo: ""
   });
   const [loading, setLoading] = useState(true);
   const [expandedMenus, setExpandedMenus] = useState({});
@@ -48,8 +48,8 @@ const Sidebar = ({ activeView, setActiveView }) => {
           `${base_url}/api/teacher/teacher-profile/${teacherId._id}`,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
-            },
+              Authorization: `Bearer ${token}`
+            }
           }
         );
 
@@ -60,7 +60,7 @@ const Sidebar = ({ activeView, setActiveView }) => {
             email: teacher.email || "",
             role: "Professor",
             avatar: getInitials(teacher.name || "T"),
-            profile_photo: teacher.profile_photo || "",
+            profile_photo: teacher.profile_photo || ""
           });
         }
       } catch (error) {
@@ -89,22 +89,22 @@ const Sidebar = ({ activeView, setActiveView }) => {
       icon: <FiLayers />,
       children: [
         { name: "Create Course", component: "createCourse" },
-        { name: "Course List", component: "courseList" },
-      ],
+        { name: "Course List", component: "courseList" }
+      ]
     },
     {
       name: "Courses paper",
       icon: <MdGolfCourse size={18} />,
-      children: [{ name: "Answer Paper ", component: "answerPaper" }],
+      children: [{ name: "Answer Paper ", component: "answerPaper" }]
     },
     { name: "Live Class", icon: <MdClass size={18} />, component: "liveClass" },
-    { name: "settings", icon: <FiSettings />, component: "settings" },
+    { name: "settings", icon: <FiSettings />, component: "settings" }
   ];
 
   const toggleMenu = (menuName) => {
     setExpandedMenus((prev) => ({
       ...prev,
-      [menuName]: !prev[menuName],
+      [menuName]: !prev[menuName]
     }));
   };
 
@@ -261,7 +261,7 @@ const Sidebar = ({ activeView, setActiveView }) => {
           {userData.profile_photo ? (
             <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-md">
               <img
-                src={`${base_url}/uploads/teachers/${userData.profile_photo}`}
+                src={`${base_url}/teachers/${userData.profile_photo}`}
                 alt="Profile"
                 className="w-full h-full object-cover"
               />

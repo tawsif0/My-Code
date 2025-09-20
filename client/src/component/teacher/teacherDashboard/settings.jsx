@@ -14,7 +14,7 @@ import {
   FiBriefcase,
   FiDollarSign,
   FiFileText,
-  FiLinkedin,
+  FiLinkedin
 } from "react-icons/fi";
 import axios from "axios";
 import { toast } from "react-hot-toast";
@@ -31,7 +31,7 @@ const TeacherSettings = () => {
     linkedin_url: "",
     hourly_rate: 0,
     profile_photo: "",
-    createdAt: "",
+    createdAt: ""
   });
   const [editMode, setEditMode] = useState({
     full_name: false,
@@ -40,14 +40,14 @@ const TeacherSettings = () => {
     specialization: false,
     qualifications: false,
     linkedin_url: false,
-    hourly_rate: false,
+    hourly_rate: false
   });
   const [tempData, setTempData] = useState({});
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
-    confirmPassword: "",
+    confirmPassword: ""
   });
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -56,7 +56,7 @@ const TeacherSettings = () => {
   const [loading, setLoading] = useState({
     profile: false,
     password: false,
-    photo: false,
+    photo: false
   });
 
   // Get teacher ID from localStorage
@@ -70,7 +70,7 @@ const TeacherSettings = () => {
     return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
-      day: "numeric",
+      day: "numeric"
     });
   };
 
@@ -82,8 +82,8 @@ const TeacherSettings = () => {
           `${base_url}/api/teacher/teacher-profile/${teacherId}`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("teacherToken")}`,
-            },
+              Authorization: `Bearer ${localStorage.getItem("teacherToken")}`
+            }
           }
         );
 
@@ -97,7 +97,7 @@ const TeacherSettings = () => {
           linkedin_url: data.linkedin_url || "",
           hourly_rate: data.hourly_rate || 0,
           profile_photo: data.profile_photo || "",
-          createdAt: data.createdAt || "",
+          createdAt: data.createdAt || ""
         });
       } catch (error) {
         console.error("Error fetching teacher data:", error);
@@ -147,8 +147,8 @@ const TeacherSettings = () => {
         { [field]: tempData[field] },
         {
           headers: {
-            Authorization: `Bearer ${token}`,
-          },
+            Authorization: `Bearer ${token}`
+          }
         }
       );
 
@@ -201,12 +201,12 @@ const TeacherSettings = () => {
         `${base_url}/api/teacher/update-password/${teacherId}`,
         {
           currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword,
+          newPassword: passwordData.newPassword
         },
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("teacherToken")}`,
-          },
+            Authorization: `Bearer ${localStorage.getItem("teacherToken")}`
+          }
         }
       );
 
@@ -214,7 +214,7 @@ const TeacherSettings = () => {
       setPasswordData({
         currentPassword: "",
         newPassword: "",
-        confirmPassword: "",
+        confirmPassword: ""
       });
       setShowPasswordChange(false);
     } catch (error) {
@@ -241,14 +241,14 @@ const TeacherSettings = () => {
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("teacherToken")}`,
-          },
+            Authorization: `Bearer ${localStorage.getItem("teacherToken")}`
+          }
         }
       );
 
       setTeacherData((prev) => ({
         ...prev,
-        profile_photo: response.data.data.profile_photo,
+        profile_photo: response.data.data.profile_photo
       }));
       toast.success("Profile photo updated successfully!");
     } catch (error) {
@@ -282,7 +282,7 @@ const TeacherSettings = () => {
               <div className="w-24 h-24 rounded-full bg-gray-100 overflow-hidden border-2 border-gray-300 flex items-center justify-center">
                 {teacherData.profile_photo ? (
                   <img
-                    src={`${base_url}/uploads/teachers/${teacherData.profile_photo}`}
+                    src={`${base_url}/teachers/${teacherData.profile_photo}`}
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />
@@ -798,7 +798,7 @@ const TeacherSettings = () => {
                           className="cursor-pointer w-full px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
                           whileHover={{
                             scale: 1.005,
-                            boxShadow: "0px 4px 15px rgba(0, 0, 0, 0.2)",
+                            boxShadow: "0px 4px 15px rgba(0, 0, 0, 0.2)"
                           }}
                           whileTap={{ scale: 1.005 }}
                           initial={{ opacity: 0, y: 10 }}

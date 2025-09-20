@@ -1,175 +1,200 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
-
-// Dummy course images (you can replace with actual image imports)
-const courseImages = [
-  "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
-  "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
-  "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
-  "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
-  "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
-  "https://images.unsplash.com/photo-1523240795612-9a054b0db644?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
-];
+import axios from "axios";
+import { toast } from "react-toastify";
+import {
+  FiBookOpen,
+  FiVideo,
+  FiUsers,
+  FiClock,
+  FiStar,
+  FiEye
+} from "react-icons/fi";
 
 const Courses = () => {
   const [activeTab, setActiveTab] = useState("free");
   const [hoveredCourse, setHoveredCourse] = useState(null);
   const [showAllCourses, setShowAllCourses] = useState(false);
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [sectionRef, sectionInView] = useInView({
     threshold: 0.1,
     triggerOnce: true
   });
+  const [categories, setCategories] = useState([]);
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [filterLevel, setFilterLevel] = useState("all");
 
-  const freeCourses = [
-    {
-      id: 1,
-      title: "IELTS Preparation",
-      description:
-        "Comprehensive course covering all sections of the IELTS exam with practice materials and mock tests.",
-      duration: "4 weeks",
-      lessons: 20,
-      icon: "📝",
-      image: courseImages[0],
-      level: "Beginner"
-    },
-    {
-      id: 2,
-      title: "SAT Crash Course",
-      description:
-        "Essential strategies and practice for the SAT exam with focus on Math and Evidence-Based Reading.",
-      duration: "3 weeks",
-      lessons: 15,
-      icon: "🧮",
-      image: courseImages[1],
-      level: "Intermediate"
-    },
-    {
-      id: 3,
-      title: "GRE Quantitative",
-      description:
-        "Master the quantitative section of GRE with our focused training modules and practice tests.",
-      duration: "5 weeks",
-      lessons: 25,
-      icon: "📊",
-      image: courseImages[2],
-      level: "Advanced"
-    },
-    {
-      id: 4,
-      title: "TOEFL Speaking",
-      description:
-        "Improve your TOEFL speaking score with our specialized course focusing on fluency and pronunciation.",
-      duration: "3 weeks",
-      lessons: 12,
-      icon: "🗣️",
-      image: courseImages[3],
-      level: "Intermediate"
-    },
-    {
-      id: 5,
-      title: "Academic Writing",
-      description:
-        "Learn the essentials of academic writing for university applications and research papers.",
-      duration: "4 weeks",
-      lessons: 16,
-      icon: "✍️",
-      image: courseImages[4],
-      level: "Beginner"
-    },
-    {
-      id: 6,
-      title: "Study Abroad Guide",
-      description:
-        "Everything you need to know about studying abroad - from applications to cultural adaptation.",
-      duration: "2 weeks",
-      lessons: 8,
-      icon: "🌍",
-      image: courseImages[5],
-      level: "Beginner"
-    }
-  ];
+  const base_url =
+    import.meta.env.VITE_API_KEY_Base_URL || "http://localhost:3500";
 
-  const premiumCourses = [
-    {
-      id: 1,
-      title: "Complete Guide to Higher Study Abroad",
-      description:
-        "End-to-end guidance for studying abroad including university selection, application process, and visa assistance with personalized counseling.",
-      duration: "6 weeks",
-      lessons: 30,
-      price: "$199",
-      icon: "🌍",
-      image: courseImages[3],
-      level: "All Levels"
-    },
-    {
-      id: 2,
-      title: "Statement of Purpose Masterclass",
-      description:
-        "Learn how to craft a winning SOP that stands out to admission committees with expert reviews.",
-      duration: "2 weeks",
-      lessons: 8,
-      price: "$99",
-      icon: "✍️",
-      image: courseImages[4],
-      level: "Intermediate"
-    },
-    {
-      id: 3,
-      title: "Visa Interview Preparation",
-      description:
-        "Comprehensive training to ace your visa interview with mock sessions and personalized feedback.",
-      duration: "3 weeks",
-      lessons: 12,
-      price: "$149",
-      icon: "🛂",
-      image: courseImages[5],
-      level: "All Levels"
-    },
-    {
-      id: 4,
-      title: "University Application Package",
-      description:
-        "Complete assistance for 5 university applications including document preparation and review.",
-      duration: "8 weeks",
-      lessons: 20,
-      price: "$299",
-      icon: "🏛️",
-      image: courseImages[0],
-      level: "All Levels"
-    },
-    {
-      id: 5,
-      title: "Scholarship Application Guide",
-      description:
-        "Learn how to find and apply for scholarships with successful application templates.",
-      duration: "3 weeks",
-      lessons: 10,
-      price: "$129",
-      icon: "💰",
-      image: courseImages[1],
-      level: "Intermediate"
-    },
-    {
-      id: 6,
-      title: "GMAT Advanced Strategies",
-      description:
-        "Advanced techniques for high scorers with personalized study plans and analytics.",
-      duration: "6 weeks",
-      lessons: 24,
-      price: "$249",
-      icon: "📈",
-      image: courseImages[2],
-      level: "Advanced"
+  // Fetch courses, categories, and teachers from backend
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Fetch all data in parallel
+        const [coursesResponse, categoriesResponse, teachersResponse] =
+          await Promise.all([
+            axios.get(`${base_url}/api/auth/all-courses`),
+            axios.get(`${base_url}/api/auth/categories`),
+            axios.get(`${base_url}/api/auth/teachers`)
+          ]);
+
+        if (coursesResponse.data.success) {
+          const teachersList = teachersResponse.data?.teachers || [];
+
+          const formattedCourses = coursesResponse.data.courses.map(
+            (course) => {
+              // Find instructor - handle both object ID and populated instructor
+              let instructor = null;
+              if (course.instructor) {
+                if (
+                  typeof course.instructor === "object" &&
+                  course.instructor._id
+                ) {
+                  // Instructor is populated
+                  instructor = course.instructor;
+                } else {
+                  // Instructor is just an ID, find in teachers list
+                  instructor = teachersList.find((teacher) => {
+                    return (
+                      teacher._id.toString() === course.instructor.toString()
+                    );
+                  });
+                }
+              }
+
+              // Determine course type
+              let courseType;
+              if (course.type === "live") {
+                courseType = "live";
+              } else {
+                courseType = course.price > 0 ? "premium" : "free";
+              }
+
+              // Calculate total content items (lessons + live sessions)
+              const totalContent = course.content ? course.content.length : 0;
+              const liveSessions = course.content
+                ? course.content.filter((item) => item.type === "live").length
+                : 0;
+              const regularLessons = totalContent - liveSessions;
+
+              // Get next session for live courses
+              let nextSession;
+              if (course.type === "live" && course.content?.length > 0) {
+                const liveSessionItems = course.content.filter(
+                  (item) => item.type === "live" && item.schedule
+                );
+                if (liveSessionItems.length > 0) {
+                  const upcomingSessions = liveSessionItems
+                    .filter(
+                      (session) => new Date(session.schedule) > new Date()
+                    )
+                    .sort(
+                      (a, b) => new Date(a.schedule) - new Date(b.schedule)
+                    );
+
+                  nextSession =
+                    upcomingSessions.length > 0
+                      ? upcomingSessions[0].schedule
+                      : liveSessionItems[liveSessionItems.length - 1].schedule;
+                }
+              }
+
+              return {
+                id: course._id,
+                title: course.title || "Untitled Course",
+                description: course.description || "No description available",
+                thumbnail: course.thumbnail?.filename
+                  ? `${base_url}/courses/${course.thumbnail.path}`
+                  : course.thumbnail ||
+                    "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+                instructor: instructor
+                  ? instructor.full_name || "Unknown Instructor"
+                  : "Unknown Instructor",
+                instructorThumbnail: instructor?.profile_photo
+                  ? `${base_url}/teachers/${instructor.profile_photo}`
+                  : null,
+                rating: course.averageRating || 0,
+                students: course.totalStudents || 0,
+                price: course.price || 0,
+                type: courseType,
+                categories:
+                  course.categories?.map((cat) =>
+                    typeof cat === "object" ? cat.name : cat
+                  ) || [],
+                level: course.level || "beginner",
+                nextSession,
+                isLive: course.type === "live",
+                totalContent, // Total content items
+                regularLessons, // Regular lessons count
+                liveSessions // Live sessions count
+              };
+            }
+          );
+
+          setCourses(formattedCourses);
+        }
+
+        if (categoriesResponse.data.success) {
+          setCategories(categoriesResponse.data.categories);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast.error(error.response?.data?.message || "Failed to load courses");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [base_url]);
+
+  // Filter courses based on active tab and filters
+  const getFilteredCourses = () => {
+    let results = [...courses];
+
+    // Filter by tab type
+    switch (activeTab) {
+      case "free":
+        results = results.filter((course) => course.type === "free");
+        break;
+      case "premium":
+        results = results.filter((course) => course.type === "premium");
+        break;
+      case "live":
+        results = results.filter((course) => course.type === "live");
+        break;
+      default:
+        break;
     }
-  ];
+
+    // Filter by category
+    if (filterCategory !== "all") {
+      results = results.filter((course) =>
+        course.categories?.some(
+          (cat) => cat.toLowerCase() === filterCategory.toLowerCase()
+        )
+      );
+    }
+
+    // Filter by level
+    if (filterLevel !== "all") {
+      results = results.filter(
+        (course) => course.level?.toLowerCase() === filterLevel.toLowerCase()
+      );
+    }
+
+    return results;
+  };
 
   // Get courses to display based on tab and showAll state
   const getDisplayedCourses = () => {
-    const courses = activeTab === "free" ? freeCourses : premiumCourses;
-    return showAllCourses ? courses : courses.slice(0, 3);
+    const filteredCourses = getFilteredCourses();
+    return showAllCourses ? filteredCourses : filteredCourses.slice(0, 3);
   };
 
   // Animation variants
@@ -221,6 +246,42 @@ const Courses = () => {
     }
   };
 
+  // Get unique category options from courses
+  const categoryOptions =
+    categories.length > 0
+      ? categories.map((cat) => (typeof cat === "object" ? cat.name : cat))
+      : Array.from(
+          new Set(courses.flatMap((c) => c.categories || []).filter(Boolean))
+        );
+
+  if (loading) {
+    return (
+      <section className="relative py-36 overflow-hidden">
+        <div className="container mx-auto px-4 relative">
+          <div className="text-center">
+            <div className="animate-pulse">
+              <div className="h-8 w-48 bg-gray-300 rounded-full mx-auto mb-4"></div>
+              <div className="h-12 w-96 bg-gray-300 rounded mx-auto mb-6"></div>
+              <div className="h-6 w-80 bg-gray-300 rounded mx-auto mb-12"></div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+              {[1, 2, 3].map((item) => (
+                <div key={item} className="bg-white rounded-xl shadow-md p-6">
+                  <div className="animate-pulse">
+                    <div className="h-40 bg-gray-300 rounded mb-4"></div>
+                    <div className="h-6 bg-gray-300 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-300 rounded mb-4"></div>
+                    <div className="h-10 bg-gray-300 rounded"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section ref={sectionRef} className="relative py-36 overflow-hidden">
       <div className="container mx-auto px-4 relative">
@@ -247,7 +308,7 @@ const Courses = () => {
             variants={headerVariants}
             className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto"
           >
-            We offer both free and premium courses to help you achieve your
+            We offer free, premium, and live courses to help you achieve your
             study abroad dreams. Quality education tailored for your success.
           </motion.p>
         </motion.div>
@@ -257,171 +318,372 @@ const Courses = () => {
           initial="hidden"
           animate={sectionInView ? "visible" : "hidden"}
           variants={tabsVariants}
-          className="flex justify-center mb-12 md:mb-16"
+          className="flex justify-center mb-8"
         >
           <div className="inline-flex rounded-full bg-gray-200 p-1">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className={`px-5 py-2 text-sm md:px-6 md:py-2 md:text-base font-medium rounded-full transition-all duration-300 ${
-                activeTab === "free"
-                  ? "bg-white text-[#004080] shadow-sm"
-                  : "text-gray-600 hover:text-gray-800"
-              }`}
-              onClick={() => {
-                setActiveTab("free");
-                setShowAllCourses(false);
-              }}
-            >
-              Free Courses
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className={`px-5 py-2 text-sm md:px-6 md:py-2 md:text-base font-medium rounded-full transition-all duration-300 ${
-                activeTab === "premium"
-                  ? "bg-white text-[#004080] shadow-sm"
-                  : "text-gray-600 hover:text-gray-800"
-              }`}
-              onClick={() => {
-                setActiveTab("premium");
-                setShowAllCourses(false);
-              }}
-            >
-              Premium Courses
-            </motion.button>
+            {["free", "premium", "live"].map((tab) => (
+              <motion.button
+                key={tab}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className={`px-5 py-2 text-sm md:px-6 md:py-2 md:text-base font-medium rounded-full transition-all duration-300 ${
+                  activeTab === tab
+                    ? "bg-white text-[#004080] shadow-sm"
+                    : "text-gray-600 hover:text-gray-800"
+                }`}
+                onClick={() => {
+                  setActiveTab(tab);
+                  setShowAllCourses(false);
+                }}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)} Courses
+              </motion.button>
+            ))}
           </div>
+        </motion.div>
+        {/* Category Filter Buttons */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={sectionInView ? { opacity: 1 } : {}}
+          transition={{ delay: 0.4 }}
+          className="flex flex-wrap justify-center gap-3 mb-8 px-4"
+        >
+          {/* All Categories */}
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className={`px-5 py-2.5 rounded-full text-sm sm:text-base font-medium transition-all duration-300 ${
+              filterCategory === "all"
+                ? "bg-[#004080] text-white shadow-lg"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+            onClick={() => {
+              setFilterCategory("all");
+              setShowAllCourses(false);
+            }}
+          >
+            All Categories
+          </motion.button>
+
+          {/* Dynamic Category Buttons */}
+          {categoryOptions.map((categoryName, index) => (
+            <motion.button
+              key={index}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`px-5 py-2.5 rounded-full text-sm sm:text-base font-medium transition-all duration-300 ${
+                filterCategory === categoryName.toLowerCase()
+                  ? "bg-[#004080] text-white shadow-lg"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
+              onClick={() => {
+                setFilterCategory(categoryName.toLowerCase());
+                setShowAllCourses(false);
+              }}
+            >
+              {categoryName}
+            </motion.button>
+          ))}
+        </motion.div>
+
+        {/* Level Filter Buttons */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="flex flex-wrap justify-center gap-3 mb-12 px-4"
+        >
+          {[
+            { value: "all", label: "All Levels" },
+            { value: "beginner", label: "Beginner" },
+            { value: "intermediate", label: "Intermediate" },
+            { value: "advanced", label: "Advanced" }
+          ].map((level) => (
+            <motion.button
+              key={level.value}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`px-5 py-2.5 rounded-full text-sm sm:text-base font-medium transition-all duration-300 ${
+                filterLevel === level.value
+                  ? "bg-[#004080] text-white shadow-lg"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
+              onClick={() => setFilterLevel(level.value)}
+            >
+              {level.label}
+            </motion.button>
+          ))}
         </motion.div>
 
         {/* Courses Grid */}
+
         <motion.div
           initial="hidden"
           animate={sectionInView ? "visible" : "hidden"}
           variants={containerVariants}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8"
+          className={`${
+            getDisplayedCourses().length === 1
+              ? "flex justify-center"
+              : getDisplayedCourses().length === 2
+              ? "flex flex-col lg:flex-row lg:justify-between w-full lg:px-20 lg:gap-7 gap-6"
+              : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          }`}
         >
-          {getDisplayedCourses().map((course) => (
+          {getDisplayedCourses().map((course, index) => (
             <motion.div
               key={course.id}
               variants={itemVariants}
               whileHover={{ y: -5 }}
-              className={`relative group overflow-hidden rounded-xl bg-white shadow-md hover:shadow-lg transition-all duration-300 h-full flex flex-col
-                ${hoveredCourse === course.id ? "transform scale-[1.02]" : ""}`}
+              className={`relative group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 w-full sm:max-w-[300px] lg:max-w-[350px] flex flex-col
+    ${getDisplayedCourses().length === 2 && index === 0 ? "lg:ml-auto" : ""}
+    ${getDisplayedCourses().length === 2 && index === 1 ? "lg:mr-auto" : ""}
+    ${hoveredCourse === course.id ? "transform scale-[1.02]" : ""}`}
               onMouseEnter={() => setHoveredCourse(course.id)}
               onMouseLeave={() => setHoveredCourse(null)}
             >
               <div
                 className={`absolute top-4 right-4 z-10 px-3 py-1 text-xs font-semibold rounded-full ${
-                  activeTab === "free"
+                  course.type === "free"
                     ? "bg-green-100 text-green-800"
-                    : "bg-purple-100 text-purple-800"
+                    : course.type === "premium"
+                    ? "bg-purple-100 text-purple-800"
+                    : "bg-red-100 text-red-800"
                 }`}
               >
-                {activeTab === "free" ? "FREE" : "PREMIUM"}
+                {course.type.toUpperCase()}
               </div>
+
               {/* Course header with image */}
-              <div className="relative h-40 overflow-hidden">
+              <div className="relative h-48 overflow-hidden">
                 <img
-                  src={course.image}
+                  src={course.thumbnail}
                   alt={course.title}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  onError={(e) => {
+                    e.target.src =
+                      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80";
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                {course.isLive && (
+                  <div className="absolute top-3 left-3 bg-white text-purple-600 p-1 rounded-full shadow-sm">
+                    <FiVideo className="text-sm" />
+                  </div>
+                )}
               </div>
 
-              {/* Course Title and Tag (Displayed Below Image) */}
-              <div className="p-4">
-                <h3 className="text-xl font-bold text-gray-900 mt-2">
-                  {course.title}
-                </h3>
-                <span className="text-xs text-gray-500">{course.level}</span>
-              </div>
-
-              {/* Course Body */}
-              <div className="flex-1 p-5 md:p-6 flex flex-col">
-                <p className="mb-4 md:mb-6 text-gray-600 text-sm md:text-base">
-                  {course.description}
-                </p>
-
-                <div className="flex justify-between items-center mb-4 text-xs md:text-sm text-gray-500">
-                  <span className="flex items-center">
-                    <svg
-                      className="w-3 h-3 md:w-4 md:h-4 mr-1 text-[#004080]"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    {course.duration}
-                  </span>
-                  <span className="flex items-center">
-                    <svg
-                      className="w-3 h-3 md:w-4 md:h-4 mr-1 text-[#004080]"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                    {course.lessons} lessons
+              {/* Course Content */}
+              <div className="p-5 flex flex-col flex-grow">
+                {/* Title and Level */}
+                <div className="mb-3">
+                  <h3 className="text-lg font-bold line-clamp-2 text-gray-800 mb-1">
+                    {course.title}
+                  </h3>
+                  <span className="text-xs text-gray-500 capitalize">
+                    {course.level}
                   </span>
                 </div>
 
-                {course.price && (
+                {/* Instructor */}
+                <div className="flex items-center space-x-2 mb-4">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-indigo-100 overflow-hidden flex items-center justify-center">
+                      {course.instructorThumbnail ? (
+                        <img
+                          src={course.instructorThumbnail}
+                          alt={course.instructor}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.src =
+                              "https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-1.2.1&auto=format&fit=crop&w=80&q=80";
+                          }}
+                        />
+                      ) : (
+                        <svg
+                          className="w-4 h-4 text-gray-600"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Taught by</p>
+                    <p className="text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors">
+                      {course.instructor}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Description */}
+                {course.description && (
+                  <div
+                    className="prose prose-lg max-w-none text-sm text-gray-600 mb-4 line-clamp-1"
+                    dangerouslySetInnerHTML={{
+                      __html: course.description
+                    }}
+                  />
+                )}
+
+                {/* Stats */}
+                <div className="mb-4 text-sm text-gray-500">
+                  {course.type === "free" ? (
+                    <div className="flex items-center justify-between">
+                      {/* Left side: Rating + Students */}
+                      <div className="flex items-center gap-x-3">
+                        <span className="flex items-center">
+                          <FiStar className="mr-1 text-yellow-400" />
+                          {course.rating > 0
+                            ? course.rating.toFixed(1)
+                            : "No ratings"}
+                        </span>
+                        <span className="flex items-center">
+                          <FiUsers className="mr-1" />
+                          {course.students.toLocaleString()}
+                        </span>
+                      </div>
+                      {/* Right side: Lessons */}
+                      <div className="flex items-center">
+                        <FiBookOpen className="mr-1" />
+                        {course.totalContent} lessons
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between mb-1">
+                        {/* Left side: Rating + Students */}
+                        <div className="flex items-center gap-x-3">
+                          <span className="flex items-center">
+                            <FiStar className="mr-1 text-yellow-400" />
+                            {course.rating > 0
+                              ? course.rating.toFixed(1)
+                              : "No ratings"}
+                          </span>
+                          <span className="flex items-center">
+                            <FiUsers className="mr-1" />
+                            {course.students.toLocaleString()}
+                          </span>
+                        </div>
+                        {/* Right side: Price */}
+                        {course.price > 0 && (
+                          <div className="font-bold text-[#004080] text-lg">
+                            ৳{course.price}
+                          </div>
+                        )}
+                      </div>
+                      {/* Lessons below */}
+                      <div className="flex items-center">
+                        <FiBookOpen className="mr-1" />
+                        {course.totalContent} lessons
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Live course specific info */}
+                {course.isLive && course.nextSession && (
                   <div className="mb-4">
-                    <span className="text-xs text-gray-400">Starting at</span>
-                    <div className="text-xl font-bold text-[#004080]">
-                      {course.price}
+                    <div className="bg-purple-50 text-purple-800 text-xs px-3 py-2 rounded-lg">
+                      <div className="flex items-center">
+                        <FiClock className="mr-2 flex-shrink-0" />
+                        <span className="truncate">
+                          {new Date(course.nextSession).toLocaleString(
+                            "en-US",
+                            {
+                              weekday: "short",
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit"
+                            }
+                          )}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 )}
+              </div>
 
-                {/* Align the button at the bottom */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`mt-auto w-full py-2 md:py-3 px-4 rounded-lg font-medium transition-all duration-300 text-sm md:text-base ${
-                    activeTab === "free"
+              {/* Action Buttons - Fixed at bottom */}
+              <div className="mt-auto p-5 pt-0">
+                <button
+                  className={`w-full py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center justify-center ${
+                    course.type === "free"
                       ? "bg-blue-100 text-[#004080] hover:bg-blue-200"
-                      : "bg-purple-100 text-purple-600 hover:bg-purple-200"
+                      : course.type === "premium"
+                      ? "bg-purple-100 text-purple-600 hover:bg-purple-200"
+                      : "bg-red-100 text-red-600 hover:bg-red-200"
                   }`}
                 >
-                  {activeTab === "free" ? "Enroll Now" : "Get This Course"}
-                </motion.button>
+                  {course.type === "free" && "Enroll Now"}
+                  {course.type === "premium" && (
+                    <>Get This Course - ৳{course.price}</>
+                  )}
+                  {course.type === "live" && (
+                    <>Join Live Class - ৳{course.price}</>
+                  )}
+                </button>
               </div>
             </motion.div>
           ))}
         </motion.div>
 
         {/* View More / View Less Button */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={sectionInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.6 }}
-          className="text-center mt-12 md:mt-16"
-        >
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowAllCourses(!showAllCourses)}
-            className="px-6 py-2 md:px-8 md:py-3 bg-[#004080] text-white font-medium rounded-full shadow-md hover:shadow-lg transition-all duration-300 hover:bg-[#003366]"
+        {getFilteredCourses().length > 3 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={sectionInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.6 }}
+            className="text-center mt-12 md:mt-16"
           >
-            {showAllCourses ? "View Less Courses" : "View All Courses"}
-          </motion.button>
-        </motion.div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowAllCourses(!showAllCourses)}
+              className="px-6 py-2 md:px-8 md:py-3 bg-[#004080] text-white font-medium rounded-full shadow-md hover:shadow-lg transition-all duration-300 hover:bg-[#003366]"
+            >
+              {showAllCourses ? "View Less Courses" : "View All Courses"}
+            </motion.button>
+          </motion.div>
+        )}
+
+        {/* Empty state */}
+        {getFilteredCourses().length === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-12"
+          >
+            {/* SVG Icon */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="mx-auto mb-4 w-16 h-16 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4.5 6.75v10.5a.75.75 0 00.75.75h13.5a.75.75 0 00.75-.75V6.75m-15 0A2.25 2.25 0 016.75 4.5h10.5a2.25 2.25 0 012.25 2.25m-15 0v10.5m15-10.5v10.5m-12-9h9m-9 3h9m-9 3h5.25"
+              />
+            </svg>
+
+            <div className="text-gray-500 text-lg">
+              No {activeTab} courses available at the moment.
+            </div>
+            <p className="text-gray-400 mt-2">
+              Check back later for new course offerings.
+            </p>
+          </motion.div>
+        )}
       </div>
     </section>
   );

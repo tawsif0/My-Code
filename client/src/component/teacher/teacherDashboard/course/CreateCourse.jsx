@@ -10,14 +10,16 @@ import {
   FiImage,
   FiVideo,
   FiChevronDown,
-  FiChevronUp,
+  FiChevronUp
 } from "react-icons/fi";
 import toast, { Toaster } from "react-hot-toast";
 import axios from "axios";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 const ItemTypes = {
-  CONTENT_ITEM: "contentItem",
+  CONTENT_ITEM: "contentItem"
 };
 const DraggableItem = ({ id, index, moveItem, children }) => {
   const ref = useRef(null);
@@ -26,8 +28,8 @@ const DraggableItem = ({ id, index, moveItem, children }) => {
     type: ItemTypes.CONTENT_ITEM,
     item: { id, index },
     collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
+      isDragging: monitor.isDragging()
+    })
   });
 
   const [, drop] = useDrop({
@@ -50,7 +52,7 @@ const DraggableItem = ({ id, index, moveItem, children }) => {
 
       moveItem(dragIndex, hoverIndex);
       item.index = hoverIndex;
-    },
+    }
   });
 
   drag(drop(ref));
@@ -60,7 +62,7 @@ const DraggableItem = ({ id, index, moveItem, children }) => {
       ref={ref}
       style={{
         opacity: isDragging ? 0.5 : 1,
-        cursor: "move",
+        cursor: "move"
       }}
     >
       {children}
@@ -79,9 +81,12 @@ const CreateCourse = () => {
     price: "",
     categories: [],
     level: "beginner",
-    category: "",
+    category: ""
   });
-
+  const [descriptionHtml, setDescriptionHtml] = useState("");
+  const [descriptionError, setDescriptionError] = useState("");
+  const [contentErrors, setContentErrors] = useState({});
+  const [answerErrors, setAnswerErrors] = useState({});
   const moveContentItem = (dragIndex, hoverIndex) => {
     setCourseData((prev) => {
       const newContent = [...prev.content];
@@ -92,7 +97,7 @@ const CreateCourse = () => {
 
       return {
         ...prev,
-        content: newContent,
+        content: newContent
       };
     });
   };
@@ -110,8 +115,8 @@ const CreateCourse = () => {
           `${base_url}/api/teacher/all-category`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("teacherToken")}`,
-            },
+              Authorization: `Bearer ${localStorage.getItem("teacherToken")}`
+            }
           }
         );
         if (response.data.success) {
@@ -137,7 +142,7 @@ const CreateCourse = () => {
   const toggleSection = (id) => {
     setExpandedSections((prev) => ({
       ...prev,
-      [id]: !prev[id],
+      [id]: !prev[id]
     }));
   };
 
@@ -157,15 +162,15 @@ const CreateCourse = () => {
       description: "",
       isPremium: isPremium,
       ...(isPremium ? { contentFile: null, content: "" } : { youtubeLink: "" }),
-      isExpanded: true,
+      isExpanded: true
     };
     setCourseData((prev) => ({
       ...prev,
-      content: [...prev.content, newTutorial],
+      content: [...prev.content, newTutorial]
     }));
     setExpandedSections((prev) => ({
       ...prev,
-      [newTutorial.id]: true,
+      [newTutorial.id]: true
     }));
   };
 
@@ -183,18 +188,18 @@ const CreateCourse = () => {
           options: ["", ""],
           correctAnswer: 0,
           answer: "",
-          marks: 1,
-        },
+          marks: 1
+        }
       ],
-      isExpanded: true,
+      isExpanded: true
     };
     setCourseData((prev) => ({
       ...prev,
-      content: [...prev.content, newQuiz],
+      content: [...prev.content, newQuiz]
     }));
     setExpandedSections((prev) => ({
       ...prev,
-      [newQuiz.id]: true,
+      [newQuiz.id]: true
     }));
   };
 
@@ -207,15 +212,15 @@ const CreateCourse = () => {
       thumbnail: null,
       meetingLink: "",
       schedule: new Date().toISOString().slice(0, 16),
-      isExpanded: true,
+      isExpanded: true
     };
     setCourseData((prev) => ({
       ...prev,
-      content: [...prev.content, newLiveClass],
+      content: [...prev.content, newLiveClass]
     }));
     setExpandedSections((prev) => ({
       ...prev,
-      [newLiveClass.id]: true,
+      [newLiveClass.id]: true
     }));
   };
 
@@ -224,7 +229,7 @@ const CreateCourse = () => {
       id: Date.now(),
       question: "",
       type: questionType,
-      marks: 1,
+      marks: 1
     };
 
     let question;
@@ -233,21 +238,21 @@ const CreateCourse = () => {
         question = {
           ...baseQuestion,
           options: ["", ""],
-          correctAnswer: 0,
+          correctAnswer: 0
         };
         break;
       case "mcq-multiple":
         question = {
           ...baseQuestion,
           options: ["", ""],
-          correctAnswer: [],
+          correctAnswer: []
         };
         break;
       case "short-answer":
       case "broad-answer":
         question = {
           ...baseQuestion,
-          expectedAnswer: "", // Use expectedAnswer instead of correctAnswer
+          expectedAnswer: "" // Use expectedAnswer instead of correctAnswer
         };
         break;
       default:
@@ -260,11 +265,11 @@ const CreateCourse = () => {
         if (item.id === quizId) {
           return {
             ...item,
-            questions: [...item.questions, question],
+            questions: [...item.questions, question]
           };
         }
         return item;
-      }),
+      })
     }));
   };
 
@@ -279,22 +284,22 @@ const CreateCourse = () => {
               if (q.id === questionId) {
                 return {
                   ...q,
-                  options: [...q.options, ""],
+                  options: [...q.options, ""]
                 };
               }
               return q;
-            }),
+            })
           };
         }
         return item;
-      }),
+      })
     }));
   };
 
   const removeContentItem = (id) => {
     setCourseData((prev) => ({
       ...prev,
-      content: prev.content.filter((item) => item.id !== id),
+      content: prev.content.filter((item) => item.id !== id)
     }));
   };
 
@@ -302,7 +307,7 @@ const CreateCourse = () => {
     const { name, value } = e.target;
     setCourseData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: value
     }));
   };
 
@@ -311,10 +316,14 @@ const CreateCourse = () => {
       ...prev,
       content: prev.content.map((item) => {
         if (item.id === id) {
+          // Validate description when it changes
+          if (field === "description") {
+            validateContentDescription(id, value);
+          }
           return { ...item, [field]: value };
         }
         return item;
-      }),
+      })
     }));
   };
 
@@ -337,11 +346,11 @@ const CreateCourse = () => {
                 return { ...q, [field]: value };
               }
               return q;
-            }),
+            })
           };
         }
         return item;
-      }),
+      })
     }));
   };
 
@@ -359,11 +368,11 @@ const CreateCourse = () => {
                 return { ...q, options: newOptions };
               }
               return q;
-            }),
+            })
           };
         }
         return item;
-      }),
+      })
     }));
   };
 
@@ -388,11 +397,11 @@ const CreateCourse = () => {
                 return { ...q, correctAnswer: newAnswers };
               }
               return q;
-            }),
+            })
           };
         }
         return item;
-      }),
+      })
     }));
   };
 
@@ -407,6 +416,7 @@ const CreateCourse = () => {
               if (q.id === questionId) {
                 // For short/broad answers, update expectedAnswer
                 if (["short-answer", "broad-answer"].includes(q.type)) {
+                  validateAnswer(questionId, value);
                   return { ...q, expectedAnswer: value };
                 }
                 // For MCQ questions, update answer (for student responses)
@@ -415,11 +425,11 @@ const CreateCourse = () => {
                 }
               }
               return q;
-            }),
+            })
           };
         }
         return item;
-      }),
+      })
     }));
   };
   const handleFileUpload = (e, id, field = "content") => {
@@ -434,7 +444,7 @@ const CreateCourse = () => {
     if (file) {
       setCourseData((prev) => ({
         ...prev,
-        thumbnail: file,
+        thumbnail: file
       }));
     }
   };
@@ -443,14 +453,14 @@ const CreateCourse = () => {
     const files = Array.from(e.target.files);
     setCourseData((prev) => ({
       ...prev,
-      attachments: [...prev.attachments, ...files],
+      attachments: [...prev.attachments, ...files]
     }));
   };
 
   const removeAttachment = (index) => {
     setCourseData((prev) => ({
       ...prev,
-      attachments: prev.attachments.filter((_, i) => i !== index),
+      attachments: prev.attachments.filter((_, i) => i !== index)
     }));
   };
 
@@ -486,18 +496,42 @@ const CreateCourse = () => {
                 return {
                   ...q,
                   options: newOptions,
-                  correctAnswer: newCorrectAnswer,
+                  correctAnswer: newCorrectAnswer
                 };
               }
               return q;
-            }),
+            })
           };
         }
         return item;
-      }),
+      })
     }));
   };
+  const validateContentDescription = (id, value) => {
+    if (!value || value === "<p><br></p>") {
+      setContentErrors((prev) => ({
+        ...prev,
+        [id]: "Description is required"
+      }));
+      return false;
+    } else {
+      setContentErrors((prev) => ({ ...prev, [id]: "" }));
+      return true;
+    }
+  };
 
+  const validateAnswer = (questionId, value) => {
+    if (!value || value === "<p><br></p>") {
+      setAnswerErrors((prev) => ({
+        ...prev,
+        [questionId]: "Expected answer is required"
+      }));
+      return false;
+    } else {
+      setAnswerErrors((prev) => ({ ...prev, [questionId]: "" }));
+      return true;
+    }
+  };
   const publishCourse = async () => {
     try {
       // Convert HTML descriptions to plain text
@@ -511,11 +545,11 @@ const CreateCourse = () => {
                 return {
                   ...question,
                   // Remove any answer field if it exists
-                  answer: undefined,
+                  answer: undefined
                 };
               }
               return question;
-            }),
+            })
           };
         }
         return item;
@@ -524,9 +558,13 @@ const CreateCourse = () => {
       // Validate required fields
       if (
         !courseData.title ||
-        !courseData.description ||
+        !descriptionHtml ||
+        descriptionHtml === "<p><br></p>" ||
         !courseData.thumbnail
       ) {
+        if (!descriptionHtml || descriptionHtml === "<p><br></p>") {
+          setDescriptionError("Course description is required");
+        }
         throw new Error("Please fill all required fields");
       }
       if (!courseData.category) {
@@ -547,6 +585,11 @@ const CreateCourse = () => {
       for (const item of contentWithPlainText) {
         if (!item.title) {
           throw new Error(`Please add a title for all content items`);
+        }
+        // Add description validation
+        if (!item.description || item.description === "<p><br></p>") {
+          validateContentDescription(item.id, item.description);
+          throw new Error(`Please add a description for "${item.title}"`);
         }
 
         if (item.type === "tutorial") {
@@ -603,6 +646,17 @@ const CreateCourse = () => {
                   `Please select at least one correct answer for multiple-choice questions in quiz "${item.title}"`
                 );
               }
+              if (["broad-answer"].includes(question.type)) {
+                if (
+                  !question.expectedAnswer ||
+                  question.expectedAnswer === "<p><br></p>"
+                ) {
+                  validateAnswer(question.id, question.expectedAnswer);
+                  throw new Error(
+                    `Please add an expected answer for question in quiz "${item.title}"`
+                  );
+                }
+              }
             }
           }
         }
@@ -612,7 +666,7 @@ const CreateCourse = () => {
       const teacherdata = JSON.parse(localStorage.getItem("teacherData"));
       const formData = new FormData();
       formData.append("title", courseData.title);
-      formData.append("description", courseData.description);
+      formData.append("description", descriptionHtml);
       formData.append("category", courseData.category);
       formData.append("level", courseData.level);
       formData.append("type", courseType);
@@ -630,7 +684,7 @@ const CreateCourse = () => {
       const processedContent = courseData.content.map((item) => {
         const contentItem = {
           ...item,
-          description: item.description ? item.description : "",
+          description: item.description ? item.description : ""
         };
 
         // For premium tutorials, include the filename reference
@@ -640,14 +694,14 @@ const CreateCourse = () => {
           item.contentFile
         ) {
           contentItem.content = {
-            filename: item.contentFile.name,
+            filename: item.contentFile.name
           };
         }
 
         // For live sessions, include thumbnail filename if exists
         if (item.type === "live" && item.thumbnail) {
           contentItem.thumbnail = {
-            filename: item.thumbnail.name,
+            filename: item.thumbnail.name
           };
         }
 
@@ -686,26 +740,29 @@ const CreateCourse = () => {
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("teacherToken")}`,
-          },
+            Authorization: `Bearer ${localStorage.getItem("teacherToken")}`
+          }
         }
       );
 
       // Success handling
       toast.dismiss(loadingToast);
       toast.success("Course published successfully!");
-
       // Reset form
       setCourseData({
         title: "",
-        description: "",
+        description: "", // This can be kept for backward compatibility
         thumbnail: null,
         attachments: [],
         content: [],
         price: "",
         level: "beginner",
-        category: "",
+        category: ""
       });
+      setDescriptionHtml(""); // Clear the ReactQuill content
+      setDescriptionError("");
+      setContentErrors({});
+      setAnswerErrors({});
       setCourseType(null);
       setExpandedSections({});
     } catch (error) {
@@ -816,7 +873,7 @@ const CreateCourse = () => {
                       content: [],
                       price: "",
                       categories: [],
-                      level: "beginner",
+                      level: "beginner"
                     });
                   }}
                   className="text-gray-500 cursor-pointer hover:text-gray-700"
@@ -845,15 +902,63 @@ const CreateCourse = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Course Description *
                     </label>
-                    <textarea
-                      name="description"
-                      value={courseData.description}
-                      onChange={handleInputChange}
-                      rows={6}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-gray-500 hover:border-gray-500 resize-vertical"
-                      required
-                      placeholder="Enter course description"
+                    <ReactQuill
+                      value={descriptionHtml}
+                      onChange={(value) => {
+                        setDescriptionHtml(value);
+                        if (value && value !== "<p><br></p>") {
+                          setDescriptionError("");
+                        }
+                      }}
+                      onBlur={() => {
+                        if (
+                          !descriptionHtml ||
+                          descriptionHtml === "<p><br></p>"
+                        ) {
+                          setDescriptionError("Course description is required");
+                        }
+                      }}
+                      modules={{
+                        toolbar: [
+                          [{ header: [1, 2, 3, false] }],
+                          [
+                            "bold",
+                            "italic",
+                            "underline",
+                            "strike",
+                            "blockquote"
+                          ],
+                          [{ list: "ordered" }, { list: "bullet" }],
+                          ["link"],
+                          ["clean"]
+                        ]
+                      }}
+                      formats={[
+                        "header",
+                        "bold",
+                        "italic",
+                        "underline",
+                        "strike",
+                        "blockquote",
+                        "list",
+                        "bullet",
+                        "link"
+                      ]}
+                      className={`border rounded-lg ${
+                        descriptionError
+                          ? "border-red-500"
+                          : "border-gray-300 focus:border-gray-500 hover:border-gray-500"
+                      }`}
                     />
+                    {descriptionError && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-sm text-red-500 mt-1"
+                      >
+                        {descriptionError}
+                      </motion.p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -879,7 +984,7 @@ const CreateCourse = () => {
                           onClick={() =>
                             setCourseData((prev) => ({
                               ...prev,
-                              thumbnail: null,
+                              thumbnail: null
                             }))
                           }
                           className="text-gray-400 hover:text-red-500 p-3 rounded-full flex items-center justify-center transition-colors"
@@ -1087,23 +1192,60 @@ const CreateCourse = () => {
                                     required
                                   />
                                 </div>
+                                {/* For tutorial descriptions */}
                                 <div>
                                   <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Description
                                   </label>
-                                  <textarea
+                                  <ReactQuill
                                     value={item.description}
-                                    onChange={(e) =>
+                                    onChange={(value) =>
                                       handleContentChange(
                                         item.id,
                                         "description",
-                                        e.target.value
+                                        value
                                       )
                                     }
-                                    rows={4}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-gray-500 hover:border-gray-500 resize-vertical"
-                                    placeholder="Enter tutorial description"
+                                    onBlur={() =>
+                                      validateContentDescription(
+                                        item.id,
+                                        item.description
+                                      )
+                                    }
+                                    modules={{
+                                      toolbar: [
+                                        ["bold", "italic", "underline"],
+                                        [
+                                          { list: "ordered" },
+                                          { list: "bullet" }
+                                        ],
+                                        ["link"],
+                                        ["clean"]
+                                      ]
+                                    }}
+                                    formats={[
+                                      "bold",
+                                      "italic",
+                                      "underline",
+                                      "list",
+                                      "bullet",
+                                      "link"
+                                    ]}
+                                    className={`border rounded-lg ${
+                                      contentErrors[item.id]
+                                        ? "border-red-500"
+                                        : "border-gray-300 focus:border-gray-500 hover:border-gray-500"
+                                    }`}
                                   />
+                                  {contentErrors[item.id] && (
+                                    <motion.p
+                                      initial={{ opacity: 0, y: -5 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      className="text-sm text-red-500 mt-1"
+                                    >
+                                      {contentErrors[item.id]}
+                                    </motion.p>
+                                  )}
                                 </div>
                                 {courseType === "free" ? (
                                   <div>
@@ -1180,23 +1322,60 @@ const CreateCourse = () => {
                                     required
                                   />
                                 </div>
+                                {/* For live class descriptions */}
                                 <div>
                                   <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Description
                                   </label>
-                                  <textarea
+                                  <ReactQuill
                                     value={item.description}
-                                    onChange={(e) =>
+                                    onChange={(value) =>
                                       handleContentChange(
                                         item.id,
                                         "description",
-                                        e.target.value
+                                        value
                                       )
                                     }
-                                    rows={4}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-gray-500 hover:border-gray-500 resize-vertical"
-                                    placeholder="Enter live class description"
+                                    onBlur={() =>
+                                      validateContentDescription(
+                                        item.id,
+                                        item.description
+                                      )
+                                    }
+                                    modules={{
+                                      toolbar: [
+                                        ["bold", "italic", "underline"],
+                                        [
+                                          { list: "ordered" },
+                                          { list: "bullet" }
+                                        ],
+                                        ["link"],
+                                        ["clean"]
+                                      ]
+                                    }}
+                                    formats={[
+                                      "bold",
+                                      "italic",
+                                      "underline",
+                                      "list",
+                                      "bullet",
+                                      "link"
+                                    ]}
+                                    className={`border rounded-lg ${
+                                      contentErrors[item.id]
+                                        ? "border-red-500"
+                                        : "border-gray-300 focus:border-gray-500 hover:border-gray-500"
+                                    }`}
                                   />
+                                  {contentErrors[item.id] && (
+                                    <motion.p
+                                      initial={{ opacity: 0, y: -5 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      className="text-sm text-red-500 mt-1"
+                                    >
+                                      {contentErrors[item.id]}
+                                    </motion.p>
+                                  )}
                                 </div>
 
                                 <div>
@@ -1257,23 +1436,60 @@ const CreateCourse = () => {
                                     required
                                   />
                                 </div>
+                                {/* For quiz descriptions */}
                                 <div>
                                   <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Description
                                   </label>
-                                  <textarea
+                                  <ReactQuill
                                     value={item.description}
-                                    onChange={(e) =>
+                                    onChange={(value) =>
                                       handleContentChange(
                                         item.id,
                                         "description",
-                                        e.target.value
+                                        value
                                       )
                                     }
-                                    rows={4}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-gray-500 hover:border-gray-500 resize-vertical"
-                                    placeholder="Enter quiz description"
+                                    onBlur={() =>
+                                      validateContentDescription(
+                                        item.id,
+                                        item.description
+                                      )
+                                    }
+                                    modules={{
+                                      toolbar: [
+                                        ["bold", "italic", "underline"],
+                                        [
+                                          { list: "ordered" },
+                                          { list: "bullet" }
+                                        ],
+                                        ["link"],
+                                        ["clean"]
+                                      ]
+                                    }}
+                                    formats={[
+                                      "bold",
+                                      "italic",
+                                      "underline",
+                                      "list",
+                                      "bullet",
+                                      "link"
+                                    ]}
+                                    className={`border rounded-lg ${
+                                      contentErrors[item.id]
+                                        ? "border-red-500"
+                                        : "border-gray-300 focus:border-gray-500 hover:border-gray-500"
+                                    }`}
                                   />
+                                  {contentErrors[item.id] && (
+                                    <motion.p
+                                      initial={{ opacity: 0, y: -5 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      className="text-sm text-red-500 mt-1"
+                                    >
+                                      {contentErrors[item.id]}
+                                    </motion.p>
+                                  )}
                                 </div>
                                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
                                   <div className="flex justify-between items-center">
@@ -1339,12 +1555,12 @@ const CreateCourse = () => {
                                                             (q) =>
                                                               q.id !==
                                                               question.id
-                                                          ),
+                                                          )
                                                       };
                                                     }
                                                     return contentItem;
                                                   }
-                                                ),
+                                                )
                                               }));
                                             }}
                                             className="text-gray-400 hover:text-red-500 transition-colors"
@@ -1530,25 +1746,57 @@ const CreateCourse = () => {
                                           <label className="block text-sm font-medium text-gray-700 mb-1">
                                             Expected Answer
                                           </label>
-                                          <textarea
+                                          <ReactQuill
                                             value={
                                               question.expectedAnswer || ""
                                             }
-                                            onChange={(e) =>
+                                            onChange={(value) =>
                                               handleAnswerChange(
                                                 item.id,
                                                 question.id,
-                                                e.target.value
+                                                value
                                               )
                                             }
-                                            rows={6}
-                                            className={`w-full px-4 py-2 border rounded-lg focus:border-gray-500 hover:border-gray-500 resize-vertical ${
-                                              question.expectedAnswer
-                                                ? "border-green-500 bg-green-50"
-                                                : "border-gray-300"
+                                            onBlur={() =>
+                                              validateAnswer(
+                                                question.id,
+                                                question.expectedAnswer
+                                              )
+                                            }
+                                            modules={{
+                                              toolbar: [
+                                                ["bold", "italic", "underline"],
+                                                [
+                                                  { list: "ordered" },
+                                                  { list: "bullet" }
+                                                ],
+                                                ["link"],
+                                                ["clean"]
+                                              ]
+                                            }}
+                                            formats={[
+                                              "bold",
+                                              "italic",
+                                              "underline",
+                                              "list",
+                                              "bullet",
+                                              "link"
+                                            ]}
+                                            className={`border rounded-lg ${
+                                              answerErrors[question.id]
+                                                ? "border-red-500"
+                                                : "border-gray-300 focus:border-gray-500 hover:border-gray-500"
                                             }`}
-                                            placeholder="Enter expected answer"
                                           />
+                                          {answerErrors[question.id] && (
+                                            <motion.p
+                                              initial={{ opacity: 0, y: -5 }}
+                                              animate={{ opacity: 1, y: 0 }}
+                                              className="text-sm text-red-500 mt-1"
+                                            >
+                                              {answerErrors[question.id]}
+                                            </motion.p>
+                                          )}
                                         </div>
                                       ) : null}
                                     </div>
@@ -1627,7 +1875,8 @@ const CreateCourse = () => {
                   onClick={publishCourse}
                   disabled={
                     !courseData.title ||
-                    !courseData.description ||
+                    !descriptionHtml || // Change this from courseData.description
+                    descriptionHtml === "<p><br></p>" || // Add this check
                     !courseData.thumbnail ||
                     courseData.content.length === 0 ||
                     ((courseType === "premium" || courseType === "live") &&
@@ -1635,7 +1884,8 @@ const CreateCourse = () => {
                   }
                   className={`px-6 py-3 rounded-lg font-medium text-white ${
                     !courseData.title ||
-                    !courseData.description ||
+                    !descriptionHtml ||
+                    descriptionHtml === "<p><br></p>" ||
                     !courseData.thumbnail ||
                     courseData.content.length === 0 ||
                     ((courseType === "premium" || courseType === "live") &&

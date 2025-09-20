@@ -16,7 +16,7 @@ import {
   FiFileText,
   FiX,
   FiArrowLeft,
-  FiPlus,
+  FiPlus
 } from "react-icons/fi";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
@@ -33,11 +33,11 @@ function BlogModify() {
   // Form state
   const [form, setForm] = useState({
     title: "",
-    category: "",
+    category: ""
   });
   const [errors, setErrors] = useState({
     title: "",
-    category: "",
+    category: ""
   });
 
   const token = localStorage.getItem("token");
@@ -46,7 +46,7 @@ function BlogModify() {
   const fetchBlogs = async () => {
     try {
       const response = await axios.get("http://localhost:3500/api/blogs", {
-        headers: authHeaders,
+        headers: authHeaders
       });
 
       // Handle different response structures
@@ -110,14 +110,15 @@ function BlogModify() {
   const resetForm = () => {
     setForm({
       title: "",
-      category: "",
+      category: ""
     });
     setContent(""); // Reset ReactQuill content
     setErrors({
       title: "",
-      content: "",
       category: "",
+      content: ""
     });
+    setContent("");
     setFiles({ image: null });
     setCurrentImage("");
     setEditingId(null);
@@ -151,7 +152,7 @@ function BlogModify() {
     const toastId = toast.loading("Deleting blog post...");
     try {
       await axios.delete(`http://localhost:3500/api/blogs/${id}`, {
-        headers: authHeaders,
+        headers: authHeaders
       });
       toast.success("Blog post deleted", { id: toastId });
       fetchBlogs();
@@ -176,7 +177,7 @@ function BlogModify() {
 
       setForm({
         title: blogData.title,
-        category: blogData.category?._id || blogData.category || "",
+        category: blogData.category?._id || blogData.category || ""
       });
 
       setContent(blogData.content || ""); // Set ReactQuill content
@@ -238,7 +239,7 @@ function BlogModify() {
   const validateForm = () => {
     let isValid = true;
     isValid = validateField("title", form.title) && isValid;
-    isValid = validateField("content", form.content) && isValid;
+    isValid = validateField("content", content) && isValid;
     isValid = validateField("category", form.category) && isValid;
 
     // Require image only for new blogs
@@ -281,8 +282,8 @@ function BlogModify() {
           {
             headers: {
               "Content-Type": "multipart/form-data",
-              ...authHeaders,
-            },
+              ...authHeaders
+            }
           }
         );
         toast.success("Blog post updated successfully", { id: toastId });
@@ -291,8 +292,8 @@ function BlogModify() {
         await axios.post("http://localhost:3500/api/blogs", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
-            ...authHeaders,
-          },
+            ...authHeaders
+          }
         });
         toast.success("Blog post created successfully", { id: toastId });
       }
@@ -407,10 +408,9 @@ function BlogModify() {
               </div>
               {/* Image Upload */}
               <div className="border-t border-gray-200 pt-6">
-                <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
-                  <FiImage className="mr-2 text-gray-600" />
-                  Blog Image
-                </h3>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <FiImage className="mr-2 text-gray-500" /> Blog Image *
+                </label>
 
                 <div className="flex flex-col md:flex-row items-start gap-6">
                   {/* Image Preview Box */}
@@ -548,19 +548,31 @@ function BlogModify() {
                 <label className="flex items-center text-sm font-medium text-gray-700">
                   <FiFileText className="mr-2 text-gray-500" /> Content *
                 </label>
-                <div className="border border-gray-300 rounded-lg bg-white">
+                <div
+                  className={`rounded-lg bg-white ${
+                    errors.content
+                      ? "border border-red-500"
+                      : "border-gray-300 focus:border-gray-500 hover:border-gray-500"
+                  }`}
+                >
                   <ReactQuill
                     theme="snow"
                     value={content}
-                    onChange={setContent}
+                    onChange={(value) => {
+                      setContent(value);
+                      if (errors.content) {
+                        setErrors((prev) => ({ ...prev, content: "" }));
+                      }
+                    }}
+                    onBlur={() => validateField("content", content)}
                     modules={{
                       toolbar: [
                         [{ header: [1, 2, 3, false] }],
                         ["bold", "italic", "underline", "strike", "blockquote"],
                         [{ list: "ordered" }, { list: "bullet" }],
                         ["link", "image"],
-                        ["clean"],
-                      ],
+                        ["clean"]
+                      ]
                     }}
                     formats={[
                       "header",
@@ -572,7 +584,7 @@ function BlogModify() {
                       "list",
                       "bullet",
                       "link",
-                      "image",
+                      "image"
                     ]}
                   />
                 </div>
@@ -755,14 +767,16 @@ function BlogModify() {
                                 </div>
                               )}
                             </div>
-                            <div className="flex flex-col">
-                              <h2 className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors">
+                            <div className="flex flex-col justify-betweenl">
+                              <h2 className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors duration-200">
                                 {blog.title}
                               </h2>
                               <p className="text-sm text-gray-600 mt-1">
-                                Category:{" "}
-                                {blog.category?.name || "Uncategorized"}
+                                <span className="bg-black text-white text-xs px-2 py-1 rounded-md">
+                                  {blog.category?.name || "Uncategorized"}
+                                </span>
                               </p>
+
                               <p className="text-xs text-gray-500 mt-2">
                                 Created:{" "}
                                 {new Date(blog.createdAt).toLocaleDateString()}

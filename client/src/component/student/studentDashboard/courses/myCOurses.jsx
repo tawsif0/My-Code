@@ -13,7 +13,8 @@ import {
   FiFilter,
   FiChevronDown,
   FiChevronUp,
-  FiStar
+  FiStar,
+  FiRefreshCw // Add this
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -30,7 +31,7 @@ const ProgressStats = ({ course }) => {
       <ProgressBar
         completed={course.progress}
         height="8px"
-        bgColor={course.completed ? "#10B981" : "#000"}
+        bgColor={course.completed ? "#10B981" : "#000"} //
         baseBgColor="#E5E7EB"
         isLabelVisible={false}
       />
@@ -149,28 +150,37 @@ const MyCourses = ({ setActiveView }) => {
           }
 
           // Handle thumbnail path
-          let thumbnailPath = course.thumbnail?.filename
-            ? `${base_url}/courses/${course.thumbnail.path}`
-            : course.thumbnail ||
-              "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80";
+          let thumbnailPath = course.thumbnail
+            ? `${base_url}/courses/${course.thumbnail.path || course.thumbnail}`
+            : "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80";
 
           // Calculate progress
-          let progress = enrollment.progress || 0;
+          let progress = 0;
           let completedItems = 0;
           let totalItems = course.totalContentItems || 0;
           let isCompleted = enrollment.completed || false;
 
-          if (
+          if (enrollment.progress && Array.isArray(enrollment.progress)) {
+            completedItems = enrollment.progress.filter(
+              (item) => item.completed
+            ).length;
+            if (totalItems > 0) {
+              progress = Math.round((completedItems / totalItems) * 100);
+            }
+            // Ensure completion status is accurate
+            isCompleted = enrollment.completed || progress === 100;
+          } else if (
             enrollment.progressDetails &&
             Array.isArray(enrollment.progressDetails)
           ) {
+            // Fallback to progressDetails if progress doesn't exist
             completedItems = enrollment.progressDetails.filter(
               (item) => item.completed
             ).length;
             if (totalItems > 0) {
               progress = Math.round((completedItems / totalItems) * 100);
             }
-            isCompleted = isCompleted || progress === 100;
+            isCompleted = enrollment.completed || progress === 100;
           }
 
           return {
@@ -182,7 +192,7 @@ const MyCourses = ({ setActiveView }) => {
               ? instructor.full_name
               : "Unknown Instructor",
             instructorThumbnail: instructor?.profile_photo
-              ? `${base_url}/uploads/teachers/${instructor?.profile_photo}`
+              ? `${base_url}/teachers/${instructor?.profile_photo}`
               : null,
             price: course.price || 0,
             type: courseType,
@@ -356,7 +366,6 @@ const MyCourses = ({ setActiveView }) => {
 
   const handleStartCourse = async (courseId) => {
     try {
-      // await recordCourseAccess(courseId);
       setActiveView({
         view: "videoPlayer",
         courseId: courseId
@@ -375,20 +384,33 @@ const MyCourses = ({ setActiveView }) => {
         return;
       }
 
-      // 🔹 Allow both completed normal courses and live courses
-      if (!course.completed && !course.isLive) {
-        toast.error("Please complete the course to get your certificate");
-        return;
-      }
+      // ✅ Allow certificate if course is completed OR course is live
 
       toast.loading("Generating your certificate...");
 
       const response = await axios.get(
         `${base_url}/api/student/certificate/${courseId}/${studentData.id}`,
         {
-          responseType: "blob"
+          responseType: "blob",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("studentToken")}`
+          }
         }
       );
+
+      // Check if response is PDF
+      if (response.headers["content-type"] !== "application/pdf") {
+        // Try to parse as JSON error
+        const text = await response.data.text();
+        try {
+          const errorData = JSON.parse(text);
+          throw new Error(
+            errorData.message || "Failed to generate certificate"
+          );
+        } catch (e) {
+          throw new Error("Server returned an invalid response");
+        }
+      }
 
       const blob = new Blob([response.data], { type: "application/pdf" });
       const url = window.URL.createObjectURL(blob);
@@ -411,8 +433,38 @@ const MyCourses = ({ setActiveView }) => {
       toast.success("Certificate downloaded successfully");
     } catch (error) {
       toast.dismiss();
-      toast.error("Failed to download certificate");
       console.error("Certificate download error:", error);
+
+      if (error.response?.status === 400) {
+        // Try to get the error message from response
+        if (error.response.data instanceof Blob) {
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              const errorData = JSON.parse(reader.result);
+              toast.error(errorData.message || "Cannot generate certificate");
+            } catch (e) {
+              toast.error(
+                "Cannot generate certificate - invalid course or student data"
+              );
+            }
+          };
+          reader.readAsText(error.response.data);
+        } else {
+          toast.error(
+            error.response.data?.message || "Cannot generate certificate"
+          );
+        }
+      } else if (error.response?.status === 403) {
+        toast.error("Not authorized to access this certificate");
+      } else if (error.response?.status === 404) {
+        toast.error("Certificate not found");
+      } else {
+        toast.error(
+          "Failed to download certificate: " +
+            (error.message || "Unknown error")
+        );
+      }
     }
   };
   const handleRateCourse = (course) => {
@@ -802,10 +854,11 @@ const MyCourses = ({ setActiveView }) => {
                           className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full"
                         >
                           {typeof category === "object"
-                            ? category.name
+                            ? category.name || category.title
                             : category}
                         </span>
                       ))}
+
                     {course.categories.filter(Boolean).length > 2 && (
                       <span className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full">
                         +{course.categories.filter(Boolean).length - 2} more
@@ -817,42 +870,31 @@ const MyCourses = ({ setActiveView }) => {
                   <div className="text-xs text-gray-500 mb-2">
                     Enrolled: {course.enrolledAt}
                   </div>
-                  <div className="flex justify-between items-center mt-auto">
-                    <div className="flex gap-2">
-                      {/* {course.completed && !course.hasRated && (
-                        <button
-                          onClick={() => handleRateCourse(course)}
-                          className="px-3 py-2 rounded-lg text-sm font-medium bg-yellow-100 text-yellow-700 hover:bg-yellow-200 flex items-center transition-colors"
-                        >
-                          <FiStar className="mr-1" />
-                          Rate
-                        </button>
-                      )} */}
-                      <button
-                        onClick={() =>
-                          course.completed
-                            ? handleViewCertificate(course.id)
-                            : handleStartCourse(course.id)
-                        }
-                        className={`px-3 py-2 rounded-lg text-sm font-medium ${
-                          course.completed
-                            ? "bg-green-100 text-green-700 hover:bg-green-200 flex items-center"
-                            : "bg-indigo-100 text-gray-700 hover:bg-gray-200 flex items-center"
-                        } transition-colors`}
-                      >
-                        {course.completed ? (
-                          <>
-                            <FiAward className="mr-1" />
-                            Certificate
-                          </>
-                        ) : (
-                          <>
-                            <FiPlay className="mr-1" />
-                            {course.progress === 0 ? "Start" : "Continue"}
-                          </>
-                        )}
-                      </button>
-                    </div>
+                  <div className="flex justify-end items-center mt-auto">
+                    <button
+                      onClick={() =>
+                        course.completed
+                          ? handleViewCertificate(course.id)
+                          : handleStartCourse(course.id)
+                      }
+                      className={`w-full md:w-auto px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center ${
+                        course.completed
+                          ? "bg-green-100 text-green-700 hover:bg-green-200"
+                          : "bg-indigo-100 text-gray-700 hover:bg-gray-200"
+                      } transition-colors`}
+                    >
+                      {course.completed ? (
+                        <>
+                          <FiAward className="mr-1" />
+                          Certificate
+                        </>
+                      ) : (
+                        <>
+                          <FiPlay className="mr-1" />
+                          {course.progress === 0 ? "Start" : "Continue"}
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
               </motion.div>

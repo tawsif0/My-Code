@@ -18,6 +18,8 @@ import EventsPage from "./pages/EventsPage";
 import CareerPage from "./pages/CareerPage";
 import "./index.css";
 import { useLenis } from "./hooks/useLenis";
+import NewsPost from "./components/NewsPost";
+import ConsultationButton from "./components/ConsultationButton";
 // Scroll to Top component
 function ScrollToTop() {
   useLenis();
@@ -28,7 +30,7 @@ function ScrollToTop() {
     if (mainContainer) {
       mainContainer.scrollTo({
         top: 0,
-        behavior: "smooth",
+        behavior: "smooth"
       });
     }
 
@@ -59,6 +61,8 @@ export default function AppRoutes() {
         <div className="absolute bottom-1/4 left-1/3 w-20 h-20 rounded-full border-4 border-[#004080]/20 animate-float animation-delay-9000 !opacity-25"></div>
       </div>
       <Header />
+      <ConsultationButton />
+
       <ScrollButtons />
 
       {/* ScrollToTop component to scroll the page on route change */}
@@ -94,6 +98,11 @@ export default function AppRoutes() {
         <Route
           path="/blog/:id"
           element={<BlogPost />}
+          key={window.location.pathname}
+        />
+        <Route
+          path="/news/:id"
+          element={<NewsPost />}
           key={window.location.pathname}
         />
         <Route

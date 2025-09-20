@@ -12,7 +12,7 @@ import {
   FiSearch,
   FiClock,
   FiUsers,
-  FiEye,
+  FiEye
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -106,7 +106,7 @@ const CourseList = ({ setActiveView }) => {
                   ? instructor.full_name
                   : "Unknown Instructor",
                 instructorThumbnail: instructor?.profile_photo
-                  ? `${base_url}/uploads/teachers/${instructor?.profile_photo}`
+                  ? `${base_url}/teachers/${instructor?.profile_photo}`
                   : null,
                 rating: course.averageRating || 0,
                 students: course.totalStudents || 0,
@@ -123,7 +123,7 @@ const CourseList = ({ setActiveView }) => {
                   course.type === "live"
                     ? course.content?.filter((item) => item.type === "live")
                         .length || 0
-                    : 0,
+                    : 0
               };
             }
           );
@@ -149,8 +149,8 @@ const CourseList = ({ setActiveView }) => {
                 headers: {
                   Authorization: `Bearer ${localStorage.getItem(
                     "studentToken"
-                  )}`,
-                },
+                  )}`
+                }
               }
             );
 
@@ -262,7 +262,7 @@ const CourseList = ({ setActiveView }) => {
     courses,
     filterType,
     filterCategory,
-    filterLevel,
+    filterLevel
   ]);
 
   const categoryOptions = Array.from(
@@ -274,8 +274,8 @@ const CourseList = ({ setActiveView }) => {
       setCartLoading(true);
       const response = await axios.get(`${base_url}/api/student/cart`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("studentToken")}`,
-        },
+          Authorization: `Bearer ${localStorage.getItem("studentToken")}`
+        }
       });
 
       if (response.data.success) {
@@ -285,7 +285,7 @@ const CourseList = ({ setActiveView }) => {
             title: item.courseId?.title,
             thumbnail: item.courseId?.thumbnail,
             price: item.price,
-            addedAt: item.addedAt,
+            addedAt: item.addedAt
           }))
           .filter((item) => item.id && item.title); // Filter out invalid items
 
@@ -325,8 +325,8 @@ const CourseList = ({ setActiveView }) => {
           { courseId: course.id },
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("studentToken")}`,
-            },
+              Authorization: `Bearer ${localStorage.getItem("studentToken")}`
+            }
           }
         );
 
@@ -337,7 +337,7 @@ const CourseList = ({ setActiveView }) => {
             thumbnail: course.thumbnail,
             price: course.price,
             instructor: course.instructor,
-            addedAt: new Date().toISOString(),
+            addedAt: new Date().toISOString()
           };
 
           setCart((prevCart) => [...prevCart, newCartItem]);
@@ -350,7 +350,7 @@ const CourseList = ({ setActiveView }) => {
           thumbnail: course.thumbnail,
           price: course.price,
           instructor: course.instructor,
-          addedAt: new Date().toISOString(),
+          addedAt: new Date().toISOString()
         };
 
         setCart((prevCart) => [...prevCart, newCartItem]);
@@ -372,8 +372,8 @@ const CourseList = ({ setActiveView }) => {
       if (studentData?.id && localStorage.getItem("studentToken")) {
         await axios.delete(`${base_url}/api/student/cart/${courseId}`, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("studentToken")}`,
-          },
+            Authorization: `Bearer ${localStorage.getItem("studentToken")}`
+          }
         });
       }
 
@@ -683,7 +683,7 @@ const CourseList = ({ setActiveView }) => {
                                 month: "short",
                                 day: "numeric",
                                 hour: "2-digit",
-                                minute: "2-digit",
+                                minute: "2-digit"
                               }
                             )}
                           </span>
@@ -697,7 +697,7 @@ const CourseList = ({ setActiveView }) => {
                       onClick={() =>
                         setActiveView({
                           view: "courseOverview",
-                          courseId: course.id,
+                          courseId: course.id
                         })
                       }
                       className={`w-full ${

@@ -1,126 +1,69 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { Link } from "react-router-dom";
 
 const News = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [showAllNews, setShowAllNews] = useState(false);
+  const [newsItems, setNewsItems] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [ref, inView] = useInView({
     threshold: 0.1,
     triggerOnce: true
   });
 
-  // News data
-  const newsItems = [
-    {
-      id: 1,
-      title: "New UK Visa Financial Requirements (June 2025)",
-      excerpt:
-        "Updated maintenance funds requirement for UK student visas increases by 12% starting June 1, 2025.",
-      category: "policy-updates",
-      date: "May 25, 2025",
-      type: "update",
-      urgency: "high",
-      image:
-        "https://images.unsplash.com/photo-1527631746610-bca00a040d60?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
-    },
-    {
-      id: 2,
-      title: "Exclusive Tie-up with University of Toronto",
-      excerpt:
-        "We're proud to announce our new partnership offering application fee waivers and dedicated support.",
-      category: "partnerships",
-      date: "May 20, 2025",
-      type: "announcement",
-      image:
-        "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
-    },
-    {
-      id: 3,
-      title: "Increased Visa Processing Times for Australia",
-      excerpt:
-        "Australian student visas now taking 8-12 weeks due to high demand. Apply early!",
-      category: "alerts",
-      date: "May 18, 2025",
-      type: "alert",
-      urgency: "critical",
-      image:
-        "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
-    },
-    {
-      id: 4,
-      title: "Canada Extends Post-Graduation Work Permits",
-      excerpt:
-        "PGWP duration increased for certain programs starting Fall 2025 intake.",
-      category: "policy-updates",
-      date: "May 15, 2025",
-      type: "update",
-      urgency: "medium",
-      image:
-        "https://images.unsplash.com/photo-1517935706615-2717063c2225?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
-    },
-    {
-      id: 5,
-      title: "New Scholarship Program with ETH Zurich",
-      excerpt:
-        "Exclusive funding opportunities for STEM students through our new collaboration.",
-      category: "partnerships",
-      date: "May 10, 2025",
-      type: "announcement",
-      image:
-        "https://images.unsplash.com/photo-1523240795612-9a054b0db644?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
-    },
-    {
-      id: 6,
-      title: "US Embassy Closures in June 2025",
-      excerpt:
-        "Scheduled maintenance will close select visa processing centers June 15-20, 2025.",
-      category: "alerts",
-      date: "May 5, 2025",
-      type: "alert",
-      urgency: "high",
-      image:
-        "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
-    },
-    {
-      id: 7,
-      title: "Germany Relaxes Work Hour Restrictions",
-      excerpt:
-        "International students can now work 140 hours/month during semesters starting Winter 2025.",
-      category: "policy-updates",
-      date: "April 28, 2025",
-      type: "update",
-      urgency: "medium",
-      image:
-        "https://images.unsplash.com/photo-1543157145-f78c636d023d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
-    },
-    {
-      id: 8,
-      title: "Partnership with National University of Singapore",
-      excerpt:
-        "Priority application processing now available for our students.",
-      category: "partnerships",
-      date: "April 25, 2025",
-      type: "announcement",
-      image:
-        "https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
-    }
-  ];
+  // Fetch news items and categories from backend
+  useEffect(() => {
+    const fetchNewsData = async () => {
+      try {
+        setLoading(true);
 
-  const categories = [
-    { id: "all", name: "All News" },
-    { id: "policy-updates", name: "Policy Updates" },
-    { id: "partnerships", name: "Partnerships" },
-    { id: "alerts", name: "Alerts" }
-  ];
+        const newsResponse = await axios.get("http://localhost:3500/api/news");
+        // Ensure newsItems is always an array
+        const newsData = Array.isArray(newsResponse.data.news)
+          ? newsResponse.data.news
+          : [];
 
-  const filteredNews =
-    activeTab === "all"
+        const categoriesResponse = await axios.get(
+          "http://localhost:3500/api/news-categories"
+        );
+        const categoriesData = Array.isArray(categoriesResponse.data)
+          ? categoriesResponse.data
+          : [];
+
+        setNewsItems(newsData);
+        setCategories([{ _id: "all", name: "All News" }, ...categoriesData]);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching news data:", err);
+        toast.error(
+          err.response?.data?.message ||
+            err.message ||
+            "Failed to load news items"
+        );
+        setLoading(false);
+      }
+    };
+
+    fetchNewsData();
+  }, []);
+
+  const filteredNews = Array.isArray(newsItems)
+    ? activeTab === "all"
       ? newsItems
-      : newsItems.filter((item) => item.category === activeTab);
+      : newsItems.filter((item) => item.category?._id === activeTab)
+    : [];
 
-  const displayedNews = showAllNews ? filteredNews : filteredNews.slice(0, 3);
+  const displayedNews = Array.isArray(filteredNews)
+    ? showAllNews
+      ? filteredNews
+      : filteredNews.slice(0, 6)
+    : [];
 
   // Animation variants
   const containerVariants = {
@@ -160,8 +103,26 @@ const News = () => {
     }
   };
 
+  // Format date function
+  const formatDate = (dateString) => {
+    const options = { year: "numeric", month: "long", day: "numeric" };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
+  if (loading) {
+    return (
+      <section className="py-36">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="text-[#004080] text-xl">Loading news items...</div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <section ref={ref} className="py-20 md:py-20">
+    <section ref={ref} className="py-36 ">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -170,6 +131,12 @@ const News = () => {
           variants={containerVariants}
           className="text-center mb-16"
         >
+          <motion.span
+            variants={itemVariants}
+            className="cursor-pointer mb-8 px-3 py-1.5 bg-[#004080] text-white font-semibold rounded-full shadow-lg inline-flex items-center justify-center transform hover:scale-105 transition-transform duration-300 group"
+          >
+            News & Updates
+          </motion.span>
           <motion.h2
             variants={headerVariants}
             className="text-4xl md:text-5xl font-bold mb-6 !text-gray-900"
@@ -184,7 +151,6 @@ const News = () => {
             important alerts for your study abroad journey.
           </motion.p>
         </motion.div>
-
         {/* Category Tabs */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -194,16 +160,16 @@ const News = () => {
         >
           {categories.map((category) => (
             <motion.button
-              key={category.id}
+              key={category._id}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className={`px-5 py-2.5 rounded-full text-sm sm:text-base font-medium transition-all duration-300 ${
-                activeTab === category.id
+                activeTab === category._id
                   ? "bg-[#004080] text-white shadow-lg"
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
               onClick={() => {
-                setActiveTab(category.id);
+                setActiveTab(category._id);
                 setShowAllNews(false);
               }}
             >
@@ -211,95 +177,131 @@ const News = () => {
             </motion.button>
           ))}
         </motion.div>
-
         {/* News Grid */}
         <motion.div
           initial="hidden"
           animate={inView ? "visible" : "hidden"}
           variants={containerVariants}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          className={`${
+            displayedNews.length === 1
+              ? "flex justify-center"
+              : displayedNews.length === 2
+              ? "flex flex-col lg:flex-row lg:justify-between w-full lg:px-20 lg:gap-7 gap-6"
+              : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          }`}
         >
-          {displayedNews.map((item) => (
-            <motion.div
-              key={item.id}
-              variants={itemVariants}
-              whileHover={{ y: -5 }}
-              className="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300"
-            >
-              {/* News Image */}
-              <div className="h-48 relative overflow-hidden">
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+          {Array.isArray(displayedNews) &&
+            displayedNews.length > 0 &&
+            displayedNews.map((item, index) => (
+              <motion.div
+                key={item._id}
+                variants={itemVariants}
+                whileHover={{ y: -5 }}
+                className={`group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 w-full sm:max-w-[350px] lg:max-w-[400px]
+          ${displayedNews.length === 2 && index === 0 ? "lg:ml-auto" : ""}
+          ${displayedNews.length === 2 && index === 1 ? "lg:mr-auto" : ""}`}
+              >
+                {/* News Image */}
+                <div className="h-48 relative overflow-hidden">
+                  <img
+                    src={`http://localhost:3500/news/${item.image}`}
+                    alt={item.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
 
-                {/* Urgency Badge */}
-                {item.urgency && (
-                  <div
-                    className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold ${
-                      item.urgency === "critical"
-                        ? "bg-red-500 text-white"
-                        : item.urgency === "high"
-                        ? "bg-orange-500 text-white"
-                        : "bg-yellow-400 text-gray-800"
-                    }`}
-                  >
-                    {item.urgency === "critical"
-                      ? "URGENT"
-                      : item.urgency === "high"
-                      ? "IMPORTANT"
-                      : "UPDATE"}
+                  {/* Category Badge */}
+                  <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-white/90 text-xs font-semibold text-[#004080]">
+                    {item.category?.name || "Uncategorized"}
                   </div>
-                )}
-
-                {/* Category Badge */}
-                <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-white/90 text-xs font-semibold text-[#004080]">
-                  {categories.find((c) => c.id === item.category)?.name}
                 </div>
-              </div>
 
-              {/* News Content */}
-              <div className="p-6 flex flex-col h-[calc(100%-12rem)]">
-                <span className="text-xs text-gray-500 mb-2">{item.date}</span>
+                {/* News Content */}
+                <div className="p-6 flex flex-col h-[calc(100%-12rem)]">
+                  <h3 className="text-xl font-bold mb-3 text-gray-900 group-hover:text-[#004080] transition-colors duration-300">
+                    {item.title}
+                  </h3>
 
-                <h3 className="text-xl font-bold mb-3 text-gray-900 group-hover:text-[#004080] transition-colors duration-300">
-                  {item.title}
-                </h3>
+                  <div
+                    className="mb-6 flex-grow text-sm prose prose-lg max-w-none text-gray-700 leading-relaxed
+    prose-headings:text-gray-900 prose-headings:font-bold
+    prose-p:mb-4 prose-img:rounded-xl prose-img:shadow-md
+    prose-ul:list-disc prose-ul:pl-6 prose-ul:mb-4
+    prose-ol:list-decimal prose-ol:pl-6 prose-ol:mb-4
+    prose-li:mb-2
+    prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-800 prose-a:inline-flex prose-a:items-center prose-a:gap-1
+    prose-strong:font-semibold prose-strong:text-gray-900
+    prose-blockquote:border-l-blue-600 prose-blockquote:bg-gray-100 prose-blockquote:px-6 prose-blockquote:py-4 prose-blockquote:rounded-r-lg
+                  line-clamp-2"
+                    dangerouslySetInnerHTML={{ __html: item.description }}
+                  />
 
-                <p className="mb-4 text-gray-600 flex-grow">{item.excerpt}</p>
-
-                <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-                  <button className="text-sm font-medium text-[#004080] hover:text-[#003366] flex items-center gap-1 transition-colors duration-300">
-                    Read Full Story
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
+                  <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                    <span className="text-xs text-gray-500">
+                      {formatDate(item.createdAt)}
+                    </span>
+                    <Link
+                      to={`/news/${item._id}`}
+                      className="text-sm font-medium text-[#004080] hover:text-[#003366] flex items-center gap-1 transition-colors duration-300"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </button>
+                      Read Full Story
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))}
         </motion.div>
-
+        {/* Empty State */}
+        {filteredNews.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={inView ? { opacity: 1 } : {}}
+            transition={{ delay: 0.6 }}
+            className="text-center py-12"
+          >
+            <div className="mb-6">
+              <svg
+                className="w-24 h-24 mx-auto text-gray-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-极客时间 2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-500 mb-2">
+              No news found in this category.
+            </h3>
+            <p className="text-gray-400">
+              Check back later for new updates or try another category.
+            </p>
+          </motion.div>
+        )}
         {/* Show More/Less Button */}
-        {filteredNews.length > 3 && (
+        {filteredNews.length > 6 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: 0.6 }}
+            transition={{ delay: 0.8 }}
             className="text-center mt-12"
           >
             <motion.button
@@ -310,20 +312,6 @@ const News = () => {
             >
               {showAllNews ? "Show Less News" : "Show More News"}
             </motion.button>
-          </motion.div>
-        )}
-
-        {/* Empty State */}
-        {filteredNews.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={inView ? { opacity: 1 } : {}}
-            transition={{ delay: 0.8 }}
-            className="text-center py-12"
-          >
-            <p className="text-gray-500 text-lg">
-              No news found in this category.
-            </p>
           </motion.div>
         )}
       </div>

@@ -27,6 +27,7 @@ const Countries = () => {
   const contentRef = useRef(null);
 
   const fetchCountries = async () => {
+    setLoading(true);
     try {
       const { data } = await axios.get("http://localhost:3500/api/countries");
       setCountries(data);
@@ -45,48 +46,28 @@ const Countries = () => {
   }, []);
 
   useEffect(() => {
+    if (!heroRef.current || !scrollIndicatorRef.current) return;
+
     const ctx = gsap.context(() => {
-      const mm = gsap.matchMedia();
-
-      mm.add("(max-width: 767px)", () => {
-        gsap.fromTo(
-          heroRef.current,
-          { minHeight: "100vh" },
-          {
-            minHeight: "70vh",
-            ease: "none",
-            scrollTrigger: {
-              trigger: heroRef.current,
-              start: "top top",
-              end: "+=300",
-              scrub: 0.6,
-              invalidateOnRefresh: true,
-            },
+      // Hero section animation
+      gsap.fromTo(
+        heroRef.current,
+        { minHeight: "100vh" },
+        {
+          minHeight: window.innerWidth < 768 ? "70vh" : "60vh",
+          ease: "none",
+          scrollTrigger: {
+            trigger: heroRef.current,
+            start: "top top",
+            end: () => (window.innerWidth < 768 ? "+=300" : "+=400"),
+            scrub: 0.6,
+            invalidateOnRefresh: true,
+            markers: false // Set to true for debugging
           }
-        );
-      });
+        }
+      );
 
-      mm.add("(min-width: 768px)", () => {
-        gsap.fromTo(
-          heroRef.current,
-          { minHeight: "100vh" },
-          {
-            minHeight: "60vh",
-            ease: "none",
-            scrollTrigger: {
-              trigger: heroRef.current,
-              start: "top top",
-              end: "+=400",
-              scrub: 0.6,
-              invalidateOnRefresh: true,
-            },
-          }
-        );
-      });
-
-      gsap.killTweensOf(contentRef.current);
-      gsap.set(contentRef.current, { clearProps: "all" });
-
+      // Scroll indicator fade out
       gsap.fromTo(
         scrollIndicatorRef.current,
         { opacity: 1 },
@@ -96,14 +77,14 @@ const Countries = () => {
             trigger: heroRef.current,
             start: "top top+=40",
             end: "+=200",
-            scrub: 0.6,
-          },
+            scrub: 0.6
+          }
         }
       );
     });
 
     return () => ctx.revert();
-  }, []);
+  }, [loading]);
 
   const toggleCountrySelection = (countryId) => {
     if (selectedCountries.includes(countryId)) {
@@ -111,6 +92,8 @@ const Countries = () => {
     } else {
       if (selectedCountries.length < 3) {
         setSelectedCountries([...selectedCountries, countryId]);
+      } else {
+        toast.info("You can compare up to 3 countries at a time");
       }
     }
   };
@@ -184,165 +167,210 @@ const Countries = () => {
             </p>
           </motion.div>
 
-          {/* Comparison Mode Toggle */}
-          <motion.div
-            variants={fadeIn("up", "tween", 0.2, 0.5)}
-            className="flex justify-center mb-8"
-          >
-            <div className="bg-white/30 p-1 rounded-full shadow-md border border-[#a0cbe8] backdrop-blur-sm">
-              <button
-                onClick={() => setComparisonMode(false)}
-                className={`px-6 py-2 rounded-full font-medium transition-all ${
-                  !comparisonMode
-                    ? "bg-[#004080] text-white"
-                    : "text-[#004080] hover:bg-[#a0cbe8]/30"
-                }`}
-              >
-                Browse Countries
-              </button>
-              <button
-                onClick={() => {
-                  if (selectedCountries.length > 0) {
-                    setComparisonMode(true);
-                  }
-                }}
-                className={`px-6 py-2 rounded-full font-medium transition-all ${
-                  comparisonMode
-                    ? "bg-[#004080] text-white"
-                    : selectedCountries.length > 0
-                    ? "text-[#004080] hover:bg-[#a0cbe8]/30"
-                    : "text-gray-400 cursor-not-allowed"
-                }`}
-                disabled={selectedCountries.length === 0}
-              >
-                Compare ({selectedCountries.length}/3)
-              </button>
-            </div>
-          </motion.div>
-
-          {comparisonMode ? (
-            <ComparisonView countries={selectedCountryData()} />
-          ) : (
+          {/* Empty State */}
+          {countries.length === 0 && (
             <motion.div
-              variants={staggerContainer()}
-              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="text-center py-16 bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-[#a0cbe8]"
             >
-              {countries.map((country, index) => (
-                <motion.div
-                  key={country._id}
-                  variants={fadeIn("up", "tween", index * 0.1, 0.5)}
-                  whileHover={{
-                    y: -10,
-                    boxShadow: "0 15px 30px rgba(0, 64, 128, 0.2)",
-                  }}
-                  className={`bg-white/80 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden border-2 transition-all duration-300 ${
-                    selectedCountries.includes(country._id)
-                      ? "border-[#ffd700]"
-                      : "border-transparent"
-                  } hover:shadow-xl flex flex-col`}
+              <div className="mb-6">
+                <svg
+                  className="w-24 h-24 mx-auto text-[#a0cbe8]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <div className="flex flex-col justify-between h-full p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex items-center">
-                        <span className="mr-3 flex items-center justify-center w-8 h-5 relative">
-                          {country.flag ? (
-                            <img
-                              src={`http://localhost:3500/api/countries/flag/${country.flag}`}
-                              alt={`${country.name} flag`}
-                              className="w-8 h-5 object-cover shadow-md border border-gray-200 hover:scale-110 transition-transform duration-300"
-                            />
-                          ) : (
-                            <div className="w-8 h-5 flex items-center justify-center bg-gray-100 text-gray-400 shadow-md border border-gray-200">
-                              🏳️
-                            </div>
-                          )}
-                        </span>
-
-                        <h3 className="text-xl font-bold text-[#004080]">
-                          {country.name}
-                        </h3>
-                      </div>
-                      <button
-                        onClick={() => toggleCountrySelection(country._id)}
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          selectedCountries.includes(country._id)
-                            ? "bg-[#ff0000] text-[#ffffff] hover:bg-[#ff0005]/80"
-                            : "bg-[#ffd700] text-[#004080] hover:bg-[#ffd705]/80"
-                        }`}
-                      >
-                        {selectedCountries.includes(country._id)
-                          ? "Remove"
-                          : "Compare"}
-                      </button>
-                    </div>
-                    <ul className="space-y-2">
-                      {country.highlights &&
-                        country.highlights.map((highlight, i) => (
-                          <li key={i} className="flex items-start">
-                            <svg
-                              className="h-5 w-5 text-[#ffd700] mr-2 mt-0.5 flex-shrink-0"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                            <span className="text-[#004080]">{highlight}</span>
-                          </li>
-                        ))}
-                    </ul>
-                    <button
-                      onClick={() =>
-                        setActiveDetail(
-                          activeDetail === country._id ? null : country._id
-                        )
-                      }
-                      className="mt-6 w-full bg-[#004080]/10 hover:bg-[#004080]/20 text-[#004080] font-medium py-2 px-4 rounded-lg transition-colors duration-300"
-                    >
-                      {activeDetail === country._id
-                        ? "Hide Details"
-                        : "View Details"}
-                    </button>
-
-                    {activeDetail === country._id && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="mt-4 overflow-hidden"
-                      >
-                        <div className="pt-4 border-t border-[#a0cbe8]">
-                          <h4 className="font-semibold text-[#004080] mb-2">
-                            Visa Success Rate
-                          </h4>
-                          <p className="text-[#004080]">100%</p>
-
-                          {country.description &&
-                            country.description.length > 0 && (
-                              <>
-                                <h4 className="font-semibold text-[#004080] mb-2 mt-4">
-                                  Description
-                                </h4>
-                                <ul className="list-disc pl-5 text-[#004080]">
-                                  {country.description.map((desc, idx) => (
-                                    <li key={idx}>{desc}</li>
-                                  ))}
-                                </ul>
-                              </>
-                            )}
-                        </div>
-                      </motion.div>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-[#004080] mb-4">
+                No Countries Available
+              </h3>
+              <p className="text-lg text-[#004080] mb-6 max-w-md mx-auto">
+                Currently there are no study destinations available. Please
+                check back later for updates.
+              </p>
+              <button
+                onClick={fetchCountries}
+                className="px-6 py-3 bg-[#004080] text-white rounded-lg font-medium hover:bg-[#003366] transition-colors duration-300"
+              >
+                Refresh
+              </button>
             </motion.div>
+          )}
+
+          {countries.length > 0 && (
+            <>
+              {/* Comparison Mode Toggle */}
+              <motion.div
+                variants={fadeIn("up", "tween", 0.2, 0.5)}
+                className="flex justify-center mb-8"
+              >
+                <div className="bg-white/30 p-1 rounded-full shadow-md border border-[#a0cbe8] backdrop-blur-sm">
+                  <button
+                    onClick={() => setComparisonMode(false)}
+                    className={`px-6 py-2 rounded-full font-medium transition-all ${
+                      !comparisonMode
+                        ? "bg-[#004080] text-white"
+                        : "text-[#004080] hover:bg-[#a0cbe8]/30"
+                    }`}
+                  >
+                    Browse Countries
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (selectedCountries.length > 0) {
+                        setComparisonMode(true);
+                      }
+                    }}
+                    className={`px-6 py-2 rounded-full font-medium transition-all ${
+                      comparisonMode
+                        ? "bg-[#004080] text-white"
+                        : selectedCountries.length > 0
+                        ? "text-[#004080] hover:bg-[#a0cbe8]/30"
+                        : "text-gray-400 cursor-not-allowed"
+                    }`}
+                    disabled={selectedCountries.length === 0}
+                  >
+                    Compare ({selectedCountries.length}/3)
+                  </button>
+                </div>
+              </motion.div>
+
+              {comparisonMode ? (
+                <ComparisonView countries={selectedCountryData()} />
+              ) : (
+                <motion.div
+                  variants={staggerContainer()}
+                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8"
+                >
+                  {countries.map((country, index) => (
+                    <motion.div
+                      key={country._id}
+                      variants={fadeIn("up", "tween", index * 0.1, 0.5)}
+                      whileHover={{
+                        y: -10,
+                        boxShadow: "0 15px 30px rgba(0, 64, 128, 0.2)"
+                      }}
+                      className={`bg-white/80 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden border-2 transition-all duration-300 ${
+                        selectedCountries.includes(country._id)
+                          ? "border-[#ffd700]"
+                          : "border-transparent"
+                      } hover:shadow-xl flex flex-col`}
+                    >
+                      <div className="flex flex-col justify-between h-full p-6">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex items-center">
+                            <span className="mr-3 flex items-center justify-center w-8 h-5 relative">
+                              {country.flag ? (
+                                <img
+                                  src={`http://localhost:3500/api/countries/flag/${country.flag}`}
+                                  alt={`${country.name} flag`}
+                                  className="w-8 h-5 object-cover shadow-md border border-gray-200 hover:scale-110 transition-transform duration-300"
+                                />
+                              ) : (
+                                <div className="w-8 h-5 flex items-center justify-center bg-gray-100 text-gray-400 shadow-md border border-gray-200">
+                                  🏳️
+                                </div>
+                              )}
+                            </span>
+
+                            <h3 className="text-xl font-bold text-[#004080]">
+                              {country.name}
+                            </h3>
+                          </div>
+                          <button
+                            onClick={() => toggleCountrySelection(country._id)}
+                            className={`px-3 py-1 rounded-full text-sm font-medium ${
+                              selectedCountries.includes(country._id)
+                                ? "bg-[#ff0000] text-[#ffffff] hover:bg-[#ff0005]/80"
+                                : "bg-[#ffd700] text-[#004080] hover:bg-[#ffd705]/80"
+                            }`}
+                          >
+                            {selectedCountries.includes(country._id)
+                              ? "Remove"
+                              : "Compare"}
+                          </button>
+                        </div>
+                        <ul className="space-y-2">
+                          {country.highlights &&
+                            country.highlights.map((highlight, i) => (
+                              <li key={i} className="flex items-start">
+                                <svg
+                                  className="h-5 w-5 text-[#ffd700] mr-2 mt-0.5 flex-shrink-0"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M5 13l4 4L19 7"
+                                  />
+                                </svg>
+                                <span className="text-[#004080]">
+                                  {highlight}
+                                </span>
+                              </li>
+                            ))}
+                        </ul>
+                        <button
+                          onClick={() =>
+                            setActiveDetail(
+                              activeDetail === country._id ? null : country._id
+                            )
+                          }
+                          className="mt-6 w-full bg-[#004080]/10 hover:bg-[#004080]/20 text-[#004080] font-medium py-2 px-4 rounded-lg transition-colors duration-300"
+                        >
+                          {activeDetail === country._id
+                            ? "Hide Details"
+                            : "View Details"}
+                        </button>
+
+                        {activeDetail === country._id && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="mt-4 overflow-hidden"
+                          >
+                            <div className="pt-4 border-t border-[#a0cbe8]">
+                              <h4 className="font-semibold text-[#004080] mb-2">
+                                Visa Success Rate
+                              </h4>
+                              <p className="text-[#004080]">100%</p>
+
+                              {country.description &&
+                                country.description.length > 0 && (
+                                  <>
+                                    <h4 className="font-semibold text-[#004080] mb-2 mt-4">
+                                      Description
+                                    </h4>
+                                    <ul className="list-disc pl-5 text-[#004080]">
+                                      {country.description.map((desc, idx) => (
+                                        <li key={idx}>{desc}</li>
+                                      ))}
+                                    </ul>
+                                  </>
+                                )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </>
           )}
         </div>
       </section>
@@ -395,7 +423,7 @@ const ComparisonView = ({ countries }) => {
         ) {
           allCriteria.push({
             _id: criterionObj.criteria._id,
-            name: criterionObj.criteria.name,
+            name: criterionObj.criteria.name
           });
         }
       });

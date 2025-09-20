@@ -3,7 +3,7 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Navigate,
+  Navigate
 } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import AdminLogin from "./component/admin/adminLogin";
@@ -29,18 +29,12 @@ import ResetPasswordEmployee from "./component/employee/ResetPassword";
 import ForgotPasswordEmployee from "./component/employee/ForgotPassword";
 
 const isAuthenticated = () => {
-  const token = localStorage.getItem("token");
+  const token =
+    localStorage.getItem("token") || localStorage.getItem("studentToken");
   return !!token;
 };
 
-const getUserRole = () => {
-  return localStorage.getItem("role"); // "admin" or "subadmin"
-};
-
 const App = () => {
-  // eslint-disable-next-line no-unused-vars
-  const role = getUserRole();
-
   const [authMode, setAuthMode] = useState("register");
   return (
     <>
@@ -48,7 +42,7 @@ const App = () => {
         position="top-center"
         containerStyle={{
           position: "fixed",
-          zIndex: 9999, // Higher than your modal's z-index
+          zIndex: 9999 // Higher than your modal's z-index
         }}
         toastOptions={{
           className:
@@ -60,20 +54,20 @@ const App = () => {
             boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
             borderRadius: "1rem",
             fontSize: "1rem",
-            padding: "1.2rem 1.5rem",
+            padding: "1.2rem 1.5rem"
           },
           success: {
             iconTheme: {
               primary: "#000",
-              secondary: "#ecfdf5",
-            },
+              secondary: "#ecfdf5"
+            }
           },
           error: {
             iconTheme: {
               primary: "#ef4444",
-              secondary: "#fef2f2",
-            },
-          },
+              secondary: "#fef2f2"
+            }
+          }
         }}
       />
       <Router>

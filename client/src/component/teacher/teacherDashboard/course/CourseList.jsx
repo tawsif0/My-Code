@@ -10,7 +10,7 @@ import {
   FiPlus,
   FiChevronDown,
   FiChevronUp,
-  FiVideo,
+  FiVideo
 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
@@ -19,7 +19,8 @@ import DOMPurify from "dompurify";
 import { FiImage } from "react-icons/fi";
 import { FiUpload } from "react-icons/fi";
 import { FiYoutube } from "react-icons/fi";
-
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 const CourseList = () => {
   const base_url = import.meta.env.VITE_API_KEY_Base_URL;
   const [courses, setCourses] = useState([]);
@@ -42,8 +43,12 @@ const CourseList = () => {
     price: "",
     categories: [],
     level: "beginner",
-    category: "",
+    category: ""
   });
+  const [descriptionHtml, setDescriptionHtml] = useState("");
+  const [descriptionError, setDescriptionError] = useState("");
+  const [contentErrors, setContentErrors] = useState({});
+  const [answerErrors, setAnswerErrors] = useState({});
   const [existingThumbnail, setExistingThumbnail] = useState(null);
   const [existingAttachments, setExistingAttachments] = useState([]);
   const [removedAttachments, setRemovedAttachments] = useState([]);
@@ -54,8 +59,8 @@ const CourseList = () => {
     try {
       const response = await axios.get(`${base_url}/api/teacher/all-category`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("teacherToken")}`,
-        },
+          Authorization: `Bearer ${localStorage.getItem("teacherToken")}`
+        }
       });
 
       const categoriesData = response.data.data || response.data;
@@ -89,8 +94,8 @@ const CourseList = () => {
         `${base_url}/api/teacher/my-courses/${teacherId}`,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("teacherToken")}`,
-          },
+            Authorization: `Bearer ${localStorage.getItem("teacherToken")}`
+          }
         }
       );
 
@@ -148,7 +153,7 @@ const CourseList = () => {
   );
   const startEdit = (course) => {
     setEditingCourse(course._id);
-
+    setDescriptionHtml(course.description || "");
     // Set existing thumbnail and attachments
     if (course.thumbnail) {
       setExistingThumbnail(course.thumbnail);
@@ -179,7 +184,7 @@ const CourseList = () => {
             ...(course.type === "premium" && item.content
               ? { content: item.content }
               : {}),
-            contentFile: null,
+            contentFile: null
           };
         }
         if (item.type === "quiz") {
@@ -189,8 +194,8 @@ const CourseList = () => {
               ...q,
               options: q.options || [],
               correctAnswer:
-                q.correctAnswer || (q.type === "mcq-multiple" ? [] : 0),
-            })),
+                q.correctAnswer || (q.type === "mcq-multiple" ? [] : 0)
+            }))
           };
         }
         return item;
@@ -199,7 +204,7 @@ const CourseList = () => {
       price: course.price,
       categories: course.categories || [],
       level: course.level || "beginner",
-      category: initialCategory,
+      category: initialCategory
     });
     // Expand all sections by default
     const expanded = {};
@@ -208,8 +213,37 @@ const CourseList = () => {
     });
     setExpandedSections(expanded);
   };
+  const validateContentDescription = (id, value) => {
+    if (!value || value === "<p><br></p>") {
+      setContentErrors((prev) => ({
+        ...prev,
+        [id]: "Description is required"
+      }));
+      return false;
+    } else {
+      setContentErrors((prev) => ({ ...prev, [id]: "" }));
+      return true;
+    }
+  };
+
+  const validateAnswer = (questionId, value) => {
+    if (!value || value === "<p><br></p>") {
+      setAnswerErrors((prev) => ({
+        ...prev,
+        [questionId]: "Expected answer is required"
+      }));
+      return false;
+    } else {
+      setAnswerErrors((prev) => ({ ...prev, [questionId]: "" }));
+      return true;
+    }
+  };
   const cancelEdit = () => {
     setEditingCourse(null);
+    setDescriptionHtml("");
+    setDescriptionError("");
+    setContentErrors({});
+    setAnswerErrors({});
     setCourseData({
       title: "",
       description: "",
@@ -219,7 +253,7 @@ const CourseList = () => {
       price: "",
       categories: [],
       level: "beginner",
-      category: "",
+      category: ""
     });
     setExistingThumbnail(null);
     setExistingAttachments([]);
@@ -229,7 +263,7 @@ const CourseList = () => {
   const toggleSection = (id) => {
     setExpandedSections((prev) => ({
       ...prev,
-      [id]: !prev[id],
+      [id]: !prev[id]
     }));
   };
 
@@ -245,27 +279,27 @@ const CourseList = () => {
       ...(isPremium
         ? {
             contentFile: null, // Will be replaced with file object when uploaded
-            youtubeLink: undefined, // Explicitly remove for premium
+            youtubeLink: undefined // Explicitly remove for premium
           }
         : {
             youtubeLink: "", // Required for free courses
-            contentFile: undefined, // Explicitly remove for free
+            contentFile: undefined // Explicitly remove for free
           }),
       // Animation properties
       initial: { opacity: 0, y: 20 },
       animate: { opacity: 1, y: 0 },
       exit: { opacity: 0, y: -20 },
-      transition: { duration: 0.3 },
+      transition: { duration: 0.3 }
     };
 
     setCourseData((prev) => ({
       ...prev,
-      content: [...prev.content, newTutorial],
+      content: [...prev.content, newTutorial]
     }));
 
     setExpandedSections((prev) => ({
       ...prev,
-      [newTutorial.id]: true,
+      [newTutorial.id]: true
     }));
   };
 
@@ -283,23 +317,23 @@ const CourseList = () => {
           options: ["", ""],
           correctAnswer: 0,
           answer: "",
-          marks: 1,
-        },
+          marks: 1
+        }
       ],
       isExpanded: true,
       // Animation properties
       initial: { opacity: 0, y: 20 },
       animate: { opacity: 1, y: 0 },
       exit: { opacity: 0, y: -20 },
-      transition: { duration: 0.3 },
+      transition: { duration: 0.3 }
     };
     setCourseData((prev) => ({
       ...prev,
-      content: [...prev.content, newQuiz],
+      content: [...prev.content, newQuiz]
     }));
     setExpandedSections((prev) => ({
       ...prev,
-      [newQuiz.id]: true,
+      [newQuiz.id]: true
     }));
   };
 
@@ -317,15 +351,15 @@ const CourseList = () => {
       initial: { opacity: 0, y: 20 },
       animate: { opacity: 1, y: 0 },
       exit: { opacity: 0, y: -20 },
-      transition: { duration: 0.3 },
+      transition: { duration: 0.3 }
     };
     setCourseData((prev) => ({
       ...prev,
-      content: [...prev.content, newLiveClass],
+      content: [...prev.content, newLiveClass]
     }));
     setExpandedSections((prev) => ({
       ...prev,
-      [newLiveClass.id]: true,
+      [newLiveClass.id]: true
     }));
   };
 
@@ -334,7 +368,7 @@ const CourseList = () => {
       id: Date.now(),
       question: "",
       type: questionType,
-      marks: 1,
+      marks: 1
     };
 
     let question;
@@ -343,21 +377,21 @@ const CourseList = () => {
         question = {
           ...baseQuestion,
           options: ["", ""],
-          correctAnswer: 0,
+          correctAnswer: 0
         };
         break;
       case "mcq-multiple":
         question = {
           ...baseQuestion,
           options: ["", ""],
-          correctAnswer: [],
+          correctAnswer: []
         };
         break;
       case "short-answer":
       case "broad-answer":
         question = {
           ...baseQuestion,
-          expectedAnswer: "", // Use expectedAnswer instead of answer
+          expectedAnswer: "" // Use expectedAnswer instead of answer
         };
         break;
       default:
@@ -370,11 +404,11 @@ const CourseList = () => {
         if (item.id === quizId || item._id === quizId) {
           return {
             ...item,
-            questions: [...(item.questions || []), question],
+            questions: [...(item.questions || []), question]
           };
         }
         return item;
-      }),
+      })
     }));
   };
 
@@ -389,22 +423,22 @@ const CourseList = () => {
               if (q.id === questionId || q._id === questionId) {
                 return {
                   ...q,
-                  options: [...(q.options || []), ""],
+                  options: [...(q.options || []), ""]
                 };
               }
               return q;
-            }),
+            })
           };
         }
         return item;
-      }),
+      })
     }));
   };
 
   const removeContentItem = (id) => {
     setCourseData((prev) => ({
       ...prev,
-      content: prev.content.filter((item) => item.id !== id && item._id !== id),
+      content: prev.content.filter((item) => item.id !== id && item._id !== id)
     }));
   };
 
@@ -432,8 +466,8 @@ const CourseList = () => {
                 description: "",
                 meetingLink: "",
                 schedule: new Date().toISOString().slice(0, 16),
-                isExpanded: true,
-              },
+                isExpanded: true
+              }
             ];
           }
         }
@@ -453,14 +487,14 @@ const CourseList = () => {
                 return {
                   ...rest,
                   contentFile: rest.contentFile || null,
-                  content: rest.content || null,
+                  content: rest.content || null
                 };
               } else {
                 // Switching to free - remove content and ensure youtubeLink exists
                 const { content, contentFile, ...rest } = item;
                 return {
                   ...rest,
-                  youtubeLink: rest.youtubeLink || "",
+                  youtubeLink: rest.youtubeLink || ""
                 };
               }
             }
@@ -472,13 +506,13 @@ const CourseList = () => {
           ...prev,
           [name]: value,
           content: updatedContent,
-          price: value === "premium" || value === "live" ? prev.price : "",
+          price: value === "premium" || value === "live" ? prev.price : ""
         };
       });
     } else {
       setCourseData((prev) => ({
         ...prev,
-        [name]: value,
+        [name]: value
       }));
     }
   };
@@ -493,10 +527,14 @@ const CourseList = () => {
       ...prev,
       content: prev.content.map((item) => {
         if (item.id === id || item._id === id) {
+          // Validate description when it changes
+          if (field === "description") {
+            validateContentDescription(id, value);
+          }
           return { ...item, [field]: value };
         }
         return item;
-      }),
+      })
     }));
   };
 
@@ -512,11 +550,11 @@ const CourseList = () => {
                 return { ...q, [field]: value };
               }
               return q;
-            }),
+            })
           };
         }
         return item;
-      }),
+      })
     }));
   };
 
@@ -534,11 +572,11 @@ const CourseList = () => {
                 return { ...q, options: newOptions };
               }
               return q;
-            }),
+            })
           };
         }
         return item;
-      }),
+      })
     }));
   };
 
@@ -569,11 +607,11 @@ const CourseList = () => {
                 return { ...q, correctAnswer: newAnswers };
               }
               return q;
-            }),
+            })
           };
         }
         return item;
-      }),
+      })
     }));
   };
 
@@ -596,11 +634,11 @@ const CourseList = () => {
                 }
               }
               return q;
-            }),
+            })
           };
         }
         return item;
-      }),
+      })
     }));
   };
 
@@ -618,7 +656,7 @@ const CourseList = () => {
       setCourseData((prev) => ({
         ...prev,
         thumbnail: file,
-        thumbnailPreview: previewUrl,
+        thumbnailPreview: previewUrl
       }));
       setExistingThumbnail(null);
     }
@@ -628,14 +666,14 @@ const CourseList = () => {
     const files = Array.from(e.target.files);
     setCourseData((prev) => ({
       ...prev,
-      attachments: [...prev.attachments, ...files],
+      attachments: [...prev.attachments, ...files]
     }));
   };
 
   const removeAttachment = (index) => {
     setCourseData((prev) => ({
       ...prev,
-      attachments: prev.attachments.filter((_, i) => i !== index),
+      attachments: prev.attachments.filter((_, i) => i !== index)
     }));
   };
 
@@ -677,15 +715,15 @@ const CourseList = () => {
                 return {
                   ...q,
                   options: newOptions,
-                  correctAnswer: newCorrectAnswer,
+                  correctAnswer: newCorrectAnswer
                 };
               }
               return q;
-            }),
+            })
           };
         }
         return item;
-      }),
+      })
     }));
   };
 
@@ -695,9 +733,13 @@ const CourseList = () => {
 
       if (
         !courseData.title ||
-        !courseData.description ||
+        !descriptionHtml ||
+        descriptionHtml === "<p><br></p>" ||
         (!courseData.thumbnail && !existingThumbnail)
       ) {
+        if (!descriptionHtml || descriptionHtml === "<p><br></p>") {
+          setDescriptionError("Course description is required");
+        }
         throw new Error("Please fill all required fields");
       }
 
@@ -746,7 +788,7 @@ const CourseList = () => {
               contentItem.content = {
                 filename: contentItem.contentFile.name,
                 size: contentItem.contentFile.size,
-                mimetype: contentItem.contentFile.type,
+                mimetype: contentItem.contentFile.type
               };
             }
 
@@ -830,7 +872,7 @@ const CourseList = () => {
       // Prepare form data for upload
       const formData = new FormData();
       formData.append("title", courseData.title);
-      formData.append("description", courseData.description);
+      formData.append("description", descriptionHtml);
 
       // Handle thumbnail
       if (courseData.thumbnail) {
@@ -892,8 +934,8 @@ const CourseList = () => {
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("teacherToken")}`,
-          },
+            Authorization: `Bearer ${localStorage.getItem("teacherToken")}`
+          }
         }
       );
 
@@ -1195,15 +1237,65 @@ const CourseList = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                               Course Description *
                             </label>
-                            <textarea
-                              name="description"
-                              value={courseData.description}
-                              onChange={handleInputChange}
-                              rows={6}
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg  focus:border-gray-500 hover:border-gray-500 resize-vertical"
-                              required
-                              placeholder="Enter course description"
+                            <ReactQuill
+                              value={descriptionHtml}
+                              onChange={(value) => {
+                                setDescriptionHtml(value);
+                                if (value && value !== "<p><br></p>") {
+                                  setDescriptionError("");
+                                }
+                              }}
+                              onBlur={() => {
+                                if (
+                                  !descriptionHtml ||
+                                  descriptionHtml === "<p><br></p>"
+                                ) {
+                                  setDescriptionError(
+                                    "Course description is required"
+                                  );
+                                }
+                              }}
+                              modules={{
+                                toolbar: [
+                                  [{ header: [1, 2, 3, false] }],
+                                  [
+                                    "bold",
+                                    "italic",
+                                    "underline",
+                                    "strike",
+                                    "blockquote"
+                                  ],
+                                  [{ list: "ordered" }, { list: "bullet" }],
+                                  ["link"],
+                                  ["clean"]
+                                ]
+                              }}
+                              formats={[
+                                "header",
+                                "bold",
+                                "italic",
+                                "underline",
+                                "strike",
+                                "blockquote",
+                                "list",
+                                "bullet",
+                                "link"
+                              ]}
+                              className={`border rounded-lg ${
+                                descriptionError
+                                  ? "border-red-500"
+                                  : "border-gray-300 focus:border-gray-500 hover:border-gray-500"
+                              }`}
                             />
+                            {descriptionError && (
+                              <motion.p
+                                initial={{ opacity: 0, y: -5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="text-sm text-red-500 mt-1"
+                              >
+                                {descriptionError}
+                              </motion.p>
+                            )}
                           </div>
 
                           {/* Course Basic Info */}
@@ -1242,22 +1334,22 @@ const CourseList = () => {
                                             initial={{
                                               opacity: 0,
                                               scale: 0.8,
-                                              y: 10,
+                                              y: 10
                                             }}
                                             animate={{
                                               opacity: 1,
                                               scale: 1,
-                                              y: 0,
+                                              y: 0
                                             }}
                                             whileHover={{
                                               scale: 1.1,
-                                              rotate: -5,
+                                              rotate: -5
                                             }}
                                             whileTap={{ scale: 0.95 }}
                                             transition={{
                                               type: "spring",
                                               stiffness: 300,
-                                              damping: 20,
+                                              damping: 20
                                             }}
                                             className="absolute -bottom-2 -right-2 bg-white p-1 rounded-full shadow-md border border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors"
                                           >
@@ -1277,29 +1369,29 @@ const CourseList = () => {
                                             setCourseData((prev) => ({
                                               ...prev,
                                               thumbnail: null,
-                                              thumbnailPreview: null,
+                                              thumbnailPreview: null
                                             }));
                                             setExistingThumbnail(null);
                                           }}
                                           initial={{
                                             opacity: 0,
                                             scale: 0.8,
-                                            y: -10,
+                                            y: -10
                                           }}
                                           animate={{
                                             opacity: 1,
                                             scale: 1,
-                                            y: 0,
+                                            y: 0
                                           }}
                                           whileHover={{
                                             scale: 1.1,
-                                            rotate: 10,
+                                            rotate: 10
                                           }}
                                           whileTap={{ scale: 0.9 }}
                                           transition={{
                                             type: "spring",
                                             stiffness: 300,
-                                            damping: 20,
+                                            damping: 20
                                           }}
                                           className="absolute -right-2 -top-2 bg-white p-1.5 rounded-full shadow-md border border-gray-200 hover:bg-red-50 text-red-500"
                                           type="button"
@@ -1630,23 +1722,66 @@ const CourseList = () => {
                                             required
                                           />
                                         </div>
+                                        {/* For tutorial descriptions */}
                                         <div>
                                           <label className="block text-sm font-medium text-gray-700 mb-1">
                                             Description
                                           </label>
-                                          <textarea
+                                          <ReactQuill
                                             value={item.description}
-                                            onChange={(e) =>
+                                            onChange={(value) =>
                                               handleContentChange(
                                                 item.id || item._id,
                                                 "description",
-                                                e.target.value
+                                                value
                                               )
                                             }
-                                            rows={4}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg  focus:border-gray-500 hover:border-gray-500 resize-vertical"
-                                            placeholder="Enter tutorial description"
+                                            onBlur={() =>
+                                              validateContentDescription(
+                                                item.id || item._id,
+                                                item.description
+                                              )
+                                            }
+                                            modules={{
+                                              toolbar: [
+                                                ["bold", "italic", "underline"],
+                                                [
+                                                  { list: "ordered" },
+                                                  { list: "bullet" }
+                                                ],
+                                                ["link"],
+                                                ["clean"]
+                                              ]
+                                            }}
+                                            formats={[
+                                              "bold",
+                                              "italic",
+                                              "underline",
+                                              "list",
+                                              "bullet",
+                                              "link"
+                                            ]}
+                                            className={`border rounded-lg ${
+                                              contentErrors[item.id || item._id]
+                                                ? "border-red-500"
+                                                : "border-gray-300 focus:border-gray-500 hover:border-gray-500"
+                                            }`}
                                           />
+                                          {contentErrors[
+                                            item.id || item._id
+                                          ] && (
+                                            <motion.p
+                                              initial={{ opacity: 0, y: -5 }}
+                                              animate={{ opacity: 1, y: 0 }}
+                                              className="text-sm text-red-500 mt-1"
+                                            >
+                                              {
+                                                contentErrors[
+                                                  item.id || item._id
+                                                ]
+                                              }
+                                            </motion.p>
+                                          )}
                                         </div>
                                         {courseData.type === "free" ? (
                                           <div>
@@ -1781,19 +1916,61 @@ const CourseList = () => {
                                           <label className="block text-sm font-medium text-gray-700 mb-1">
                                             Description
                                           </label>
-                                          <textarea
+                                          <ReactQuill
                                             value={item.description}
-                                            onChange={(e) =>
+                                            onChange={(value) =>
                                               handleContentChange(
                                                 item.id || item._id,
                                                 "description",
-                                                e.target.value
+                                                value
                                               )
                                             }
-                                            rows={4}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg  focus:border-gray-500 hover:border-gray-500 resize-vertical"
-                                            placeholder="Enter quiz description"
+                                            onBlur={() =>
+                                              validateContentDescription(
+                                                item.id || item._id,
+                                                item.description
+                                              )
+                                            }
+                                            modules={{
+                                              toolbar: [
+                                                ["bold", "italic", "underline"],
+                                                [
+                                                  { list: "ordered" },
+                                                  { list: "bullet" }
+                                                ],
+                                                ["link"],
+                                                ["clean"]
+                                              ]
+                                            }}
+                                            formats={[
+                                              "bold",
+                                              "italic",
+                                              "underline",
+                                              "list",
+                                              "bullet",
+                                              "link"
+                                            ]}
+                                            className={`border rounded-lg ${
+                                              contentErrors[item.id || item._id]
+                                                ? "border-red-500"
+                                                : "border-gray-300 focus:border-gray-500 hover:border-gray-500"
+                                            }`}
                                           />
+                                          {contentErrors[
+                                            item.id || item._id
+                                          ] && (
+                                            <motion.p
+                                              initial={{ opacity: 0, y: -5 }}
+                                              animate={{ opacity: 1, y: 0 }}
+                                              className="text-sm text-red-500 mt-1"
+                                            >
+                                              {
+                                                contentErrors[
+                                                  item.id || item._id
+                                                ]
+                                              }
+                                            </motion.p>
+                                          )}
                                         </div>
 
                                         <div>
@@ -1862,19 +2039,61 @@ const CourseList = () => {
                                           <label className="block text-sm font-medium text-gray-700 mb-1">
                                             Description
                                           </label>
-                                          <textarea
+                                          <ReactQuill
                                             value={item.description}
-                                            onChange={(e) =>
+                                            onChange={(value) =>
                                               handleContentChange(
                                                 item.id || item._id,
                                                 "description",
-                                                e.target.value
+                                                value
                                               )
                                             }
-                                            rows={4}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg  focus:border-gray-500 hover:border-gray-500 resize-vertical"
-                                            placeholder="Enter live class description"
+                                            onBlur={() =>
+                                              validateContentDescription(
+                                                item.id || item._id,
+                                                item.description
+                                              )
+                                            }
+                                            modules={{
+                                              toolbar: [
+                                                ["bold", "italic", "underline"],
+                                                [
+                                                  { list: "ordered" },
+                                                  { list: "bullet" }
+                                                ],
+                                                ["link"],
+                                                ["clean"]
+                                              ]
+                                            }}
+                                            formats={[
+                                              "bold",
+                                              "italic",
+                                              "underline",
+                                              "list",
+                                              "bullet",
+                                              "link"
+                                            ]}
+                                            className={`border rounded-lg ${
+                                              contentErrors[item.id || item._id]
+                                                ? "border-red-500"
+                                                : "border-gray-300 focus:border-gray-500 hover:border-gray-500"
+                                            }`}
                                           />
+                                          {contentErrors[
+                                            item.id || item._id
+                                          ] && (
+                                            <motion.p
+                                              initial={{ opacity: 0, y: -5 }}
+                                              animate={{ opacity: 1, y: 0 }}
+                                              className="text-sm text-red-500 mt-1"
+                                            >
+                                              {
+                                                contentErrors[
+                                                  item.id || item._id
+                                                ]
+                                              }
+                                            </motion.p>
+                                          )}
                                         </div>
                                         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
                                           <div className="flex justify-between items-center">
@@ -1960,12 +2179,12 @@ const CourseList = () => {
                                                                             q.id !==
                                                                             (question.id ||
                                                                               question._id)
-                                                                        ),
+                                                                        )
                                                                     };
                                                                   }
                                                                   return contentItem;
                                                                 }
-                                                              ),
+                                                              )
                                                           })
                                                         );
                                                       }}
@@ -2020,7 +2239,7 @@ const CourseList = () => {
                                                 </div>
                                                 {[
                                                   "mcq-single",
-                                                  "mcq-multiple",
+                                                  "mcq-multiple"
                                                 ].includes(question.type) ? (
                                                   <div className="space-y-2">
                                                     {question.options.map(
@@ -2135,10 +2354,10 @@ const CourseList = () => {
                                                         }
                                                         className="text-green-600 hover:text-green-800 flex items-center text-sm mt-2 bg-green-50 hover:bg-green-100 px-3 py-1 rounded border border-green-200"
                                                         whileHover={{
-                                                          scale: 1.05,
+                                                          scale: 1.05
                                                         }}
                                                         whileTap={{
-                                                          scale: 0.95,
+                                                          scale: 0.95
                                                         }}
                                                       >
                                                         <FiPlus className="mr-1" />{" "}
@@ -2180,27 +2399,81 @@ const CourseList = () => {
                                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                                       Expected Answer
                                                     </label>
-                                                    <textarea
+                                                    <ReactQuill
                                                       value={
                                                         question.expectedAnswer ||
                                                         ""
                                                       }
-                                                      onChange={(e) =>
+                                                      onChange={(value) =>
                                                         handleAnswerChange(
                                                           item.id || item._id,
                                                           question.id ||
                                                             question._id,
-                                                          e.target.value
+                                                          value
                                                         )
                                                       }
-                                                      rows={6}
-                                                      className={`w-full px-4 py-2 border rounded-lg  focus:border-gray-500 resize-vertical ${
-                                                        question.expectedAnswer
-                                                          ? "border-green-500 bg-green-50"
-                                                          : "border-gray-300"
+                                                      onBlur={() =>
+                                                        validateAnswer(
+                                                          question.id ||
+                                                            question._id,
+                                                          question.expectedAnswer
+                                                        )
+                                                      }
+                                                      modules={{
+                                                        toolbar: [
+                                                          [
+                                                            "bold",
+                                                            "italic",
+                                                            "underline"
+                                                          ],
+                                                          [
+                                                            { list: "ordered" },
+                                                            { list: "bullet" }
+                                                          ],
+                                                          ["link"],
+                                                          ["clean"]
+                                                        ]
+                                                      }}
+                                                      formats={[
+                                                        "bold",
+                                                        "italic",
+                                                        "underline",
+                                                        "list",
+                                                        "bullet",
+                                                        "link"
+                                                      ]}
+                                                      className={`border rounded-lg ${
+                                                        answerErrors[
+                                                          question.id ||
+                                                            question._id
+                                                        ]
+                                                          ? "border-red-500"
+                                                          : "border-gray-300 focus:border-gray-500 hover:border-gray-500"
                                                       }`}
-                                                      placeholder="Enter expected answer"
                                                     />
+                                                    {answerErrors[
+                                                      question.id ||
+                                                        question._id
+                                                    ] && (
+                                                      <motion.p
+                                                        initial={{
+                                                          opacity: 0,
+                                                          y: -5
+                                                        }}
+                                                        animate={{
+                                                          opacity: 1,
+                                                          y: 0
+                                                        }}
+                                                        className="text-sm text-red-500 mt-1"
+                                                      >
+                                                        {
+                                                          answerErrors[
+                                                            question.id ||
+                                                              question._id
+                                                          ]
+                                                        }
+                                                      </motion.p>
+                                                    )}
                                                   </div>
                                                 ) : null}
                                               </motion.div>
@@ -2360,11 +2633,18 @@ const CourseList = () => {
                                 {course.title}
                               </h2>
                               <div
-                                className="text-sm text-gray-500 line-clamp-1 overflow-hidden"
+                                className="mb-2 flex-grow text-sm prose prose-lg max-w-none text-gray-700 leading-relaxed
+    prose-headings:text-gray-900 prose-headings:font-bold
+    prose-p:mb-4 prose-img:rounded-xl prose-img:shadow-md
+    prose-ul:list-disc prose-ul:pl-6 prose-ul:mb-4
+    prose-ol:list-decimal prose-ol:pl-6 prose-ol:mb-4
+    prose-li:mb-2
+    prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-800 prose-a:inline-flex prose-a:items-center prose-a:gap-1
+    prose-strong:font-semibold prose-strong:text-gray-900
+    prose-blockquote:border-l-blue-600 prose-blockquote:bg-gray-100 prose-blockquote:px-6 prose-blockquote:py-4 prose-blockquote:rounded-r-lg
+                  line-clamp-1"
                                 dangerouslySetInnerHTML={{
-                                  __html: DOMPurify.sanitize(
-                                    course.description
-                                  ),
+                                  __html: course.description
                                 }}
                               />
                               <div className="flex gap-2 mt-2 flex-wrap">

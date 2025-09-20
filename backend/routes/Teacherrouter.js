@@ -1157,13 +1157,16 @@ function getNextRecommendedContent(contentProgress, courseContent) {
 // -------------------------- Profile Photo Update ----------------------------
 const storages = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = "./public/uploads/teachers";
+    const dir = "./public/teachers";
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
     cb(null, dir);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
     const baseName = path.basename(file.originalname, ext);
-    const dir = "./public/uploads/teachers";
+    const dir = "./public/teachers";
 
     let finalName = file.originalname;
     let counter = 1;
@@ -1212,12 +1215,7 @@ Teaceherrouter.put(
 
       // Delete old profile photo if exists (we store filename, not full path)
       if (teacher.profile_photo) {
-        const oldPath = path.join(
-          "public",
-          "uploads",
-          "teachers",
-          teacher.profile_photo
-        );
+        const oldPath = path.join("public", "teachers", teacher.profile_photo);
         if (fs.existsSync(oldPath)) {
           try {
             fs.unlinkSync(oldPath);
@@ -2012,17 +2010,55 @@ Teaceherrouter.put(
         }
       });
 
-      // 6. Update progress metrics
+      // 6. Update progress metrics - MARK AS COMPLETED
       progress.score = newScore;
+      progress.maxScore =
+        progress.maxScore ||
+        course.content
+          .id(contentItemId)
+          .questions.reduce((total, q) => total + (q.marks || 1), 0);
       progress.percentage = Math.round((newScore / progress.maxScore) * 100);
 
       // Use 40% as passing score
       const passingScore = 40;
       progress.passed = progress.percentage >= passingScore;
+      progress.completed = true; // MARK AS COMPLETED
+      progress.completedAt = now; // SET COMPLETION DATE
       progress.gradingStatus = "manually-graded";
-      progress.status = "graded";
+      progress.status = "completed"; // Use "completed" instead of "graded"
 
-      // 7. Save the changes
+      // 7. Check if course is now completed
+      const allContentIds = course.content.map((item) => item._id.toString());
+      const completedContentIds = enrollment.progress
+        .filter((p) => {
+          const contentItem = course.content.id(p.contentItemId);
+
+          // For quizzes, only count as completed if fully graded
+          if (contentItem && contentItem.type === "quiz") {
+            return p.completed && p.gradingStatus === "manually-graded";
+          }
+
+          // For live sessions, only count as completed if teacher marked as present
+          if (contentItem && contentItem.type === "live") {
+            return p.completed && contentItem.attendanceStatus === "present";
+          }
+
+          // For tutorials, use normal completion logic
+          return p.completed;
+        })
+        .map((p) => p.contentItemId.toString());
+
+      const allCompleted = allContentIds.every((id) =>
+        completedContentIds.includes(id)
+      );
+
+      if (allCompleted) {
+        enrollment.completed = true;
+        enrollment.completedAt = now;
+        enrollment.status = "completed";
+      }
+
+      // 8. Save the changes
       await course.save();
 
       res.status(200).json({
@@ -2034,7 +2070,9 @@ Teaceherrouter.put(
           newScore,
           maxScore: progress.maxScore,
           percentage: progress.percentage,
-          passed: progress.passed
+          passed: progress.passed,
+          completed: progress.completed,
+          courseCompleted: allCompleted
         }
       });
     } catch (error) {
@@ -2696,88 +2734,84 @@ Teaceherrouter.get(
 // -------------------------- Live Class Progress Routes ----------------------------
 
 // Get live class progress data for teacher
-Teaceherrouter.get(
-  "/live-class-progress/:courseId",
-  authenticateTeacher,
-  async (req, res) => {
-    try {
-      const { courseId } = req.params;
-      const teacherId = req.teacher._id;
+Teaceherrouter.get("/live-class-progress/:courseId", async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const teacherId = req.teacher._id;
 
-      // Find the course and verify the teacher is the instructor
-      const course = await Course.findOne({
-        _id: courseId,
-        instructor: teacherId
-      })
-        .populate("enrollments.studentId", "full_name email")
-        .select("content enrollments");
+    // Find the course and verify the teacher is the instructor
+    const course = await Course.findOne({
+      _id: courseId,
+      instructor: teacherId
+    })
+      .populate("enrollments.studentId", "full_name email")
+      .select("content enrollments");
 
-      if (!course) {
-        return res.json({
-          success: false,
-          message: "Course not found or you are not the instructor"
-        });
-      }
-
-      // Find all live class content items
-      const liveClasses = course.content.filter((item) => item.type === "live");
-
-      // Get progress data for each live class
-      const liveClassProgress = liveClasses.map((liveClass) => {
-        // Find all enrollments that have progress for this live class
-        const enrollmentsWithProgress = course.enrollments.filter(
-          (enrollment) => {
-            return enrollment.progress.some(
-              (p) => p.contentItemId.toString() === liveClass._id.toString()
-            );
-          }
-        );
-
-        // Calculate completion stats
-        const totalStudents = course.enrollments.length;
-        const completedStudents = enrollmentsWithProgress.length;
-        const completionRate =
-          totalStudents > 0
-            ? Math.round((completedStudents / totalStudents) * 100)
-            : 0;
-
-        return {
-          liveClassId: liveClass._id,
-          title: liveClass.title,
-          scheduledTime: liveClass.scheduledTime,
-          duration: liveClass.duration,
-          totalStudents,
-          completedStudents,
-          completionRate,
-          students: enrollmentsWithProgress.map((enrollment) => {
-            const progress = enrollment.progress.find(
-              (p) => p.contentItemId.toString() === liveClass._id.toString()
-            );
-            return {
-              studentId: enrollment.studentId._id,
-              name: enrollment.studentId.full_name,
-              email: enrollment.studentId.email,
-              completed: progress?.completed || false,
-              lastAccessed: progress?.lastAccessed,
-              timeSpent: progress?.timeSpent || 0
-            };
-          })
-        };
-      });
-
-      res.json({
-        success: true,
-        data: liveClassProgress
-      });
-    } catch (error) {
-      res.status(500).json({
+    if (!course) {
+      return res.json({
         success: false,
-        message: "Failed to fetch live class progress",
-        error: error.message
+        message: "Course not found or you are not the instructor"
       });
     }
+
+    // Find all live class content items
+    const liveClasses = course.content.filter((item) => item.type === "live");
+
+    // Get progress data for each live class
+    const liveClassProgress = liveClasses.map((liveClass) => {
+      // Find all enrollments that have progress for this live class
+      const enrollmentsWithProgress = course.enrollments.filter(
+        (enrollment) => {
+          return enrollment.progress.some(
+            (p) => p.contentItemId.toString() === liveClass._id.toString()
+          );
+        }
+      );
+
+      // Calculate completion stats
+      const totalStudents = course.enrollments.length;
+      const completedStudents = enrollmentsWithProgress.length;
+      const completionRate =
+        totalStudents > 0
+          ? Math.round((completedStudents / totalStudents) * 100)
+          : 0;
+
+      return {
+        liveClassId: liveClass._id,
+        title: liveClass.title,
+        scheduledTime: liveClass.scheduledTime,
+        duration: liveClass.duration,
+        totalStudents,
+        completedStudents,
+        completionRate,
+        students: enrollmentsWithProgress.map((enrollment) => {
+          const progress = enrollment.progress.find(
+            (p) => p.contentItemId.toString() === liveClass._id.toString()
+          );
+          return {
+            studentId: enrollment.studentId._id,
+            name: enrollment.studentId.full_name,
+            email: enrollment.studentId.email,
+            completed: progress?.completed || false,
+            lastAccessed: progress?.lastAccessed,
+            timeSpent: progress?.timeSpent || 0
+          };
+        })
+      };
+    });
+
+    res.json({
+      success: true,
+      data: liveClassProgress
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch live class progress",
+      error: error.message
+    });
   }
-);
+});
 
 // Mark live class as completed for all students
 Teaceherrouter.post(

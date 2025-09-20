@@ -17,6 +17,7 @@
 }
 .prose p {
   font-size: 1em !important;
+  line-height: 1.6 !important;
 }
 .prose ul {
   list-style-type: disc !important;
@@ -30,10 +31,46 @@
   margin-bottom: 0.5em !important;
 }
 .prose strong {
-  font-weight: 600 !important;
+  font-weight: 800 !important;
 }
 .prose em {
   font-style: italic !important;
+}
+.prose a {
+  color: #3269ff !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  vertical-align: middle !important;
+  line-height: 1.2 !important;
+}
+.prose a:hover {
+  color: #294db1 !important;
+}
+
+.prose a::before {
+  content: "" !important;
+  display: inline-block !important;
+  width: 16px !important;
+  height: 16px !important;
+  vertical-align: middle !important;
+  position: relative !important;
+  top: -1px !important; /* Fine-tune vertical position */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3' stroke='%232b6eff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  flex-shrink: 0 !important;
+}
+.prose a:hover::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3' stroke='%23235eff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+}
+
+/* Ensure all text elements align properly */
+.prose span,
+.prose a,
+.prose strong,
+.prose em {
+  vertical-align: middle !important;
+  line-height: 1.4 !important;
 }
 /* end */
 /* This is for react quill editor */
@@ -171,4 +208,31 @@ input[type="datetime-local"]:after {
 
 .star-rating input:checked ~ label {
   background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%23f59e0b' stroke='%23f59e0b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolygon points='12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2'%3e%3c/polygon%3e%3c/svg%3e");
+}
+/* Review slidiing effect */
+.carousel-container {
+  animation: slide 30s linear infinite;
+  width: max-content;
+}
+
+.carousel-container:hover {
+  animation-play-state: paused;
+}
+
+@keyframes slide {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.carousel-item {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.carousel-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
 }

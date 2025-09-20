@@ -229,9 +229,13 @@ const courseSchema = new Schema(
     enrollments: [enrollmentSchema],
     ratings: [
       {
-        user: { type: Schema.Types.ObjectId },
-        rating: { type: Number, min: 1, max: 5 },
-        review: String,
+        user: {
+          type: Schema.Types.ObjectId,
+          ref: "Student",
+          required: true
+        },
+        rating: { type: Number, min: 1, max: 5, required: true },
+        review: { type: String },
         createdAt: { type: Date, default: Date.now }
       }
     ],
@@ -523,17 +527,33 @@ courseSchema.methods.gradeStudentAnswers = async function (
   return progress;
 };
 
-// In models/Course.js - update the checkCourseCompletion method
+// Update the checkCourseCompletion method in your Course model
 courseSchema.methods.checkCourseCompletion = function (studentId) {
   const enrollment = this.enrollments.find(
-    (e) => e.studentId.toString() === studentId
+    (e) => e.studentId.toString() === studentId.toString()
   );
   if (!enrollment || enrollment.completed) return false;
 
-  // Check if all content items are completed
+  // Check if all content items are properly completed
   const allContentIds = this.content.map((item) => item._id.toString());
+
   const completedContentIds = enrollment.progress
-    .filter((p) => p.completed)
+    .filter((p) => {
+      const contentItem = this.content.id(p.contentItemId);
+
+      // For quizzes, only count as completed if fully graded
+      if (contentItem && contentItem.type === "quiz") {
+        return p.completed && p.gradingStatus !== "partially-graded";
+      }
+
+      // For live sessions, only count as completed if teacher marked as present
+      if (contentItem && contentItem.type === "live") {
+        return p.completed && contentItem.attendanceStatus === "present";
+      }
+
+      // For tutorials, use normal completion logic
+      return p.completed;
+    })
     .map((p) => p.contentItemId.toString());
 
   const allCompleted = allContentIds.every((id) =>

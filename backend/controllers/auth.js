@@ -226,8 +226,8 @@ exports.updateSubadminStatus = async (req, res) => {
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
+    user: "tausifrahman02@gmail.com",
+    pass: "ozbw qiwq tzzn yhli"
   }
 });
 
@@ -244,7 +244,7 @@ exports.forgotPassword = async (req, res) => {
     await admin.save();
 
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: "tausifrahman02@gmail.com",
       to: email,
       subject: "Password Reset OTP",
       text: `Your OTP is: ${resetCode}`
@@ -436,7 +436,7 @@ exports.approveTeacher = async (req, res) => {
 
     // Email content
     let mailOptions = {
-      from: `"Northern-Lights Admin" <${process.env.EMAIL_USER}>`,
+      from: `"Northern-Lights Admin" <tausifrahman02@gmail.com>`,
       to: updatedTeacher.email,
       subject: `Your Teacher Application Status - ${status.toUpperCase()}`
     };

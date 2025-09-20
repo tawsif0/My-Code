@@ -11,6 +11,7 @@ import {
   FiDownload,
   FiClock,
   FiChevronDown,
+  FiEye
 } from "react-icons/fi";
 
 const Notifications = ({ setNotificationCount }) => {
@@ -33,7 +34,7 @@ const Notifications = ({ setNotificationCount }) => {
       const { data } = await axios.get(
         "http://localhost:3500/api/auth/notifications",
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token}` }
         }
       );
 
@@ -60,7 +61,7 @@ const Notifications = ({ setNotificationCount }) => {
         `http://localhost:3500/api/auth/teacher-status/${teacherId}`,
         { status: "approved" },
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token}` }
         }
       );
 
@@ -87,10 +88,10 @@ const Notifications = ({ setNotificationCount }) => {
         `http://localhost:3500/api/auth/teacher-status/${selectedTeacher.id}`,
         {
           status: "rejected",
-          rejectionReason: rejectionReason || "Not specified",
+          rejectionReason: rejectionReason || "Not specified"
         },
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token}` }
         }
       );
 
@@ -148,7 +149,7 @@ const Notifications = ({ setNotificationCount }) => {
                     <div className="flex items-start space-x-4 flex-1">
                       {teacher.profilePhoto ? (
                         <img
-                          src={`http://localhost:3500/uploads/teachers/${teacher.profilePhoto}`}
+                          src={`http://localhost:3500/teachers/${teacher.profilePhoto}`}
                           alt="Profile"
                           className="w-16 h-16 object-cover rounded-full border-4 border-white shadow-lg transition-all duration-300 hover:scale-110"
                         />
@@ -192,7 +193,7 @@ const Notifications = ({ setNotificationCount }) => {
                           >
                             <FiFileText className="mr-1 text-black text-lg transition-colors duration-300" />
                             View CV
-                            <FiDownload className="ml-2 mr-1 text-black transition-all duration-300 transform group-hover:scale-110" />
+                            <FiEye className="ml-2 mr-1 text-black transition-all duration-300 transform group-hover:scale-110" />
                           </button>
 
                           {teacher.certificates?.length > 0 && (
@@ -245,7 +246,7 @@ const Notifications = ({ setNotificationCount }) => {
                                               .{extension}
                                             </span>
                                           </div>
-                                          <FiDownload className="text-gray-700 flex-shrink-0" />
+                                          <FiEye className="text-gray-700 flex-shrink-0" />
                                         </button>
                                       );
                                     })}

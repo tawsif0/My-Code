@@ -10,7 +10,7 @@ import {
   FiPhone,
   FiFileText,
   FiLink,
-  FiDollarSign,
+  FiDollarSign
 } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
@@ -28,13 +28,13 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
     specialization: "",
     qualifications: "",
     linkedin_url: "",
-    hourly_rate: "",
+    hourly_rate: ""
   });
 
   const [files, setFiles] = useState({
     cv: null,
     certificates: [],
-    profile_photo: null,
+    profile_photo: null
   });
 
   const [errors, setErrors] = useState({
@@ -45,19 +45,19 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
     specialization: "",
     qualifications: "",
     cv: "",
-    certificates: "",
+    certificates: ""
   });
 
   // Login form state
   const [loginForm, setLoginForm] = useState({
     email: "",
     password: "",
-    remember: false,
+    remember: false
   });
 
   const [loginErrors, setLoginErrors] = useState({
     email: "",
-    password: "",
+    password: ""
   });
 
   // UI states
@@ -218,8 +218,8 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
         formData,
         {
           headers: {
-            "Content-Type": "multipart/form-data",
-          },
+            "Content-Type": "multipart/form-data"
+          }
         }
       );
 
@@ -228,8 +228,8 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
           background: "#fff",
           color: "#000",
           border: "1px solid #e5e7eb",
-          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-        },
+          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+        }
       });
 
       // Reset form and switch to login
@@ -241,13 +241,13 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
         specialization: "",
         qualifications: "",
         linkedin_url: "",
-        hourly_rate: "",
+        hourly_rate: ""
       });
       setCustomSpecialization("");
       setFiles({
         cv: null,
         certificates: [],
-        profile_photo: null,
+        profile_photo: null
       });
       setAuthMode("login");
     } catch (err) {
@@ -303,7 +303,7 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
     try {
       const response = await axios.post(`${base_url}/api/auth/teacher-login`, {
         email: loginForm.email,
-        password: loginForm.password,
+        password: loginForm.password
       });
 
       // Store the token (you might want to use cookies or more secure storage)
@@ -315,8 +315,8 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
           background: "#fff",
           color: "#000",
           border: "1px solid #e5e7eb",
-          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-        },
+          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+        }
       });
 
       // Navigate to dashboard
@@ -339,8 +339,8 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
           background: "#fff",
           color: "#000",
           border: "1px solid #e5e7eb",
-          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-        },
+          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+        }
       });
     } finally {
       setIsLoginSubmitting(false);
@@ -349,7 +349,7 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
 
   const handleForgotPassword = () => {
     navigate("/teacher/forgotPassword", {
-      state: { authMode },
+      state: { authMode }
     });
   };
 
@@ -522,10 +522,10 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
                     >
                       <option value="">Select your specialization</option>
                       <option value="IELTS">IELTS</option>
-                      <option value="GRE">GRE</option>
+
                       <option value="SAT">SAT</option>
                       <option value="TOEFL">TOEFL</option>
-                      <option value="GMAT">GMAT</option>
+
                       <option value="Other">Other</option>
                     </select>
                     {form.specialization === "Other" && (
@@ -678,7 +678,7 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
                             setFiles((prev) => ({ ...prev, cv: null }));
                             setErrors((prev) => ({
                               ...prev,
-                              cv: "CV is required",
+                              cv: "CV is required"
                             }));
                           }}
                           className="text-gray-400 hover:text-red-500 ml-2 transition-colors duration-200"
@@ -746,7 +746,7 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
                             handleFileChange(e);
                             setErrors((prev) => ({
                               ...prev,
-                              certificates: "",
+                              certificates: ""
                             }));
                           }}
                           className="hidden"
@@ -776,7 +776,7 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
                                     certificates:
                                       files.certificates.length <= 1
                                         ? "At least one certificate is required"
-                                        : "",
+                                        : ""
                                   }));
                                 }}
                                 className="text-gray-400 hover:text-red-500 ml-2 transition-colors duration-200"
@@ -825,7 +825,7 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
                                 handleFileChange(e);
                                 setErrors((prev) => ({
                                   ...prev,
-                                  certificates: "",
+                                  certificates: ""
                                 }));
                               }}
                               className="hidden"
@@ -861,7 +861,7 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
                           onClick={() =>
                             setFiles((prev) => ({
                               ...prev,
-                              profile_photo: null,
+                              profile_photo: null
                             }))
                           }
                           className="text-gray-400 hover:text-red-500 ml-2 transition-colors duration-200"
@@ -1079,10 +1079,10 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
                             x: loginForm.remember ? 20 : 3,
                             backgroundColor: loginForm.remember
                               ? "#ffffff"
-                              : "#ffffff",
+                              : "#ffffff"
                           }}
                           style={{
-                            boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
                           }}
                         ></motion.div>
                       </div>

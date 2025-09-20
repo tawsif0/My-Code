@@ -6,7 +6,7 @@ import {
   FiClock,
   FiMapPin,
   FiFileText,
-  FiImage,
+  FiImage
 } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import axios from "axios";
@@ -22,11 +22,11 @@ const CreateEvent = () => {
     endDate: "",
     startTime: "",
     endTime: "",
-    location: "",
+    location: ""
   });
 
   const [files, setFiles] = useState({
-    image: null,
+    image: null
   });
 
   const [errors, setErrors] = useState({});
@@ -86,8 +86,8 @@ const CreateEvent = () => {
       await axios.post("http://localhost:3500/api/events/create", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
       });
 
       toast.success("Event created successfully!");
@@ -97,7 +97,7 @@ const CreateEvent = () => {
         endDate: "",
         startTime: "",
         endTime: "",
-        location: "",
+        location: ""
       });
       setDescription("");
       setFiles({ image: null });
@@ -143,12 +143,17 @@ const CreateEvent = () => {
                 type="text"
                 name="title"
                 value={form.title}
-                onChange={handleChange}
+                onChange={(e) => {
+                  handleChange(e);
+                  if (errors.title)
+                    setErrors((prev) => ({ ...prev, title: "" }));
+                }}
                 placeholder="Enter event title"
                 className={`w-full px-4 py-3 rounded-lg border ${
                   errors.title ? "border-red-500" : "border-gray-300"
-                } focus:border-gray-500 transition-all`}
+                } focus:border-gray-500 hover:border-gray-500 hover:border-gray-500 transition-all`}
               />
+
               {errors.title && (
                 <p className="text-sm text-red-500">{errors.title}</p>
               )}
@@ -166,11 +171,16 @@ const CreateEvent = () => {
                   type="date"
                   name="startDate"
                   value={form.startDate}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    handleChange(e);
+                    if (errors.startDate)
+                      setErrors((prev) => ({ ...prev, startDate: "" }));
+                  }}
                   className={`w-full px-4 py-3 rounded-lg border ${
                     errors.startDate ? "border-red-500" : "border-gray-300"
-                  } focus:border-gray-500 transition-all`}
+                  } focus:border-gray-500 hover:border-gray-500 hover:border-gray-500 transition-all`}
                 />
+
                 {errors.startDate && (
                   <p className="text-sm text-red-500">{errors.startDate}</p>
                 )}
@@ -185,11 +195,16 @@ const CreateEvent = () => {
                   type="date"
                   name="endDate"
                   value={form.endDate}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    handleChange(e);
+                    if (errors.endDate)
+                      setErrors((prev) => ({ ...prev, endDate: "" }));
+                  }}
                   className={`w-full px-4 py-3 rounded-lg border ${
                     errors.endDate ? "border-red-500" : "border-gray-300"
-                  } focus:border-gray-500 transition-all`}
+                  } focus:border-gray-500 hover:border-gray-500 hover:border-gray-500 transition-all`}
                 />
+
                 {errors.endDate && (
                   <p className="text-sm text-red-500">{errors.endDate}</p>
                 )}
@@ -205,11 +220,16 @@ const CreateEvent = () => {
                   type="time"
                   name="startTime"
                   value={form.startTime || ""}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    handleChange(e);
+                    if (errors.startTime)
+                      setErrors((prev) => ({ ...prev, startTime: "" }));
+                  }}
                   className={`w-full px-4 py-3 rounded-lg border ${
                     errors.startTime ? "border-red-500" : "border-gray-300"
-                  } focus:border-gray-500 transition-all`}
+                  } focus:border-gray-500 hover:border-gray-500 hover:border-gray-500 transition-all`}
                 />
+
                 {errors.startTime && (
                   <p className="text-sm text-red-500">{errors.startTime}</p>
                 )}
@@ -224,11 +244,16 @@ const CreateEvent = () => {
                   type="time"
                   name="endTime"
                   value={form.endTime || ""}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    handleChange(e);
+                    if (errors.endTime)
+                      setErrors((prev) => ({ ...prev, endTime: "" }));
+                  }}
                   className={`w-full px-4 py-3 rounded-lg border ${
                     errors.endTime ? "border-red-500" : "border-gray-300"
-                  } focus:border-gray-500 transition-all`}
+                  } focus:border-gray-500 hover:border-gray-500 transition-all`}
                 />
+
                 {errors.endTime && (
                   <p className="text-sm text-red-500">{errors.endTime}</p>
                 )}
@@ -244,38 +269,50 @@ const CreateEvent = () => {
                 type="text"
                 name="location"
                 value={form.location}
-                onChange={handleChange}
+                onChange={(e) => {
+                  handleChange(e);
+                  if (errors.location)
+                    setErrors((prev) => ({ ...prev, location: "" }));
+                }}
                 placeholder="Enter event location"
                 className={`w-full px-4 py-3 rounded-lg border ${
                   errors.location ? "border-red-500" : "border-gray-300"
-                } focus:border-gray-500 transition-all`}
+                } focus:border-gray-500 hover:border-gray-500 transition-all`}
               />
+
               {errors.location && (
                 <p className="text-sm text-red-500">{errors.location}</p>
               )}
             </div>
 
             {/* Description */}
-            {/* Description with Draft.js + Toolbar */}
             <div className="space-y-2">
               <label className="flex items-center text-sm font-medium text-gray-700">
                 <FiFileText className="mr-2 text-gray-500" /> Description *
               </label>
 
-              <div className="bg-white">
+              <div
+                className={`bg-white rounded-lg min-h-[200px] border ${
+                  errors.description ? "border-red-500" : "border-gray-300"
+                }`}
+              >
                 <ReactQuill
                   value={description}
-                  onChange={setDescription}
+                  onChange={(val) => {
+                    setDescription(val);
+                    if (errors.description) {
+                      setErrors((prev) => ({ ...prev, description: "" }));
+                    }
+                  }}
                   placeholder="Write a brief description about the event"
-                  className="bg-white"
                   modules={{
                     toolbar: [
                       [{ header: [1, 2, 3, false] }],
                       ["bold", "italic", "underline", "strike", "blockquote"],
                       [{ list: "ordered" }, { list: "bullet" }],
                       ["link", "image"],
-                      ["clean"],
-                    ],
+                      ["clean"]
+                    ]
                   }}
                   formats={[
                     "header",
@@ -287,11 +324,10 @@ const CreateEvent = () => {
                     "list",
                     "bullet",
                     "link",
-                    "image",
+                    "image"
                   ]}
                 />
               </div>
-
               {errors.description && (
                 <p className="text-sm text-red-500">{errors.description}</p>
               )}

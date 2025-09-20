@@ -33,6 +33,8 @@ const {
   authorizeAdmin,
   authorizeSubAdmin
 } = require("../middleware/auth");
+const Course = require("../models/Course");
+const Teacher = require("../models/Teacher");
 const multer = require("multer");
 
 // Utility function to create directory if not exists
@@ -45,14 +47,14 @@ const ensureDirectoryExists = (dir) => {
 // Configure multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = "./public/uploads/teachers";
+    const dir = "./public/teachers";
     ensureDirectoryExists(dir);
     cb(null, dir);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
     const baseName = path.basename(file.originalname, ext);
-    const dir = "./public/uploads/teachers";
+    const dir = "./public/teachers";
 
     let finalName = file.originalname;
     let counter = 1;
@@ -141,7 +143,39 @@ router.post("/login", login);
 router.post("/forgot-password", forgotPassword);
 router.post("/verify-otp", verifyOtp);
 router.post("/reset-password", resetPassword);
+//Courses
+router.get("/teachers", async (req, res) => {
+  try {
+    const teachers = await Teacher.find({})
+      .select("_id full_name email profile_photo") // Only select necessary fields
+      .lean();
 
+    res.json({
+      success: true,
+      teachers
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching teachers"
+    });
+  }
+});
+router.get("/all-courses", async (req, res) => {
+  try {
+    const allcourses = await Course.find()
+      .populate("instructor", "full_name") // This ensures instructor data is included
+      .lean();
+
+    if (!allcourses) {
+      return res.send({ success: false, message: "No courses found!" });
+    }
+    res.status(200).json({ success: true, courses: allcourses });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
 // Teacher routes
 router.post(
   "/teacher-register",

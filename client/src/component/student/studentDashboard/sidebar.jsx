@@ -12,70 +12,34 @@ import {
   FiLogOut,
   FiLayers
 } from "react-icons/fi";
-import axios from "axios";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../context/useAuth";
 
 const Sidebar = ({ activeView, setActiveView }) => {
   const base_url = import.meta.env.VITE_API_KEY_Base_URL;
-  const studentdata = JSON.parse(localStorage.getItem("studentData"));
-  const studentToken = localStorage.getItem("studentToken");
   const [isOpen, setIsOpen] = useState(true);
-  const [studentData, setStudentData] = useState({
-    name: "",
-    email: "",
-    avatarColor: "bg-gradient-to-r from-purple-500 to-pink-500",
-    profile_picture: null
-  });
-  const [loading, setLoading] = useState(true);
   const [expandedMenus, setExpandedMenus] = useState({});
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const navigate = useNavigate();
 
+  // Use AuthContext for student data
+  const {
+    studentData,
+    studentLoading,
+    studentError,
+    fetchStudentProfile,
+    forceUpdateFromStorage
+  } = useAuth();
+
   useEffect(() => {
-    const fetchStudentData = async () => {
-      try {
-        // Fetch student profile data
-        const response = await axios.get(
-          `${base_url}/api/student/profile/${studentdata.id}`, // Use your actual backend URL
-          {
-            headers: {
-              Authorization: `Bearer ${studentToken}`
-            }
-          }
-        );
-
-        const gradients = [
-          "bg-gradient-to-r from-purple-500 to-pink-500",
-          "bg-gradient-to-r from-blue-500 to-teal-400",
-          "bg-gradient-to-r from-amber-500 to-pink-500",
-          "bg-gradient-to-r from-emerald-500 to-blue-500",
-          "bg-gradient-to-r from-violet-500 to-fuchsia-500"
-        ];
-        const randomGradient =
-          gradients[Math.floor(Math.random() * gradients.length)];
-
-        setStudentData({
-          name: response.data.student.full_name,
-          email: response.data.student.email,
-          avatarColor: randomGradient,
-          profile_picture: response.data.student.profile_picture, // Add this line
-          // Add additional student data you want to display
-          ...response.data.student
-        });
-
-        setLoading(false);
-      } catch (err) {
-        toast.error("Failed to load student data");
-        setLoading(false);
-      }
-    };
-
-    fetchStudentData();
+    // Force update from localStorage on mount to ensure we have the latest data
+    forceUpdateFromStorage();
   }, []);
 
-  const studentInitial = studentData.name.charAt(0).toUpperCase();
+  const studentInitial =
+    studentData?.full_name?.charAt(0)?.toUpperCase() || "S";
 
   const baseNavItems = [
     { name: "dashboard", icon: <FiHome />, component: "dashboard" },
@@ -120,7 +84,7 @@ const Sidebar = ({ activeView, setActiveView }) => {
   const confirmLogout = () => {
     localStorage.removeItem("studentToken");
     localStorage.removeItem("studentData");
-    localStorage.removeItem("studentActiveView"); // This clears the view state
+    localStorage.removeItem("studentActiveView");
     toast.success("Logout successful!");
     setTimeout(() => {
       navigate("/", { replace: true });
@@ -146,7 +110,10 @@ const Sidebar = ({ activeView, setActiveView }) => {
           </motion.h1>
         ) : (
           <div
-            className={`w-8 h-8 rounded-full ${studentData.avatarColor} text-white flex items-center justify-center font-bold shadow-md`}
+            className={`w-8 h-8 rounded-full ${
+              studentData?.avatarColor ||
+              "bg-gradient-to-r from-purple-500 to-pink-500"
+            } text-white flex items-center justify-center font-bold shadow-md`}
           >
             {studentInitial}
           </div>
@@ -256,17 +223,28 @@ const Sidebar = ({ activeView, setActiveView }) => {
           className="flex items-center"
           whileHover={isOpen ? { scale: 1.005 } : {}}
         >
-          {studentData.profile_picture ? (
+          {studentData?.profile_picture ? (
             <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-md">
               <img
-                src={`${base_url}/students/${studentData.profile_picture}`}
+                src={studentData.profile_picture}
                 alt="Profile"
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  console.error("Image failed to load:", e.target.src);
+                  console.error("Error event:", e);
+                  e.target.style.display = "none";
+                }}
+                onLoad={(e) => {
+                  console.log("Image loaded successfully:", e.target.src);
+                }}
               />
             </div>
           ) : (
             <div
-              className={`w-10 h-10 rounded-full ${studentData.avatarColor} text-white flex items-center justify-center font-bold shadow-md`}
+              className={`w-10 h-10 rounded-full ${
+                studentData?.avatarColor ||
+                "bg-gradient-to-r from-purple-500 to-pink-500"
+              } text-white flex items-center justify-center font-bold shadow-md`}
             >
               {studentInitial}
             </div>
@@ -280,7 +258,7 @@ const Sidebar = ({ activeView, setActiveView }) => {
             >
               <div className="flex items-center justify-between">
                 <p className="text-sm font-[700] text-gray-900 truncate">
-                  {studentData.name}
+                  {studentData?.full_name || "Student"}
                 </p>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
