@@ -11,7 +11,7 @@ import {
   FiEye,
   FiEyeOff,
   FiUpload,
-  FiX
+  FiX,
 } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
@@ -34,15 +34,15 @@ const StudentAuth = ({ authMode, setAuthMode }) => {
     full_name: "",
     phone: "",
     date_of_birth: "",
-    address: ""
+    address: "",
   });
 
   // Profile picture state
   const [files, setFiles] = useState({
-    profile_picture: null
+    profile_picture: null,
   });
   const [fileErrors, setFileErrors] = useState({
-    profile_picture: ""
+    profile_picture: "",
   });
   // OTP verification state
   const [otp, setOtp] = useState("");
@@ -53,14 +53,14 @@ const StudentAuth = ({ authMode, setAuthMode }) => {
   const [loginForm, setLoginForm] = useState({
     email: "",
     password: "",
-    remember: false
+    remember: false,
   });
   // UI states
   const [errors, setErrors] = useState({
     email: "",
     password: "",
     full_name: "",
-    phone: ""
+    phone: "",
   });
   const [loginErrors, setLoginErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -90,7 +90,7 @@ const StudentAuth = ({ authMode, setAuthMode }) => {
       // 2MB in bytes
       setFileErrors((prev) => ({
         ...prev,
-        [name]: "Image couldn't be uploaded more than 2MB"
+        [name]: "Image couldn't be uploaded more than 2MB",
       }));
       // Clear the file input
       e.target.value = "";
@@ -153,7 +153,7 @@ const StudentAuth = ({ authMode, setAuthMode }) => {
     if (!files.profile_picture) {
       setFileErrors((prev) => ({
         ...prev,
-        profile_picture: "Profile picture is required"
+        profile_picture: "Profile picture is required",
       }));
       isValid = false;
     } else {
@@ -214,8 +214,8 @@ const StudentAuth = ({ authMode, setAuthMode }) => {
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          }
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
       );
       // Clear all registration data
@@ -225,7 +225,7 @@ const StudentAuth = ({ authMode, setAuthMode }) => {
         full_name: "",
         phone: "",
         date_of_birth: "",
-        address: ""
+        address: "",
       });
       setFiles({ profile_picture: null });
       setFileErrors({ profile_picture: "" });
@@ -233,7 +233,7 @@ const StudentAuth = ({ authMode, setAuthMode }) => {
         email: "",
         password: "",
         full_name: "",
-        phone: ""
+        phone: "",
       });
       setRegisteredEmail(form.email);
       setAuthMode("verify");
@@ -263,7 +263,7 @@ const StudentAuth = ({ authMode, setAuthMode }) => {
         `${base_url}/api/auth/student/verify-otp`,
         {
           email: registeredEmail,
-          otp
+          otp,
         }
       );
       // Clear OTP data
@@ -273,7 +273,7 @@ const StudentAuth = ({ authMode, setAuthMode }) => {
       setLoginForm({
         email: registeredEmail,
         password: "",
-        remember: false
+        remember: false,
       });
       toast.success("Account verified successfully!");
       setAuthMode("login");
@@ -289,7 +289,7 @@ const StudentAuth = ({ authMode, setAuthMode }) => {
     setIsResending(true);
     try {
       await axios.post(`${base_url}/api/auth/student/resend-otp`, {
-        email: registeredEmail
+        email: registeredEmail,
       });
       setOtpCountdown(60); // Reset countdown
       toast.success("New OTP sent to your email!");
@@ -335,6 +335,9 @@ const StudentAuth = ({ authMode, setAuthMode }) => {
     return isValid;
   };
 
+  // In your StudentAuth component, update the useAuth import:
+
+  // Replace your handleLogin function with this:
   const handleLogin = async (e) => {
     e.preventDefault();
     if (!validateLoginForm()) return;
@@ -343,31 +346,22 @@ const StudentAuth = ({ authMode, setAuthMode }) => {
     try {
       const response = await axios.post(`${base_url}/api/auth/student/login`, {
         email: loginForm.email,
-        password: loginForm.password
+        password: loginForm.password,
       });
 
       const { token, student } = response.data;
 
-      console.log("=== LOGIN SUCCESS ===");
-      console.log("Token:", token);
-      console.log("Student data:", student);
-
-      // Store in localStorage FIRST
+      // Store in localStorage
       localStorage.setItem("studentToken", token);
       localStorage.setItem("studentData", JSON.stringify(student));
 
-      console.log("Data stored in localStorage");
-
-      // CRITICAL: Force context to update immediately
+      // Force context to update immediately
       forceUpdateFromStorage();
-
-      console.log("Context force update called");
-
       // Clear form
       setLoginForm({
         email: "",
         password: "",
-        remember: false
+        remember: false,
       });
 
       toast.success("Login successful");
@@ -377,10 +371,6 @@ const StudentAuth = ({ authMode, setAuthMode }) => {
         navigate("/");
       }, 200);
     } catch (err) {
-      console.error(
-        "Login failed:",
-        err.response ? err.response.data : err.message
-      );
       const errorMessage = err.response?.data?.message || "Login failed";
       toast.error(errorMessage);
       if (err.response?.data?.errors) {
@@ -830,8 +820,8 @@ const StudentAuth = ({ authMode, setAuthMode }) => {
                       transition: {
                         type: "spring",
                         stiffness: 700,
-                        damping: 30
-                      }
+                        damping: 30,
+                      },
                     }}
                   />
                 </div>

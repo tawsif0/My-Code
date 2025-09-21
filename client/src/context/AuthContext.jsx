@@ -19,45 +19,26 @@ export const AuthProvider = ({ children }) => {
   // Get admin auth data
   const getAdminAuthData = () => ({
     token: localStorage.getItem("token"),
-    userInfo: JSON.parse(localStorage.getItem("admin") || "null")
+    userInfo: JSON.parse(localStorage.getItem("admin") || "null"),
   });
 
   // Get student auth data
   const getStudentAuthData = () => ({
     token: localStorage.getItem("studentToken"),
-    studentInfo: JSON.parse(localStorage.getItem("studentData") || "null")
+    studentInfo: JSON.parse(localStorage.getItem("studentData") || "null"),
   });
 
-  // CRITICAL FIX: Initialize student data from localStorage immediately
+  // Initialize student data from localStorage immediately
   useEffect(() => {
     const { token, studentInfo } = getStudentAuthData();
 
-    console.log(
-      "AuthContext initializing - Token:",
-      !!token,
-      "StudentInfo:",
-      studentInfo
-    );
-
     if (token && studentInfo) {
-      console.log("Setting initial student data:", studentInfo);
-
-      // Add base_url to profile_picture for initial data
-      const updatedStudentInfo = { ...studentInfo };
-      if (updatedStudentInfo.profile_picture) {
-        updatedStudentInfo.profile_picture = `${base_url}/students/${updatedStudentInfo.profile_picture}`;
-        console.log(
-          "Initial profile picture URL:",
-          updatedStudentInfo.profile_picture
-        );
-      }
-
-      setStudentData(updatedStudentInfo);
+      setStudentData(studentInfo);
       setStudentLoading(false);
     } else {
       setStudentLoading(false);
     }
-  }, [base_url]); // Add base_url as dependency
+  }, []);
 
   // Memoized fetch function for admin
   const fetchAdminProfile = useCallback(async () => {
@@ -76,8 +57,8 @@ export const AuthProvider = ({ children }) => {
         `${base_url}/api/admin/profile/${userInfo._id}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
@@ -86,7 +67,6 @@ export const AuthProvider = ({ children }) => {
       setAdminError(
         err.response?.data?.message || "Failed to fetch admin profile"
       );
-      // Clear invalid token/data
       if (err.response?.status === 401) {
         localStorage.removeItem("token");
         localStorage.removeItem("admin");
@@ -111,37 +91,26 @@ export const AuthProvider = ({ children }) => {
       setStudentLoading(true);
       setStudentError(null);
 
-      console.log("Fetching fresh student profile for:", studentInfo._id);
-
       const response = await axios.get(
         `${base_url}/api/student/profile/${studentInfo._id}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
       const studentData = response.data.student;
 
-      // CRITICAL: Add base_url to profile_picture to create the complete URL
-      if (studentData.profile_picture) {
-        studentData.profile_picture = `${base_url}/students/${studentData.profile_picture}`;
-        console.log("Profile picture URL:", studentData.profile_picture);
-      }
-
       setStudentData(studentData);
 
-      // Update localStorage with fresh data (without base_url for storage)
-      const storageData = { ...response.data.student };
-      localStorage.setItem("studentData", JSON.stringify(storageData));
+      // Update localStorage with fresh data
+      localStorage.setItem("studentData", JSON.stringify(studentData));
     } catch (err) {
-      console.error("Profile fetch error:", err);
       setStudentError(
         err.response?.data?.message || "Failed to fetch student profile"
       );
 
-      // Clear invalid token/data
       if (err.response?.status === 401) {
         localStorage.removeItem("studentToken");
         localStorage.removeItem("studentData");
@@ -152,12 +121,19 @@ export const AuthProvider = ({ children }) => {
     }
   }, [base_url]);
 
-  // Initial fetch on mount for admin only (student is handled by the initialization useEffect)
+  // Initial fetch on mount for admin only
   useEffect(() => {
     fetchAdminProfile();
   }, [fetchAdminProfile]);
+  // 1. FIRST: Add updateStudentData
+  const updateStudentData = useCallback((updatedData) => {
+    // Update context state
+    setStudentData(updatedData);
 
-  // Listen for storage changes (for login/logout from other tabs)
+    // Update localStorage
+    localStorage.setItem("studentData", JSON.stringify(updatedData));
+  }, []);
+  // Listen for storage changes
   useEffect(() => {
     const handleStorageChange = () => {
       const adminAuth = getAdminAuthData();
@@ -172,7 +148,6 @@ export const AuthProvider = ({ children }) => {
       if (!studentAuth.token || !studentAuth.studentInfo) {
         clearStudentData();
       } else {
-        // Immediately set student data and refetch
         setStudentData(studentAuth.studentInfo);
         fetchStudentProfile();
       }
@@ -185,13 +160,6 @@ export const AuthProvider = ({ children }) => {
   // Force immediate update from localStorage
   const forceUpdateFromStorage = useCallback(() => {
     const { token, studentInfo } = getStudentAuthData();
-
-    console.log(
-      "Force updating from storage - Token:",
-      !!token,
-      "Data:",
-      !!studentInfo
-    );
 
     if (token && studentInfo) {
       setStudentData(studentInfo);
@@ -215,7 +183,6 @@ export const AuthProvider = ({ children }) => {
     setStudentLoading(false);
   };
 
-  // Expose refresh functions
   const refreshAdminData = () => {
     fetchAdminProfile();
   };
@@ -240,7 +207,8 @@ export const AuthProvider = ({ children }) => {
         studentLoading,
         studentError,
         fetchStudentProfile: refreshStudentData,
-        forceUpdateFromStorage, // NEW: Force update function
+        forceUpdateFromStorage,
+        updateStudentData,
         clearStudentData,
 
         // Combined helper functions
@@ -252,7 +220,7 @@ export const AuthProvider = ({ children }) => {
         },
         getUserRole: () => {
           return localStorage.getItem("role") || "student";
-        }
+        },
       }}
     >
       {children}

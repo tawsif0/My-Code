@@ -10,7 +10,7 @@ import {
   FiChevronDown,
   FiChevronUp,
   FiLogOut,
-  FiLayers
+  FiLayers,
 } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -30,7 +30,7 @@ const Sidebar = ({ activeView, setActiveView }) => {
     studentLoading,
     studentError,
     fetchStudentProfile,
-    forceUpdateFromStorage
+    forceUpdateFromStorage,
   } = useAuth();
 
   useEffect(() => {
@@ -49,24 +49,24 @@ const Sidebar = ({ activeView, setActiveView }) => {
       children: [
         { name: "Course List", component: "courseList" },
         { name: "Course Cart", component: "cart" },
-        { name: "My Courses", component: "myCourses" }
-      ]
+        { name: "My Courses", component: "myCourses" },
+      ],
     },
     {
       name: "Visa Processing",
       icon: <FiGlobe />,
       children: [
         { name: "Request Visa", component: "visaRequest" },
-        { name: "Visa Status", component: "visaStatus" }
-      ]
+        { name: "Visa Status", component: "visaStatus" },
+      ],
     },
-    { name: "settings", icon: <FiSettings />, component: "settings" }
+    { name: "settings", icon: <FiSettings />, component: "settings" },
   ];
 
   const toggleMenu = (menuName) => {
     setExpandedMenus((prev) => ({
       ...prev,
-      [menuName]: !prev[menuName]
+      [menuName]: !prev[menuName],
     }));
   };
 
@@ -226,7 +226,7 @@ const Sidebar = ({ activeView, setActiveView }) => {
           {studentData?.profile_picture ? (
             <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-md">
               <img
-                src={studentData.profile_picture}
+                src={`${base_url}/students/${studentData.profile_picture}`}
                 alt="Profile"
                 className="w-full h-full object-cover"
                 onError={(e) => {

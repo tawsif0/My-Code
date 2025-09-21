@@ -16,7 +16,7 @@ import {
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
-
+import { useAuth } from "../../../context/useAuth";
 const StudentSettings = () => {
   const base_url = import.meta.env.VITE_API_KEY_Base_URL;
   const [profile, setProfile] = useState({
@@ -51,7 +51,7 @@ const StudentSettings = () => {
     password: false,
     photo: false,
   });
-
+  const { updateStudentData } = useAuth();
   // Format date for display
   const formatDate = (dateString) => {
     if (!dateString) return "";
@@ -139,12 +139,11 @@ const StudentSettings = () => {
     try {
       setLoading({ ...loading, profile: true });
       const token = localStorage.getItem("studentToken");
-      // Send the update with proper structure
+
       const response = await axios.put(
-        `http://localhost:3500/api/student/profile/${studentdata.id}`, // Include student ID
+        `${base_url}/api/student/profile/${studentdata.id}`,
         {
           [field]: tempProfile[field],
-          id: studentdata.id, // Also include ID in body if your backend expects it
         },
         {
           headers: {
@@ -154,8 +153,16 @@ const StudentSettings = () => {
         }
       );
 
-      // Update local state
-      setProfile((prev) => ({ ...prev, [field]: tempProfile[field] }));
+      // CRITICAL: Update both local state AND global context
+      const updatedValue = tempProfile[field];
+      setProfile((prev) => ({ ...prev, [field]: updatedValue }));
+
+      // Update global context with the new data
+      updateStudentData({
+        ...JSON.parse(localStorage.getItem("studentData")),
+        [field]: updatedValue,
+      });
+
       setEditMode((prev) => ({ ...prev, [field]: false }));
       toast.success(`${field.replace(/_/g, " ")} updated successfully!`);
     } catch (err) {
@@ -236,10 +243,10 @@ const StudentSettings = () => {
       setLoading({ ...loading, photo: true });
       const token = localStorage.getItem("studentToken");
       const formData = new FormData();
-      formData.append("profile_picture", file); // Must match the field name expected by multer
+      formData.append("profile_picture", file);
 
       const response = await axios.put(
-        `${base_url}/api/student/profile/${studentdata.id}`, // Use the profile update endpoint
+        `${base_url}/api/student/profile/${studentdata.id}`,
         formData,
         {
           headers: {
@@ -249,10 +256,21 @@ const StudentSettings = () => {
         }
       );
 
+      // CRITICAL: Update both local state AND global context
+      const newProfilePicture =
+        response.data.student?.profile_picture || response.data.profile_picture;
+
       setProfile((prev) => ({
         ...prev,
-        profile_picture: response.data.profile_picture || prev.profile_picture,
+        profile_picture: newProfilePicture,
       }));
+
+      // Update global context
+      updateStudentData({
+        ...JSON.parse(localStorage.getItem("studentData")),
+        profile_picture: newProfilePicture,
+      });
+
       toast.success("Profile photo updated successfully!");
     } catch (err) {
       toast.error(

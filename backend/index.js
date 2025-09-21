@@ -29,7 +29,7 @@ const corsOptions = {
   origin: ["http://localhost:5173", "http://localhost:5174"], // Allow only this origin
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true, // Allow cookies/session to be sent
-  optionsSuccessStatus: 204 // For legacy browser support
+  optionsSuccessStatus: 204, // For legacy browser support
 };
 
 // Middleware
@@ -59,20 +59,7 @@ app.use("/api/blog-categories", blogCategoryRoutes);
 app.use("/api/news-categories", newsCategoryRoutes);
 app.use("/api/news", newsRoutes);
 // Add this debug route to check student images
-app.get("/api/debug/students", (req, res) => {
-  const fs = require("fs");
-  const path = require("path");
 
-  const studentsDir = path.join(__dirname, "public", "students");
-  fs.readdir(studentsDir, (err, files) => {
-    if (err) {
-      return res
-        .status(500)
-        .json({ error: "Cannot read students directory", path: studentsDir });
-    }
-    res.json({ files, directory: studentsDir });
-  });
-});
 // DB Connection
 connectDB();
 
