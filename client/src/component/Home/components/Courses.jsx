@@ -1,19 +1,26 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import axios from "axios";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import {
   FiBookOpen,
   FiVideo,
   FiUsers,
   FiClock,
   FiStar,
-  FiEye
+  FiEye,
+  FiShoppingCart,
+  FiCheck
 } from "react-icons/fi";
+import AuthContext from "../../../context/AuthContext"; // Adjust path as needed
+import { useNavigate } from "react-router-dom";
+import { useCart } from "../../../context/useCart";
 
 const Courses = () => {
+  const navigate = useNavigate();
+  const { studentData } = useContext(AuthContext);
   const [activeTab, setActiveTab] = useState("free");
   const [hoveredCourse, setHoveredCourse] = useState(null);
   const [showAllCourses, setShowAllCourses] = useState(false);
@@ -26,11 +33,20 @@ const Courses = () => {
   const [categories, setCategories] = useState([]);
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterLevel, setFilterLevel] = useState("all");
+  const [enrolledCourses, setEnrolledCourses] = useState([]);
+
+  const {
+    addToCart,
+    removeFromCart,
+    isInCart,
+    loading: cartLoading
+  } = useCart();
 
   const base_url =
     import.meta.env.VITE_API_KEY_Base_URL || "http://localhost:3500";
 
-  // Fetch courses, categories, and teachers from backend
+  const isAuthenticated = studentData && localStorage.getItem("studentToken");
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -142,6 +158,33 @@ const Courses = () => {
         if (categoriesResponse.data.success) {
           setCategories(categoriesResponse.data.categories);
         }
+
+        // Fetch cart and enrollment data if user is logged in
+
+        if (isAuthenticated) {
+          try {
+            // Fetch enrolled courses
+            const enrolledResponse = await axios.get(
+              `${base_url}/api/student/enrolled-courses/${studentData._id}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem(
+                    "studentToken"
+                  )}`
+                }
+              }
+            );
+
+            if (enrolledResponse.data.success) {
+              const enrolledIds = enrolledResponse.data.enrolledCourses
+                .map((ec) => ec?.courseDetails?._id)
+                .filter(Boolean);
+              setEnrolledCourses(enrolledIds);
+            }
+          } catch (error) {
+            console.error("Error fetching enrolled courses:", error);
+          }
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
         toast.error(error.response?.data?.message || "Failed to load courses");
@@ -151,8 +194,41 @@ const Courses = () => {
     };
 
     fetchData();
-  }, [base_url]);
+  }, [base_url, isAuthenticated, studentData]);
 
+  const isEnrolled = (courseId) => {
+    return enrolledCourses.some((id) => id.toString() === courseId.toString());
+  };
+
+  const handleAddToCart = async (course) => {
+    // Check if user is logged in
+    if (!isAuthenticated) {
+      toast.error("Please login to add courses to cart");
+      navigate("/student");
+      return;
+    }
+
+    if (isEnrolled(course.id)) {
+      toast.error("You are already enrolled in this course");
+      return;
+    }
+
+    if (isInCart(course.id)) {
+      toast.error("Course already in cart");
+      return;
+    }
+
+    const success = await addToCart(course);
+    if (!success) {
+      toast.error("Failed to add course to cart");
+    }
+  };
+  const handleRemoveFromCart = async (courseId) => {
+    const success = await removeFromCart(courseId);
+    if (!success) {
+      toast.error("Failed to add course to cart");
+    }
+  };
   // Filter courses based on active tab and filters
   const getFilteredCourses = () => {
     let results = [...courses];
@@ -341,6 +417,7 @@ const Courses = () => {
             ))}
           </div>
         </motion.div>
+
         {/* Category Filter Buttons */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -416,7 +493,6 @@ const Courses = () => {
         </motion.div>
 
         {/* Courses Grid */}
-
         <motion.div
           initial="hidden"
           animate={sectionInView ? "visible" : "hidden"}
@@ -612,23 +688,43 @@ const Courses = () => {
 
               {/* Action Buttons - Fixed at bottom */}
               <div className="mt-auto p-5 pt-0">
-                <button
-                  className={`w-full py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center justify-center ${
-                    course.type === "free"
-                      ? "bg-blue-100 text-[#004080] hover:bg-blue-200"
-                      : course.type === "premium"
-                      ? "bg-purple-100 text-purple-600 hover:bg-purple-200"
-                      : "bg-red-100 text-red-600 hover:bg-red-200"
-                  }`}
-                >
-                  {course.type === "free" && "Enroll Now"}
-                  {course.type === "premium" && (
-                    <>Get This Course - ৳{course.price}</>
-                  )}
-                  {course.type === "live" && (
-                    <>Join Live Class - ৳{course.price}</>
-                  )}
-                </button>
+                {isEnrolled(course.id) ? (
+                  <motion.span
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="w-full bg-green-50 text-green-700 py-2 rounded-lg text-sm text-center flex items-center justify-center"
+                  >
+                    <FiCheck className="mr-2" /> Enrolled
+                  </motion.span>
+                ) : isInCart(course.id) ? (
+                  <button
+                    onClick={() => handleRemoveFromCart(course.id)}
+                    className="w-full bg-white text-red-600 border border-red-200 hover:border-red-300 py-2 rounded-lg text-sm hover:bg-red-50 flex items-center justify-center transition-all"
+                  >
+                    <FiShoppingCart className="mr-2" /> Remove from Cart
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleAddToCart(course)}
+                    className={`w-full py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center justify-center ${
+                      course.type === "free"
+                        ? "bg-blue-100 text-[#004080] hover:bg-blue-200"
+                        : course.type === "premium"
+                        ? "bg-purple-100 text-purple-600 hover:bg-purple-200"
+                        : "bg-red-100 text-red-600 hover:bg-red-200"
+                    }`}
+                    disabled={cartLoading}
+                  >
+                    <FiShoppingCart className="mr-2" />
+                    {course.type === "free" && "Add to Cart"}
+                    {course.type === "premium" && (
+                      <>Add to Cart - ৳{course.price}</>
+                    )}
+                    {course.type === "live" && (
+                      <>Add to Cart - ৳{course.price}</>
+                    )}
+                  </button>
+                )}
               </div>
             </motion.div>
           ))}

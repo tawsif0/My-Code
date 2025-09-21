@@ -4,11 +4,11 @@ import Settings from "./settings";
 import CourseList from "./courses/coursesList";
 import Cart from "./courses/cart";
 import MyCourses from "./courses/myCOurses";
-import axios from "axios";
 import CourseOverview from "./courses/courseView/CourseOverview";
 import CoursePlayer from "./courses/courseView/CoursePlayer";
 import VisaStatus from "./visa/VisaStatus";
 import VisaRequestForm from "./visa/VisaRequestForm";
+import { useCart } from "../../../context/useCart";
 
 const StudentDashboard = () => {
   // Initialize state with proper structure from localStorage
@@ -21,46 +21,17 @@ const StudentDashboard = () => {
     }
   });
 
-  const [cart, setCart] = useState([]);
+  const { refreshCart } = useCart();
 
   useEffect(() => {
-    const loadAndValidateCart = async () => {
-      try {
-        const savedCart = JSON.parse(localStorage.getItem("courseCart")) || [];
-
-        if (localStorage.getItem("studentToken")) {
-          const response = await axios.get(
-            `${import.meta.env.VITE_API_KEY_Base_URL}/api/student/cart`,
-            {
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem("studentToken")}`
-              }
-            }
-          );
-
-          if (response.data.success) {
-            setCart(response.data.cart.items);
-            return;
-          }
-        }
-
-        setCart(savedCart);
-      } catch (error) {
-        console.error("Error loading cart:", error);
-        const savedCart = JSON.parse(localStorage.getItem("courseCart")) || [];
-        setCart(savedCart);
-      }
-    };
-
-    loadAndValidateCart();
-  }, []);
-
-  // Update localStorage whenever cart changes (for guest users)
-  useEffect(() => {
-    if (!localStorage.getItem("studentToken")) {
-      localStorage.setItem("courseCart", JSON.stringify(cart));
+    // Handle URL parameters for view
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewParam = urlParams.get("view");
+    if (viewParam && ["cart", "myCourses"].includes(viewParam)) {
+      setActiveView(viewParam);
     }
-  }, [cart]);
+    refreshCart();
+  }, [refreshCart]);
 
   // Update localStorage whenever activeView changes
   useEffect(() => {
@@ -80,17 +51,9 @@ const StudentDashboard = () => {
       case "settings":
         return <Settings />;
       case "courseList":
-        return (
-          <CourseList
-            setActiveView={setActiveView}
-            cart={cart}
-            setCart={setCart}
-          />
-        );
+        return <CourseList setActiveView={setActiveView} />;
       case "cart":
-        return (
-          <Cart setActiveView={setActiveView} cart={cart} setCart={setCart} />
-        );
+        return <Cart setActiveView={setActiveView} />;
       case "myCourses":
         return <MyCourses setActiveView={setActiveView} />;
       case "courseOverview":

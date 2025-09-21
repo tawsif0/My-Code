@@ -58,7 +58,6 @@ app.use("/api/blogs", blogRoutes);
 app.use("/api/blog-categories", blogCategoryRoutes);
 app.use("/api/news-categories", newsCategoryRoutes);
 app.use("/api/news", newsRoutes);
-// Add this debug route to check student images
 
 // DB Connection
 connectDB();

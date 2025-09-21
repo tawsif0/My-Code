@@ -28,7 +28,7 @@ Studentrouter.get("/profile/:id", studentAuth, async (req, res) => {
     if (req.student._id.toString() !== req.params.id) {
       return res.status(403).json({
         success: false,
-        message: "Not authorized to view this profile.",
+        message: "Not authorized to view this profile."
       });
     }
 
@@ -61,14 +61,14 @@ const storage = multer.diskStorage({
     }
 
     cb(null, finalName);
-  },
+  }
 });
 
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 2 * 1024 * 1024, // 2MB limit
-  },
+    fileSize: 2 * 1024 * 1024 // 2MB limit
+  }
 });
 // Protected route - Update student profile (excluding password)
 Studentrouter.put(
@@ -84,7 +84,7 @@ Studentrouter.put(
       if (req.student._id.toString() !== id) {
         return res.status(403).json({
           success: false,
-          message: "You can only update your own profile",
+          message: "You can only update your own profile"
         });
       }
 
@@ -100,7 +100,7 @@ Studentrouter.put(
 
       const updatedStudent = await Student.findByIdAndUpdate(id, updates, {
         new: true,
-        runValidators: true,
+        runValidators: true
       }).select(
         "-password -otp -otpExpires -resetPasswordToken -resetPasswordExpire -loginAttempts -lockUntil"
       );
@@ -108,7 +108,7 @@ Studentrouter.put(
       if (!updatedStudent) {
         return res.status(404).json({
           success: false,
-          message: "Student not found",
+          message: "Student not found"
         });
       }
 
@@ -128,15 +128,15 @@ Studentrouter.put(
           role: updatedStudent.role,
           isVerified: updatedStudent.isVerified,
           createdAt: updatedStudent.createdAt,
-          updatedAt: updatedStudent.updatedAt,
+          updatedAt: updatedStudent.updatedAt
         },
-        profile_picture: req.file?.filename, // Keep this for backward compatibility
+        profile_picture: req.file?.filename // Keep this for backward compatibility
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         message: "Server error",
-        error: error.message,
+        error: error.message
       });
     }
   }
@@ -148,58 +148,34 @@ Studentrouter.put("/profile/:id/password", studentAuth, async (req, res) => {
     const { id } = req.params;
     const { currentPassword, newPassword } = req.body;
 
-    // Verify the requesting student has permission to update this password
-    if (req.student._id.toString() !== id) {
-      return res.status(403).json({
-        success: false,
-        message: "Not authorized to update this password.",
-      });
+    if (!req.student || req.student._id.toString() !== id) {
+      return res.status(403).json({ success: false, message: "Unauthorized" });
     }
 
-    // Validate input
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "Current and new password are required.",
-      });
-    }
-
-    if (newPassword.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must be at least 6 characters.",
-      });
-    }
-
-    // Find the student with password field selected
     const student = await Student.findById(id).select("+password");
     if (!student) {
       return res
         .status(404)
-        .json({ success: false, message: "Student not found." });
+        .json({ success: false, message: "Student not found" });
     }
 
-    // Verify current password
     const isMatch = await student.comparePassword(currentPassword);
     if (!isMatch) {
       return res
         .status(400)
-        .json({ success: false, message: "Current password is incorrect." });
+        .json({ success: false, message: "Current password incorrect" });
     }
 
-    // Update password (let the pre-save middleware handle hashing)
+    // Set the new password and save with validation disabled
     student.password = newPassword;
-    await student.save();
+    await student.save({ validateBeforeSave: false }); // This will trigger the pre-save hook but skip validation
 
     res
       .status(200)
-      .json({ success: true, message: "Password updated successfully." });
+      .json({ success: true, message: "Password updated successfully" });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
+    console.error("Password update error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
@@ -213,12 +189,12 @@ Studentrouter.get("/teachers", async (req, res) => {
 
     res.json({
       success: true,
-      teachers,
+      teachers
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Server error while fetching teachers",
+      message: "Server error while fetching teachers"
     });
   }
 });
@@ -263,7 +239,7 @@ Studentrouter.post("/enroll/:courseId", async (req, res) => {
     if (isEnrolled) {
       return res.status(400).json({
         success: false,
-        message: "You are already enrolled in this course",
+        message: "You are already enrolled in this course"
       });
     }
 
@@ -273,13 +249,13 @@ Studentrouter.post("/enroll/:courseId", async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Successfully enrolled in the course",
-      enrolledCourses: student.enrolledCourses,
+      enrolledCourses: student.enrolledCourses
     });
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Server error",
-      error: error.message,
+      error: error.message
     });
   }
 });
@@ -290,7 +266,7 @@ Studentrouter.get("/my-courses", async (req, res) => {
     const student = await Student.findById(req.student._id)
       .populate({
         path: "enrolledCourses.course",
-        select: "title description thumbnail instructor rating duration price",
+        select: "title description thumbnail instructor rating duration price"
       })
       .select("enrolledCourses");
 
@@ -308,25 +284,25 @@ Studentrouter.get("/my-courses", async (req, res) => {
         instructor: enrollment.course.instructor,
         rating: enrollment.course.rating,
         duration: enrollment.course.duration,
-        price: enrollment.course.price,
+        price: enrollment.course.price
       },
       enrolledAt: enrollment.enrolledAt,
       progress: enrollment.progress,
       completed: enrollment.completed,
       lastAccessed: enrollment.lastAccessed,
-      certificates: enrollment.certificates,
+      certificates: enrollment.certificates
     }));
 
     res.status(200).json({
       success: true,
       enrolledCourses,
-      count: enrolledCourses.length,
+      count: enrolledCourses.length
     });
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Failed to fetch enrolled courses",
-      error: error.message,
+      error: error.message
     });
   }
 });
@@ -335,7 +311,7 @@ Studentrouter.post("/:courseId/enroll", studentAuth, async (req, res) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.courseId)) {
     return res.status(400).json({
       success: false,
-      message: "Invalid course ID format",
+      message: "Invalid course ID format"
     });
   }
   try {
@@ -354,7 +330,7 @@ Studentrouter.post("/:courseId/enroll", studentAuth, async (req, res) => {
     if (alreadyEnrolled) {
       return res.status(400).json({
         success: false,
-        message: "You are already enrolled in this course",
+        message: "You are already enrolled in this course"
       });
     }
 
@@ -370,14 +346,14 @@ Studentrouter.post("/:courseId/enroll", studentAuth, async (req, res) => {
     const progress = course.content.map((item) => ({
       contentItemId: item._id,
       completed: false,
-      lastAccessed: new Date(),
+      lastAccessed: new Date()
     }));
 
     // Create new enrollment
     const newEnrollment = {
       studentId: req.body.user_id,
       progress,
-      lastAccessed: new Date(),
+      lastAccessed: new Date()
     };
 
     course.enrollments.push(newEnrollment);
@@ -385,13 +361,13 @@ Studentrouter.post("/:courseId/enroll", studentAuth, async (req, res) => {
 
     // Add course to user's enrolled courses
     await Student.findByIdAndUpdate(req.body.user_id, {
-      $addToSet: { enrolledCourses: course._id },
+      $addToSet: { enrolledCourses: course._id }
     });
 
     res.status(200).json({
       success: true,
       message: "Successfully enrolled in the course",
-      enrollment: newEnrollment,
+      enrollment: newEnrollment
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -403,7 +379,7 @@ Studentrouter.get("/enrolled-courses/:studentId", async (req, res) => {
 
     // Find all courses where the student is enrolled and populate necessary fields
     const courses = await Course.find({
-      "enrollments.studentId": studentId,
+      "enrollments.studentId": studentId
     })
       .populate("instructor", "name email profilePicture")
       .populate("enrollments.progress.answers.gradedBy", "name")
@@ -413,7 +389,7 @@ Studentrouter.get("/enrolled-courses/:studentId", async (req, res) => {
       return res.status(200).json({
         success: true,
         enrolledCourses: [],
-        message: "No enrolled courses found for this student",
+        message: "No enrolled courses found for this student"
       });
     }
 
@@ -467,7 +443,7 @@ Studentrouter.get("/enrolled-courses/:studentId", async (req, res) => {
           totalLessons: course.content.filter((c) => c.type === "tutorial")
             .length,
           totalQuizzes: course.content.filter((c) => c.type === "quiz").length,
-          totalContentItems: course.content.length,
+          totalContentItems: course.content.length
         },
         enrollmentInfo: {
           enrolledAt: enrollment.enrolledAt,
@@ -485,20 +461,20 @@ Studentrouter.get("/enrolled-courses/:studentId", async (req, res) => {
             accuracy,
             totalMarksObtained,
             totalMaxMarks,
-            overallPercentage,
-          },
-        },
+            overallPercentage
+          }
+        }
       };
     });
 
     res.status(200).json({
       success: true,
-      enrolledCourses,
+      enrolledCourses
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Server error while fetching enrolled courses",
+      message: "Server error while fetching enrolled courses"
     });
   }
 });
@@ -553,7 +529,7 @@ Studentrouter.post("/:courseId/access", studentAuth, async (req, res) => {
         progress: course.content.map((item) => ({
           contentItemId: item._id,
           completed: false,
-          timeSpent: 0,
+          timeSpent: 0
         })),
         totalTimeSpent: 0,
         accessHistory: [
@@ -561,9 +537,9 @@ Studentrouter.post("/:courseId/access", studentAuth, async (req, res) => {
             accessedAt: now,
             duration: 0,
             contentItemId: null,
-            action: "initial_access",
-          },
-        ],
+            action: "initial_access"
+          }
+        ]
       };
       course.enrollments.push(enrollment);
     } else {
@@ -573,7 +549,7 @@ Studentrouter.post("/:courseId/access", studentAuth, async (req, res) => {
         accessedAt: now,
         duration: 0,
         contentItemId: null,
-        action: "accessed",
+        action: "accessed"
       });
 
       if (!enrollment.firstAccessedAt) {
@@ -591,14 +567,14 @@ Studentrouter.post("/:courseId/access", studentAuth, async (req, res) => {
       enrollment: {
         _id: enrollment._id,
         firstAccessedAt: enrollment.firstAccessedAt,
-        lastAccessed: enrollment.lastAccessed,
-      },
+        lastAccessed: enrollment.lastAccessed
+      }
     });
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: error.message,
+      error: error.message
     });
   }
 });
@@ -611,7 +587,7 @@ Studentrouter.get("/video/:filename", studentAuth, async (req, res) => {
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({
         success: false,
-        message: "Video not found",
+        message: "Video not found"
       });
     }
 
@@ -631,7 +607,7 @@ Studentrouter.get("/video/:filename", studentAuth, async (req, res) => {
         "Content-Range": `bytes ${start}-${end}/${fileSize}`,
         "Accept-Ranges": "bytes",
         "Content-Length": chunksize,
-        "Content-Type": "video/mp4",
+        "Content-Type": "video/mp4"
       };
 
       res.writeHead(206, head);
@@ -639,7 +615,7 @@ Studentrouter.get("/video/:filename", studentAuth, async (req, res) => {
     } else {
       const head = {
         "Content-Length": fileSize,
-        "Content-Type": "video/mp4",
+        "Content-Type": "video/mp4"
       };
       res.writeHead(200, head);
       fs.createReadStream(filePath).pipe(res);
@@ -647,7 +623,7 @@ Studentrouter.get("/video/:filename", studentAuth, async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Error streaming video",
+      message: "Error streaming video"
     });
   }
 });
@@ -683,7 +659,7 @@ Studentrouter.get("/:courseId/progress", studentAuth, async (req, res) => {
       totalItems,
       completedItems,
       lastAccessed: enrollment.lastAccessed,
-      totalTimeSpent: enrollment.totalTimeSpent,
+      totalTimeSpent: enrollment.totalTimeSpent
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -790,7 +766,7 @@ Studentrouter.put(
               questionId: question._id,
               answer: answer.answer,
               isCorrect,
-              marksObtained,
+              marksObtained
             };
           })
           .filter(Boolean);
@@ -810,7 +786,7 @@ Studentrouter.put(
 
       res.status(200).json({
         message: "Progress updated successfully",
-        progress: progressItem,
+        progress: progressItem
       });
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -829,7 +805,7 @@ Studentrouter.get("/enrolled/:studentId", async (req, res) => {
 
     // Find all courses where the student is enrolled
     const enrolledCourses = await Course.find({
-      "enrollments.studentId": studentId,
+      "enrollments.studentId": studentId
     })
       .populate("instructor", "name email") // Populate instructor details
       .select("-content -attachments -previousInstructors -ratings"); // Exclude large/unnecessary fields
@@ -869,9 +845,9 @@ Studentrouter.get("/enrolled/:studentId", async (req, res) => {
           totalProgress: course.content.length,
           lastAccessed: enrollment.lastAccessed,
           totalTimeSpent: enrollment.totalTimeSpent,
-          certificateIssued: enrollment.certificateIssued,
+          certificateIssued: enrollment.certificateIssued
         },
-        createdAt: course.createdAt,
+        createdAt: course.createdAt
       };
     });
 
@@ -941,7 +917,7 @@ Studentrouter.get("/certificate/:courseId/:studentId", async (req, res) => {
     if (!enrollment) {
       return res.status(404).json({
         success: false,
-        message: "Student not enrolled in this course",
+        message: "Student not enrolled in this course"
       });
     }
 
@@ -959,7 +935,7 @@ Studentrouter.get("/certificate/:courseId/:studentId", async (req, res) => {
         certificateId: `CERT-${Date.now()}`,
         issuedAt: new Date(),
         verificationCode: generateVerificationCode(),
-        downloadUrl: "",
+        downloadUrl: ""
       };
       await course.save();
     }
@@ -968,7 +944,7 @@ Studentrouter.get("/certificate/:courseId/:studentId", async (req, res) => {
     const doc = new PDFDocument({
       layout: "landscape",
       size: "A4",
-      margin: 0,
+      margin: 0
     });
 
     // Generate safe filename
@@ -1030,7 +1006,7 @@ Studentrouter.get("/certificate/:courseId/:studentId", async (req, res) => {
       [45, 45],
       [pageWidth - 45 - cornerSize, 45],
       [45, pageHeight - 45 - cornerSize],
-      [pageWidth - 45 - cornerSize, pageHeight - 45 - cornerSize],
+      [pageWidth - 45 - cornerSize, pageHeight - 45 - cornerSize]
     ];
 
     corners.forEach(([x, y]) => {
@@ -1073,7 +1049,7 @@ Studentrouter.get("/certificate/:courseId/:studentId", async (req, res) => {
       .font("Helvetica-Bold")
       .text("CERTIFICATE", 0, 200, {
         align: "center",
-        characterSpacing: 4,
+        characterSpacing: 4
       });
 
     doc
@@ -1082,7 +1058,7 @@ Studentrouter.get("/certificate/:courseId/:studentId", async (req, res) => {
       .font("Helvetica")
       .text("OF ACHIEVEMENT", 0, 255, {
         align: "center",
-        characterSpacing: 2,
+        characterSpacing: 2
       });
 
     // Decorative line under title
@@ -1121,7 +1097,7 @@ Studentrouter.get("/certificate/:courseId/:studentId", async (req, res) => {
       .font("Helvetica-Bold")
       .text(student.full_name.toUpperCase(), 0, 360, {
         align: "center",
-        characterSpacing: 1,
+        characterSpacing: 1
       });
 
     // Elegant underline for name
@@ -1139,7 +1115,7 @@ Studentrouter.get("/certificate/:courseId/:studentId", async (req, res) => {
       .fontSize(16)
       .font("Helvetica")
       .text("has successfully completed the comprehensive course", 0, 435, {
-        align: "center",
+        align: "center"
       });
 
     // 8. COURSE TITLE - HIGHLIGHTED
@@ -1157,7 +1133,7 @@ Studentrouter.get("/certificate/:courseId/:studentId", async (req, res) => {
       .font("Helvetica-Bold")
       .text(`"${course.title}"`, 0, 485, {
         align: "center",
-        characterSpacing: 0.5,
+        characterSpacing: 0.5
       });
 
     // 9. DATE AND DETAILS SECTION
@@ -1201,11 +1177,11 @@ Studentrouter.get("/certificate/:courseId/:studentId", async (req, res) => {
       .fontSize(12)
       .font("Helvetica")
       .text("Authorized Signature", pageWidth - 250, sigY + 30, {
-        align: "left",
+        align: "left"
       });
 
     doc.fontSize(10).text("Director of Education", pageWidth - 250, sigY + 45, {
-      align: "left",
+      align: "left"
     });
 
     // 12. PREMIUM SEAL (Bottom Center)
@@ -1234,7 +1210,7 @@ Studentrouter.get("/certificate/:courseId/:studentId", async (req, res) => {
       .font("Helvetica-Bold")
       .text("CERTIFIED", 0, pageHeight / 2 - 50, {
         align: "center",
-        rotate: -45,
+        rotate: -45
       })
       .restore();
 
@@ -1259,7 +1235,7 @@ Studentrouter.get("/certificate/:courseId/:studentId", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to generate certificate",
-      error: error.message,
+      error: error.message
     });
   }
 });
@@ -1285,7 +1261,7 @@ Studentrouter.get("/cart", studentAuth, async (req, res) => {
     if (!student.cart || student.cart.items.length === 0) {
       return res.status(200).json({
         success: true,
-        cart: { items: [], totalPrice: 0 },
+        cart: { items: [], totalPrice: 0 }
       });
     }
 
@@ -1294,7 +1270,7 @@ Studentrouter.get("/cart", studentAuth, async (req, res) => {
       .populate({
         path: "cart.items.courseId",
         select: "title thumbnail price instructor",
-        options: { lean: true }, // Use lean to avoid virtuals
+        options: { lean: true } // Use lean to avoid virtuals
       })
       .select("cart")
       .lean();
@@ -1314,22 +1290,22 @@ Studentrouter.get("/cart", studentAuth, async (req, res) => {
           title: item.courseId?.title || "Unknown Course",
           thumbnail: item.courseId?.thumbnail || null,
           price: item.courseId?.price || 0,
-          instructor: item.courseId?.instructor || "Unknown Instructor",
+          instructor: item.courseId?.instructor || "Unknown Instructor"
         },
-        price: item.price || 0,
+        price: item.price || 0
       })),
-      totalPrice,
+      totalPrice
     };
 
     res.status(200).json({
       success: true,
-      cart: safeCart,
+      cart: safeCart
     });
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Server error while fetching cart",
-      error: error.message,
+      error: error.message
     });
   }
 });
@@ -1358,26 +1334,26 @@ Studentrouter.post("/cart", studentAuth, async (req, res) => {
     // Check if already enrolled
     const isEnrolled = await Student.exists({
       _id: req.student._id,
-      "enrolledCourses.course": courseId,
+      "enrolledCourses.course": courseId
     });
 
     if (isEnrolled) {
       return res.status(400).json({
         success: false,
-        message: "You are already enrolled in this course",
+        message: "You are already enrolled in this course"
       });
     }
 
     // Check if already in cart
     const alreadyInCart = await Student.exists({
       _id: req.student._id,
-      "cart.items.courseId": courseId,
+      "cart.items.courseId": courseId
     });
 
     if (alreadyInCart) {
       return res.status(400).json({
         success: false,
-        message: "Course already in cart",
+        message: "Course already in cart"
       });
     }
 
@@ -1389,9 +1365,9 @@ Studentrouter.post("/cart", studentAuth, async (req, res) => {
           "cart.items": {
             courseId: courseId,
             price: course.price,
-            addedAt: new Date(),
-          },
-        },
+            addedAt: new Date()
+          }
+        }
       },
       { new: true }
     ).select("cart");
@@ -1404,27 +1380,27 @@ Studentrouter.post("/cart", studentAuth, async (req, res) => {
           title: course.title,
           thumbnail: course.thumbnail,
           price: course.price,
-          instructor: course.instructor,
+          instructor: course.instructor
         },
         price: item.price,
-        addedAt: item.addedAt,
+        addedAt: item.addedAt
       })),
       totalPrice: updatedStudent.cart.items.reduce(
         (sum, item) => sum + item.price,
         0
-      ),
+      )
     };
 
     res.status(200).json({
       success: true,
       message: "Course added to cart successfully",
-      cart: cartData,
+      cart: cartData
     });
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Server error while adding to cart",
-      error: error.message,
+      error: error.message
     });
   }
 });
@@ -1436,7 +1412,7 @@ Studentrouter.delete("/cart/:courseId", studentAuth, async (req, res) => {
     if (!mongoose.isValidObjectId(courseId)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid course ID format",
+        message: "Invalid course ID format"
       });
     }
 
@@ -1446,13 +1422,13 @@ Studentrouter.delete("/cart/:courseId", studentAuth, async (req, res) => {
     // 2. First find the student and item to get the price
     const student = await Student.findOne({
       _id: studentId,
-      "cart.items.courseId": courseObjectId,
+      "cart.items.courseId": courseObjectId
     });
 
     if (!student) {
       return res.status(404).json({
         success: false,
-        message: "Student or course not found in cart",
+        message: "Student or course not found in cart"
       });
     }
 
@@ -1464,7 +1440,7 @@ Studentrouter.delete("/cart/:courseId", studentAuth, async (req, res) => {
     if (!itemToRemove) {
       return res.status(404).json({
         success: false,
-        message: "Course not found in cart",
+        message: "Course not found in cart"
       });
     }
 
@@ -1472,20 +1448,20 @@ Studentrouter.delete("/cart/:courseId", studentAuth, async (req, res) => {
     const updatedStudent = await Student.findOneAndUpdate(
       {
         _id: studentId,
-        "cart.items.courseId": courseObjectId,
+        "cart.items.courseId": courseObjectId
       },
       {
         $pull: { "cart.items": { courseId: courseObjectId } },
         $set: { "cart.lastUpdated": new Date() },
-        $inc: { "cart.total": -itemToRemove.price }, // Subtract the price
+        $inc: { "cart.total": -itemToRemove.price } // Subtract the price
       },
       {
         new: true,
         runValidators: false,
         populate: {
           path: "cart.items.courseId",
-          select: "title thumbnail price instructor",
-        },
+          select: "title thumbnail price instructor"
+        }
       }
     );
 
@@ -1503,14 +1479,14 @@ Studentrouter.delete("/cart/:courseId", studentAuth, async (req, res) => {
               title: item.courseId.title,
               thumbnail: item.courseId.thumbnail,
               price: item.courseId.price,
-              instructor: item.courseId.instructor,
+              instructor: item.courseId.instructor
             },
             price: item.price,
-            addedAt: item.addedAt,
+            addedAt: item.addedAt
           })),
         total: updatedStudent.cart.total,
-        lastUpdated: updatedStudent.cart.lastUpdated,
-      },
+        lastUpdated: updatedStudent.cart.lastUpdated
+      }
     };
 
     res.status(200).json(response);
@@ -1518,7 +1494,7 @@ Studentrouter.delete("/cart/:courseId", studentAuth, async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Server error while removing from cart",
-      error: error.message,
+      error: error.message
     });
   }
 });
@@ -1534,14 +1510,14 @@ Studentrouter.delete("/cart", studentAuth, async (req, res) => {
       cart: {
         items: [],
         total: 0,
-        lastUpdated: new Date(),
-      },
+        lastUpdated: new Date()
+      }
     });
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Server error while clearing cart",
-      error: error.message,
+      error: error.message
     });
   }
 });
@@ -1554,7 +1530,7 @@ Studentrouter.post("/cart/checkout", studentAuth, async (req, res) => {
     if (!student || student.cart.items.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Cart is empty",
+        message: "Cart is empty"
       });
     }
 
@@ -1563,12 +1539,12 @@ Studentrouter.post("/cart/checkout", studentAuth, async (req, res) => {
     res.json({
       success: true,
       message: "Enrollment successful!",
-      enrolledCourses: result.enrolledCourses,
+      enrolledCourses: result.enrolledCourses
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message
     });
   }
 });
@@ -1588,7 +1564,7 @@ Studentrouter.post("/request", studentAuth, async (req, res) => {
           name: "Initial Documentation",
           status: "pending",
           requiredDocuments: ["Passport", "Academic Records", "Proof of Funds"],
-          notes: "",
+          notes: ""
         },
         {
           name: "University Application",
@@ -1596,9 +1572,9 @@ Studentrouter.post("/request", studentAuth, async (req, res) => {
           requiredDocuments: [
             "Application Form",
             "Recommendation Letters",
-            "Statement of Purpose",
+            "Statement of Purpose"
           ],
-          notes: "",
+          notes: ""
         },
         {
           name: "Visa Application",
@@ -1606,22 +1582,22 @@ Studentrouter.post("/request", studentAuth, async (req, res) => {
           requiredDocuments: [
             "Visa Application Form",
             "Medical Certificate",
-            "Police Clearance",
+            "Police Clearance"
           ],
-          notes: "",
+          notes: ""
         },
         {
           name: "Interview Preparation",
           status: "pending",
           requiredDocuments: [],
-          notes: "",
+          notes: ""
         },
         {
           name: "Visa Approval",
           status: "pending",
           requiredDocuments: [],
-          notes: "",
-        },
+          notes: ""
+        }
       ];
       initialDocuments = processingSteps[0].requiredDocuments;
     } else if (visaType === "work") {
@@ -1632,9 +1608,9 @@ Studentrouter.post("/request", studentAuth, async (req, res) => {
           requiredDocuments: [
             "Passport",
             "Employment Contract",
-            "Qualifications",
+            "Qualifications"
           ],
-          notes: "",
+          notes: ""
         },
         {
           name: "Work Permit Application",
@@ -1642,22 +1618,22 @@ Studentrouter.post("/request", studentAuth, async (req, res) => {
           requiredDocuments: [
             "Application Form",
             "Medical Certificate",
-            "Police Clearance",
+            "Police Clearance"
           ],
-          notes: "",
+          notes: ""
         },
         {
           name: "Interview Preparation",
           status: "pending",
           requiredDocuments: [],
-          notes: "",
+          notes: ""
         },
         {
           name: "Visa Approval",
           status: "pending",
           requiredDocuments: [],
-          notes: "",
-        },
+          notes: ""
+        }
       ];
       initialDocuments = processingSteps[0].requiredDocuments;
     } else if (visaType === "tourist") {
@@ -1668,28 +1644,28 @@ Studentrouter.post("/request", studentAuth, async (req, res) => {
           requiredDocuments: [
             "Passport",
             "Travel Itinerary",
-            "Proof of Accommodation",
+            "Proof of Accommodation"
           ],
-          notes: "",
+          notes: ""
         },
         {
           name: "Visa Application",
           status: "pending",
           requiredDocuments: ["Application Form", "Bank Statements"],
-          notes: "",
+          notes: ""
         },
         {
           name: "Visa Approval",
           status: "pending",
           requiredDocuments: [],
-          notes: "",
-        },
+          notes: ""
+        }
       ];
       initialDocuments = processingSteps[0].requiredDocuments;
     } else {
       return res.status(400).json({
         success: false,
-        message: "Invalid visa type",
+        message: "Invalid visa type"
       });
     }
 
@@ -1698,7 +1674,7 @@ Studentrouter.post("/request", studentAuth, async (req, res) => {
       name: docName,
       status: "pending",
       url: "",
-      feedback: "",
+      feedback: ""
     }));
 
     const visaRequest = await VisaRequest.create({
@@ -1709,7 +1685,7 @@ Studentrouter.post("/request", studentAuth, async (req, res) => {
       documents,
       processingSteps,
       currentStep: 0,
-      status: "pending",
+      status: "pending"
     });
 
     // Populate student details in the response
@@ -1719,12 +1695,12 @@ Studentrouter.post("/request", studentAuth, async (req, res) => {
 
     res.status(201).json({
       success: true,
-      visaRequest: populatedRequest,
+      visaRequest: populatedRequest
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Server error while creating visa request",
+      message: "Server error while creating visa request"
     });
   }
 });
@@ -1739,13 +1715,13 @@ Studentrouter.post(
       if (!req.file) {
         return res.status(400).json({
           success: false,
-          message: "No file uploaded",
+          message: "No file uploaded"
         });
       }
 
       const visaRequest = await VisaRequest.findOne({
         _id: req.params.requestId,
-        student: req.student.id,
+        student: req.student.id
       });
 
       if (!visaRequest) {
@@ -1753,7 +1729,7 @@ Studentrouter.post(
         fs.unlinkSync(req.file.path);
         return res.status(404).json({
           success: false,
-          message: "Visa request not found or not owned by you",
+          message: "Visa request not found or not owned by you"
         });
       }
 
@@ -1767,7 +1743,7 @@ Studentrouter.post(
         fs.unlinkSync(req.file.path);
         return res.status(400).json({
           success: false,
-          message: "Invalid document name for this visa request",
+          message: "Invalid document name for this visa request"
         });
       }
 
@@ -1789,7 +1765,7 @@ Studentrouter.post(
         url: req.file.path.replace(/\\/g, "/"), // Convert to forward slashes for consistency
         status: "pending", // Reset status when new file is uploaded
         feedback: "", // Clear any previous feedback
-        uploadedAt: new Date(),
+        uploadedAt: new Date()
       };
 
       await visaRequest.save();
@@ -1797,7 +1773,7 @@ Studentrouter.post(
       res.json({
         success: true,
         document: visaRequest.documents[documentIndex],
-        message: "Document uploaded successfully",
+        message: "Document uploaded successfully"
       });
     } catch (error) {
       // Clean up the uploaded file if there was an error
@@ -1806,7 +1782,7 @@ Studentrouter.post(
       }
       res.status(500).json({
         success: false,
-        message: "Server error while uploading document",
+        message: "Server error while uploading document"
       });
     }
   }
@@ -1831,24 +1807,24 @@ Studentrouter.get("/download/:filename", studentAuth, (req, res) => {
 Studentrouter.get("/status", studentAuth, async (req, res) => {
   try {
     const visaRequests = await VisaRequest.find({
-      student: req.student.id,
+      student: req.student.id
     })
       .sort({ createdAt: -1 }) // Sort by newest first
       .populate({
         path: "student",
         select: "full_name email",
-        options: { virtuals: false },
+        options: { virtuals: false }
       })
       .populate("assignedConsultant", "username email phoneNumber");
 
     res.json({
       success: true,
-      visaRequests, // Changed from visaRequest to visaRequests (array)
+      visaRequests // Changed from visaRequest to visaRequests (array)
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Server error while fetching visa status",
+      message: "Server error while fetching visa status"
     });
   }
 });

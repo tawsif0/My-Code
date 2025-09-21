@@ -7,12 +7,15 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "flag-icons/css/flag-icons.min.css";
+import { CartProvider } from "./context/CartContext.jsx";
 
 gsap.registerPlugin(ScrollTrigger);
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <AuthProvider>
-      <App />
+      <CartProvider>
+        <App />
+      </CartProvider>
     </AuthProvider>
   </StrictMode>
 );

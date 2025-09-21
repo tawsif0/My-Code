@@ -17,27 +17,35 @@ import {
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
+import { useCart } from "../../../../context/useCart"; // Import the useCart hook
 
 const CourseList = ({ setActiveView }) => {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [filteredCourses, setFilteredCourses] = useState([]);
-  const [cart, setCart] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [priceFilter, setPriceFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
-  const [enrolling, setEnrolling] = useState(false);
-  const [cartLoading, setCartLoading] = useState(false);
-  const base_url = import.meta.env.VITE_API_KEY_Base_URL;
-  const studentData = JSON.parse(localStorage.getItem("studentData"));
   const [filterType, setFilterType] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterLevel, setFilterLevel] = useState("all");
   const [categories, setCategories] = useState([]);
   const [teachers, setTeachers] = useState([]);
 
-  // Fetch courses, enrolled courses, and cart
+  // Use the global cart context
+  const {
+    cart,
+    addToCart,
+    removeFromCart,
+    isInCart,
+    loading: cartLoading
+  } = useCart();
+
+  const base_url = import.meta.env.VITE_API_KEY_Base_URL;
+  const studentData = JSON.parse(localStorage.getItem("studentData"));
+
+  // Fetch courses, enrolled courses
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -164,28 +172,6 @@ const CourseList = ({ setActiveView }) => {
             console.error("Error fetching enrolled courses:", enrolledError);
             toast.error("Failed to load enrolled courses");
           }
-
-          // Fetch cart from server
-          await fetchCart();
-        } else {
-          try {
-            const savedCart =
-              JSON.parse(localStorage.getItem("courseCart")) || [];
-            const validCart = savedCart.filter(
-              (item) => item?.id && item?.title && !isNaN(item?.price)
-            );
-            setCart(validCart);
-            if (validCart.length !== savedCart.length) {
-              localStorage.setItem("courseCart", JSON.stringify(validCart));
-            }
-          } catch (localStorageError) {
-            console.error(
-              "Error loading cart from localStorage:",
-              localStorageError
-            );
-            localStorage.removeItem("courseCart");
-            setCart([]);
-          }
         }
       } catch (error) {
         console.error("Error in fetchData:", error);
@@ -193,7 +179,6 @@ const CourseList = ({ setActiveView }) => {
 
         if (error.response?.status === 401) {
           setEnrolledCourses([]);
-          setCart([]);
         }
       } finally {
         setLoading(false);
@@ -269,43 +254,8 @@ const CourseList = ({ setActiveView }) => {
     new Set(courses.flatMap((c) => c.categories || []).filter(Boolean))
   );
 
-  const fetchCart = async () => {
-    try {
-      setCartLoading(true);
-      const response = await axios.get(`${base_url}/api/student/cart`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("studentToken")}`
-        }
-      });
-
-      if (response.data.success) {
-        const serverCart = response.data.cart.items
-          .map((item) => ({
-            id: item.courseId?._id,
-            title: item.courseId?.title,
-            thumbnail: item.courseId?.thumbnail,
-            price: item.price,
-            addedAt: item.addedAt
-          }))
-          .filter((item) => item.id && item.title); // Filter out invalid items
-
-        setCart(serverCart);
-        localStorage.setItem("courseCart", JSON.stringify(serverCart));
-      }
-    } catch (error) {
-      console.error("Error fetching cart:", error);
-      toast.error("Failed to load cart");
-    } finally {
-      setCartLoading(false);
-    }
-  };
-
-  const addToCart = async (course) => {
-    if (!course?.id || !course?.title) {
-      console.error("Invalid course data");
-      return;
-    }
-
+  // Handle add to cart
+  const handleAddToCart = async (course) => {
     if (isEnrolled(course.id)) {
       toast.error("You are already enrolled in this course");
       return;
@@ -316,88 +266,21 @@ const CourseList = ({ setActiveView }) => {
       return;
     }
 
-    try {
-      setCartLoading(true);
-
-      if (studentData?.id && localStorage.getItem("studentToken")) {
-        const response = await axios.post(
-          `${base_url}/api/student/cart`,
-          { courseId: course.id },
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("studentToken")}`
-            }
-          }
-        );
-
-        if (response.data.success) {
-          const newCartItem = {
-            id: course.id,
-            title: course.title,
-            thumbnail: course.thumbnail,
-            price: course.price,
-            instructor: course.instructor,
-            addedAt: new Date().toISOString()
-          };
-
-          setCart((prevCart) => [...prevCart, newCartItem]);
-          toast.success("Course added to cart");
-        }
-      } else {
-        const newCartItem = {
-          id: course.id,
-          title: course.title,
-          thumbnail: course.thumbnail,
-          price: course.price,
-          instructor: course.instructor,
-          addedAt: new Date().toISOString()
-        };
-
-        setCart((prevCart) => [...prevCart, newCartItem]);
-        localStorage.setItem(
-          "courseCart",
-          JSON.stringify([...cart, newCartItem])
-        );
-        toast.success("Course added to cart");
-      }
-    } catch (error) {
-      console.error("Error adding to cart:", error);
-      toast.error(error.response?.data?.message || "Failed to add to cart");
-    } finally {
-      setCartLoading(false);
+    const success = await addToCart(course);
+    if (!success) {
+      toast.error("Failed to add course to cart");
     }
   };
-  const removeFromCart = async (courseId) => {
-    try {
-      if (studentData?.id && localStorage.getItem("studentToken")) {
-        await axios.delete(`${base_url}/api/student/cart/${courseId}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("studentToken")}`
-          }
-        });
-      }
 
-      const updatedCart = cart.filter((item) => item.id !== courseId);
-      setCart(updatedCart);
-      localStorage.setItem("courseCart", JSON.stringify(updatedCart));
-      toast.success("Course removed from cart");
-    } catch (error) {
-      console.error("Error removing from cart:", error);
-      toast.error(
-        error.response?.data?.message || "Failed to remove from cart"
-      );
+  // Handle remove from cart
+  const handleRemoveFromCart = async (courseId) => {
+    const success = await removeFromCart(courseId);
+    if (!success) {
+      toast.error("Failed to remove course from cart");
     }
   };
-  // Add this useEffect hook near your other effects
-  useEffect(() => {
-    // Clean up any invalid items on component mount
-    const cleanCart = cart.filter((item) => item?.id && item?.title);
-    if (cleanCart.length !== cart.length) {
-      setCart(cleanCart);
-      localStorage.setItem("courseCart", JSON.stringify(cleanCart));
-    }
-  }, []);
-  const isInCart = (courseId) => cart.some((item) => item.id === courseId);
+
+  // Check if course is enrolled
   const isEnrolled = (courseId) => {
     return enrolledCourses.some((id) => id.toString() === courseId.toString());
   };
@@ -722,16 +605,17 @@ const CourseList = ({ setActiveView }) => {
                       </motion.span>
                     ) : isInCart(course.id) ? (
                       <button
-                        onClick={() => removeFromCart(course.id)}
+                        onClick={() => handleRemoveFromCart(course.id)}
                         className="w-full bg-white text-red-600 border border-red-200 hover:border-red-300 py-2 rounded-lg text-sm hover:bg-red-50 flex items-center justify-center transition-all"
+                        disabled={cartLoading}
                       >
                         <FiShoppingCart className="mr-2" /> Remove
                       </button>
                     ) : (
                       <button
-                        onClick={() => addToCart(course)}
+                        onClick={() => handleAddToCart(course)}
                         className="w-full bg-black text-white py-2 rounded-lg text-sm hover:bg-gray-800 flex items-center justify-center transition-all"
-                        disabled={isEnrolled(course.id)}
+                        disabled={isEnrolled(course.id) || cartLoading}
                       >
                         <FiShoppingCart className="mr-2" />
                         {isEnrolled(course.id)

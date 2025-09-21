@@ -7,18 +7,21 @@ import { toast } from "react-toastify";
 import logo from "../../../../public/images/logo.png";
 import { useAuth } from "../../../context/useAuth";
 import { FiHome, FiLogOut, FiShoppingCart } from "react-icons/fi";
+import { useCart } from "../../../context/useCart";
+import CartModal from "./CartModal";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isOthersDropdownOpen, setIsOthersDropdownOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-
+  const { getCartCount } = useCart();
   const { studentData, studentLoading, clearStudentData } = useAuth();
-
+  const [isCartModalOpen, setIsCartModalOpen] = useState(false);
   const headerRef = useRef(null);
   const dropdownRef = useRef(null);
   const mobileDropdownRef = useRef(null);
+  const cartButtonRef = useRef(null);
 
   const base_url =
     import.meta.env.VITE_API_KEY_Base_URL || "http://localhost:3500";
@@ -38,6 +41,17 @@ const Header = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Close cart modal if clicked outside
+      if (
+        isCartModalOpen &&
+        cartButtonRef.current &&
+        !cartButtonRef.current.contains(event.target) &&
+        !document.getElementById("cart-modal")?.contains(event.target)
+      ) {
+        setIsCartModalOpen(false);
+      }
+
+      // Close others dropdown if clicked outside
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target) &&
@@ -52,7 +66,7 @@ const Header = () => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, [isCartModalOpen]);
 
   const mainNavLinks = [
     { name: "Home", path: "/" },
@@ -62,24 +76,24 @@ const Header = () => {
     { name: "Consultation", path: "/appointment" },
     {
       name: "Courses",
-      path: "/courses",
+      path: "/courses"
     },
     {
       name: "Blogs & News",
-      path: "/blog",
+      path: "/blog"
     },
     {
       name: "Events",
-      path: "/events",
+      path: "/events"
     },
     {
       name: "Careers",
-      path: "/career",
+      path: "/career"
     },
     {
       name: "Contact",
-      path: "/contact",
-    },
+      path: "/contact"
+    }
   ];
 
   const profileDropdownLinks = [
@@ -93,8 +107,8 @@ const Header = () => {
         localStorage.removeItem("studentData");
         clearStudentData();
         window.location.reload();
-      },
-    },
+      }
+    }
   ];
 
   const handleLogout = () => {
@@ -102,6 +116,10 @@ const Header = () => {
     localStorage.removeItem("studentData");
     clearStudentData();
     window.location.reload();
+  };
+
+  const toggleCartModal = () => {
+    setIsCartModalOpen(!isCartModalOpen);
   };
 
   return (
@@ -152,29 +170,38 @@ const Header = () => {
                   }`
                 }
               >
-                <span className="text-lg">{link.icon}</span>
                 <span>{link.name}</span>
               </NavLink>
             ))}
-
-            {/* Others Dropdown - Futuristic Design */}
           </div>
 
           {/* Right Section */}
           <div className="flex items-center space-x-2 lg:space-x-2">
             {/* Cart Icon (only shown when logged in) */}
             {isStudentLoggedIn && (
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                <Link
-                  to="/cart"
-                  className="relative flex items-center justify-center p-2 text-gray-600 hover:text-[#004080] transition-colors duration-300 bg-gray-100 rounded-xl hover:bg-gray-200"
+              <div className="relative" ref={cartButtonRef}>
+                <motion.div
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
                 >
-                  <FiShoppingCart className="w-5 h-5" />
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#004080] text-white text-[10px] rounded-full flex items-center justify-center shadow-sm">
-                    0
-                  </span>
-                </Link>
-              </motion.div>
+                  <button
+                    onClick={toggleCartModal}
+                    className="cursor-pointer relative flex items-center justify-center p-2 text-gray-600 hover:text-[#004080] transition-colors duration-300 bg-gray-100 rounded-xl hover:bg-gray-200"
+                  >
+                    <FiShoppingCart className="w-5 h-5" />
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#004080] text-white text-[10px] rounded-full flex items-center justify-center shadow-sm">
+                      {getCartCount()}
+                    </span>
+                  </button>
+                </motion.div>
+
+                {/* Cart Modal positioned under the cart button */}
+                <CartModal
+                  isOpen={isCartModalOpen}
+                  onClose={() => setIsCartModalOpen(false)}
+                  positionRef={cartButtonRef}
+                />
+              </div>
             )}
 
             {/* User Profile (only shown when logged in) */}
@@ -232,7 +259,7 @@ const Header = () => {
                       transition={{
                         duration: 0.2,
                         type: "spring",
-                        damping: 20,
+                        damping: 20
                       }}
                       className="absolute top-full right-0 mt-2 w-46 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 py-3 z-50"
                     >
@@ -349,7 +376,6 @@ const Header = () => {
                     }
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    <span className="text-xl">{link.icon}</span>
                     <span>{link.name}</span>
                   </NavLink>
                 ))}

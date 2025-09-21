@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,68 +8,31 @@ import {
   FiCreditCard,
   FiStar,
   FiImage,
-  FiCheckCircle,
+  FiCheckCircle
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import axios from "axios";
+import { useCart } from "../../../../context/useCart";
 
 const Cart = ({ setActiveView }) => {
-  const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(true);
   const base_url = import.meta.env.VITE_API_KEY_Base_URL;
   const studentData = JSON.parse(localStorage.getItem("studentData"));
+  const { cart, removeFromCart, refreshCart, loading: cartLoading } = useCart();
 
   useEffect(() => {
-    const fetchCart = async () => {
-      try {
-        const response = await axios.get(`${base_url}/api/student/cart`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("studentToken")}`,
-          },
-        });
+    refreshCart();
+    setLoading(false);
+  }, [refreshCart]);
 
-        if (response.data.success) {
-          const formattedCart = response.data.cart.items.map((item) => ({
-            id: item.courseId._id,
-            title: item.courseId.title,
-            thumbnail: item.courseId.thumbnail,
-            price: item.price,
-          }));
-          setCart(formattedCart);
-        }
-      } catch (error) {
-        console.error("Error fetching cart:", error);
-        toast.error("Failed to load cart");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCart();
-  }, []);
-
-  const removeFromCart = async (courseId, silent = false) => {
-    if (!courseId) {
-      console.error("Invalid course ID");
-      setCart((prevCart) => prevCart.filter((item) => item?.id));
-      return;
+  const handleRemoveFromCart = async (courseId, silent = false) => {
+    const success = await removeFromCart(courseId);
+    if (success && !silent) {
+      toast.success("Course removed from cart");
+    } else if (!success && !silent) {
+      toast.error("Failed to remove course");
     }
-
-    try {
-      if (studentData?.id && localStorage.getItem("studentToken")) {
-        await axios.delete(`${base_url}/api/student/cart/${courseId}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("studentToken")}`,
-          },
-        });
-      }
-
-      setCart((prevCart) => prevCart.filter((item) => item?.id !== courseId));
-      if (!silent) toast.success("Course removed from cart");
-    } catch (error) {
-      console.error("Error removing item from cart:", error);
-      if (!silent) toast.error("Failed to remove course");
-    }
+    return success;
   };
 
   const handleEnrollCourses = async () => {
@@ -85,11 +47,11 @@ const Cart = ({ setActiveView }) => {
             { user_id: studentData?.id },
             {
               headers: {
-                Authorization: `Bearer ${localStorage.getItem("studentToken")}`,
-              },
+                Authorization: `Bearer ${localStorage.getItem("studentToken")}`
+              }
             }
           );
-          await removeFromCart(courseId, true);
+          await handleRemoveFromCart(courseId, true);
           return true;
         } catch (error) {
           console.error(`Failed to enroll in course ${courseId}:`, error);
@@ -118,9 +80,8 @@ const Cart = ({ setActiveView }) => {
   };
 
   const total = cart.reduce((sum, item) => sum + (item.price || 0), 0);
-  const validCartItems = cart.filter((item) => item.id && item.title);
 
-  if (loading) {
+  if (cartLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-black"></div>
@@ -142,8 +103,7 @@ const Cart = ({ setActiveView }) => {
           </motion.button>
           <div className="flex items-center">
             <span className="bg-black text-white px-3 py-1 rounded-full text-sm font-medium">
-              {validCartItems.length}{" "}
-              {validCartItems.length === 1 ? "Item" : "Items"}
+              {cart.length} {cart.length === 1 ? "Item" : "Items"}
             </span>
           </div>
         </div>
@@ -151,15 +111,15 @@ const Cart = ({ setActiveView }) => {
 
       {/* Main Content */}
       <main className="max-w-full mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        {validCartItems.length > 0 ? (
+        {cart.length > 0 ? (
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Cart Items */}
             <div className="lg:w-2/3">
               <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
                 <div className="p-6 border-b border-gray-200 bg-white">
                   <h2 className="text-2xl font-bold text-black">
-                    {validCartItems.length}{" "}
-                    {validCartItems.length === 1 ? "Course" : "Courses"} in Cart
+                    {cart.length} {cart.length === 1 ? "Course" : "Courses"} in
+                    Cart
                   </h2>
                   <p className="text-gray-600 mt-2">
                     Review your selections before checkout
@@ -168,7 +128,7 @@ const Cart = ({ setActiveView }) => {
 
                 <div className="divide-y divide-gray-200 max-h-[calc(100vh-300px)] overflow-y-auto">
                   <AnimatePresence>
-                    {validCartItems.map((course) => (
+                    {cart.map((course) => (
                       <motion.div
                         key={course.id}
                         initial={{ opacity: 0, y: 10 }}
@@ -200,7 +160,7 @@ const Cart = ({ setActiveView }) => {
                                 </h4>
                               </div>
                               <button
-                                onClick={() => removeFromCart(course.id)}
+                                onClick={() => handleRemoveFromCart(course.id)}
                                 className="text-gray-400 hover:text-red-500 p-1 -mt-2 -mr-2 transition-colors"
                               >
                                 <FiX size={20} />
@@ -246,7 +206,7 @@ const Cart = ({ setActiveView }) => {
                 </h2>
 
                 <div className="space-y-4 mb-6">
-                  {validCartItems.map((course) => (
+                  {cart.map((course) => (
                     <div
                       key={course.id}
                       className="flex justify-between items-start"
