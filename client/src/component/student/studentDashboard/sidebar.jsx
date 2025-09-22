@@ -229,14 +229,6 @@ const Sidebar = ({ activeView, setActiveView }) => {
                 src={`${base_url}/students/${studentData.profile_picture}`}
                 alt="Profile"
                 className="w-full h-full object-cover"
-                onError={(e) => {
-                  console.error("Image failed to load:", e.target.src);
-                  console.error("Error event:", e);
-                  e.target.style.display = "none";
-                }}
-                onLoad={(e) => {
-                  console.log("Image loaded successfully:", e.target.src);
-                }}
               />
             </div>
           ) : (

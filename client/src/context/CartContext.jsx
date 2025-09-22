@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -7,7 +8,6 @@ const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
-  const [loading, setLoading] = useState(false);
 
   const base_url =
     import.meta.env.VITE_API_KEY_Base_URL || "http://localhost:3500";
@@ -37,11 +37,10 @@ export const CartProvider = ({ children }) => {
 
     // If token exists, fetch from server
     try {
-      setLoading(true);
       const response = await axios.get(`${base_url}/api/student/cart`, {
         headers: {
-          Authorization: `Bearer ${studentToken}`
-        }
+          Authorization: `Bearer ${studentToken}`,
+        },
       });
 
       if (response.data.success) {
@@ -51,15 +50,13 @@ export const CartProvider = ({ children }) => {
             title: item.courseId?.title,
             thumbnail: item.courseId?.thumbnail,
             price: item.price,
-            instructor: item.courseId?.instructor
+            instructor: item.courseId?.instructor,
           }))
           .filter((item) => item.id && item.title); // Filter out invalid items
 
         setCart(formattedCart);
       }
     } catch (error) {
-      console.error("Error fetching cart:", error);
-      // Fallback to localStorage on error
       try {
         const savedCart = JSON.parse(localStorage.getItem("courseCart")) || [];
         setCart(savedCart);
@@ -67,8 +64,6 @@ export const CartProvider = ({ children }) => {
         console.error("Error loading cart from localStorage:", localError);
         setCart([]);
       }
-    } finally {
-      setLoading(false);
     }
   }, [base_url]);
 
@@ -80,7 +75,6 @@ export const CartProvider = ({ children }) => {
     }
 
     try {
-      setLoading(true);
       const studentToken = localStorage.getItem("studentToken");
       const studentData = JSON.parse(
         localStorage.getItem("studentData") || "null"
@@ -93,8 +87,8 @@ export const CartProvider = ({ children }) => {
           { courseId: course.id },
           {
             headers: {
-              Authorization: `Bearer ${studentToken}`
-            }
+              Authorization: `Bearer ${studentToken}`,
+            },
           }
         );
 
@@ -105,7 +99,7 @@ export const CartProvider = ({ children }) => {
             thumbnail: course.thumbnail,
             price: course.price,
             instructor: course.instructor,
-            addedAt: new Date().toISOString()
+            addedAt: new Date().toISOString(),
           };
 
           setCart((prevCart) => {
@@ -124,7 +118,7 @@ export const CartProvider = ({ children }) => {
           thumbnail: course.thumbnail,
           price: course.price,
           instructor: course.instructor,
-          addedAt: new Date().toISOString()
+          addedAt: new Date().toISOString(),
         };
 
         setCart((prevCart) => {
@@ -133,15 +127,14 @@ export const CartProvider = ({ children }) => {
           return updatedCart;
         });
         toast.success("Course added to cart");
-        return true;
+        return true; // This return was missing
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
       toast.error(error.response?.data?.message || "Failed to add to cart");
       return false;
-    } finally {
-      setLoading(false);
     }
+    return false; // Add default return
   };
 
   // Remove item from cart
@@ -154,8 +147,8 @@ export const CartProvider = ({ children }) => {
         try {
           await axios.delete(`${base_url}/api/student/cart/${courseId}`, {
             headers: {
-              Authorization: `Bearer ${studentToken}`
-            }
+              Authorization: `Bearer ${studentToken}`,
+            },
           });
         } catch (serverError) {
           console.error("Error removing from server cart:", serverError);
@@ -209,13 +202,12 @@ export const CartProvider = ({ children }) => {
 
   const value = {
     cart,
-    loading,
     addToCart,
     removeFromCart,
     isInCart,
     getCartCount,
     clearCart,
-    refreshCart: fetchCart
+    refreshCart: fetchCart,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

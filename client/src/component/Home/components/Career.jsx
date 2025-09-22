@@ -1,14 +1,34 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useRef, useEffect } from "react";
-// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import axios from "axios";
+import JobCard from "./JobCard";
+
 gsap.registerPlugin(ScrollTrigger);
 
 const Career = () => {
   const heroRef = useRef(null);
   const contentRef = useRef(null);
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const response = await axios.get("http://localhost:3500/api/jobs");
+        setJobs(response.data);
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, []);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -71,8 +91,6 @@ const Career = () => {
     triggerOnce: true,
   });
 
-  const formRef = useRef(null);
-
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     setFormData({
@@ -83,7 +101,6 @@ const Career = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
     setSubmitted(true);
     setFormData({
       name: "",
@@ -93,13 +110,6 @@ const Career = () => {
       file: null,
     });
     setTimeout(() => setSubmitted(false), 5000);
-  };
-
-  const scrollToForm = (position = "General Application") => {
-    setFormData((prev) => ({ ...prev, position }));
-    if (formRef.current) {
-      formRef.current.scrollIntoView({ behavior: "smooth" });
-    }
   };
 
   // Animation variants
@@ -197,10 +207,46 @@ const Career = () => {
           </div>
 
           <form onSubmit={handleSubmit}>
+            <div className="mb-3">
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Full Name"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md mb-2"
+                required
+              />
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Email Address"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md mb-2"
+                required
+              />
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="Phone Number"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md mb-2"
+              />
+              <select
+                name="position"
+                value={formData.position}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md mb-2"
+              >
+                <option value="General Application">General Application</option>
+              </select>
+            </div>
             <input
               type="file"
               name="file"
-              accept=".pdf,.docx"
+              accept=".pdf,.docx,.doc"
               required
               onChange={handleChange}
               className="w-full mb-3 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#004080]/10 file:text-[#004080] hover:file:bg-[#004080]/20"
@@ -212,6 +258,11 @@ const Career = () => {
               Submit CV
             </button>
           </form>
+          {submitted && (
+            <div className="mt-3 p-2 bg-green-100 text-green-700 rounded-md text-sm">
+              Thank you! Your CV has been submitted successfully.
+            </div>
+          )}
         </motion.div>
       )}
     </div>
@@ -396,231 +447,44 @@ const Career = () => {
             </motion.h2>
           </motion.div>
 
-          <motion.div
-            variants={fadeIn}
-            className="bg-white rounded-xl shadow-md overflow-hidden p-12 text-center"
-          >
-            <svg
-              className="w-16 h-16 mx-auto text-gray-400 mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <h3 className="text-2xl font-bold mb-2 text-gray-800">
-              No Openings at the Moment
-            </h3>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              We're not hiring right now — but don't worry, exciting
-              opportunities are always on the horizon. Stay tuned!
-            </p>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => scrollToForm()}
-              className="mt-6 inline-block bg-[#004080] hover:bg-[#003366] text-white font-bold py-3 px-6 rounded-lg transition duration-300"
-            >
-              Submit General Application
-            </motion.button>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Application Form Section */}
-      <section id="apply" className="py-20" ref={formRef}>
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+          ) : jobs.length > 0 ? (
+            <div className="space-y-6 max-w-4xl mx-auto">
+              {jobs.map((job) => (
+                <JobCard key={job._id} job={job} />
+              ))}
+            </div>
+          ) : (
             <motion.div
-              initial="hidden"
-              animate={inView ? "visible" : "hidden"}
-              variants={containerVariants}
-              className="text-center mb-16"
+              variants={fadeIn}
+              className="bg-white rounded-xl shadow-md overflow-hidden p-12 text-center"
             >
-              <motion.h2
-                variants={itemVariants}
-                className="text-3xl md:text-4xl font-bold mb-6 text-gray-900"
+              <svg
+                className="w-16 h-16 mx-auto text-gray-400 mb-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                Apply Now
-              </motion.h2>
-              <motion.p
-                variants={itemVariants}
-                className="text-xl text-gray-600 max-w-2xl mx-auto"
-              >
-                Submit your CV and we'll contact you when positions open up
-              </motion.p>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <h3 className="text-2xl font-bold mb-2 text-gray-800">
+                No Openings at the Moment
+              </h3>
+              <p className="text-gray-600 max-w-2xl mx-auto">
+                We're not hiring right now — but don't worry, exciting
+                opportunities are always on the horizon. Stay tuned!
+              </p>
             </motion.div>
-
-            {submitted ? (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-green-100 border border-green-400 text-green-700 px-4 py-8 rounded-xl text-center"
-              >
-                <svg
-                  className="w-16 h-16 mx-auto mb-4 text-green-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <h3 className="text-2xl font-bold mb-2">
-                  Thank you for your application!
-                </h3>
-                <p>
-                  We'll contact you when suitable positions become available.
-                </p>
-              </motion.div>
-            ) : (
-              <motion.form
-                variants={fadeIn}
-                onSubmit={handleSubmit}
-                className="bg-white p-8 rounded-xl shadow-md"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <div>
-                    <label
-                      htmlFor="name"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Full Name*
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      required
-                      value={formData.name}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-[#004080] focus:ring-2 focus:ring-[#004080]/50 transition duration-300"
-                      placeholder="Your full name"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="email"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Email*
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      required
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-[#004080] focus:ring-2 focus:ring-[#004080]/50 transition duration-300"
-                      placeholder="your.email@example.com"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="phone"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Phone*
-                    </label>
-                    <input
-                      type="tel"
-                      id="phone"
-                      name="phone"
-                      required
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-[#004080] focus:ring-2 focus:ring-[#004080]/50 transition duration-300"
-                      placeholder="+880 1XXX XXXXXX"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="position"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Position*
-                    </label>
-                    <select
-                      id="position"
-                      name="position"
-                      required
-                      value={formData.position}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-[#004080] focus:ring-2 focus:ring-[#004080]/50 transition duration-300"
-                    >
-                      <option value="General Application">
-                        General Application
-                      </option>
-                    </select>
-                  </div>
-                </div>
-                <div className="mb-6">
-                  <label
-                    htmlFor="file"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Upload CV (PDF or DOCX)*
-                  </label>
-                  <div className="flex items-center justify-center w-full">
-                    <label className="flex flex-col w-full border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 transition duration-300">
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4">
-                        <svg
-                          className="w-10 h-10 mb-3 text-gray-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                          />
-                        </svg>
-                        <p className="mb-2 text-sm text-gray-500">
-                          <span className="font-semibold">Click to upload</span>{" "}
-                          or drag and drop
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          PDF or DOCX (Max. 5MB)
-                        </p>
-                      </div>
-                      <input
-                        id="file"
-                        name="file"
-                        type="file"
-                        accept=".pdf,.docx"
-                        required
-                        onChange={handleChange}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  type="submit"
-                  className="w-full bg-[#004080] hover:bg-[#003366] text-white font-bold py-4 px-6 rounded-lg transition duration-300"
-                >
-                  Submit Application
-                </motion.button>
-              </motion.form>
-            )}
-          </div>
+          )}
         </div>
       </section>
     </motion.div>

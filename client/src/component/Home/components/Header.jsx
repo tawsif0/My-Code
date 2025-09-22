@@ -73,27 +73,28 @@ const Header = () => {
     { name: "About", path: "/about" },
     { name: "Services", path: "/services" },
     { name: "Countries", path: "/countries" },
-    { name: "Consultation", path: "/appointment" },
+
     {
       name: "Courses",
-      path: "/courses"
+      path: "/courses",
     },
     {
       name: "Blogs & News",
-      path: "/blog"
+      path: "/blog",
     },
     {
       name: "Events",
-      path: "/events"
+      path: "/events",
     },
     {
       name: "Careers",
-      path: "/career"
+      path: "/career",
     },
     {
       name: "Contact",
-      path: "/contact"
-    }
+      path: "/contact",
+    },
+    { name: "Consultation", path: "/appointment" },
   ];
 
   const profileDropdownLinks = [
@@ -107,8 +108,8 @@ const Header = () => {
         localStorage.removeItem("studentData");
         clearStudentData();
         window.location.reload();
-      }
-    }
+      },
+    },
   ];
 
   const handleLogout = () => {
@@ -259,7 +260,7 @@ const Header = () => {
                       transition={{
                         duration: 0.2,
                         type: "spring",
-                        damping: 20
+                        damping: 20,
                       }}
                       className="absolute top-full right-0 mt-2 w-46 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 py-3 z-50"
                     >

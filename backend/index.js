@@ -13,6 +13,7 @@ const heroSectionRoutes = require("./routes/heroSection");
 const employeeRoutes = require("./routes/Employee");
 const eventRoutes = require("./routes/Event");
 const contactUserRoutes = require("./routes/contactUser");
+const jobRoutes = require("./routes/jobs");
 const app = express();
 const PORT = process.env.PORT || 3500;
 
@@ -58,7 +59,7 @@ app.use("/api/blogs", blogRoutes);
 app.use("/api/blog-categories", blogCategoryRoutes);
 app.use("/api/news-categories", newsCategoryRoutes);
 app.use("/api/news", newsRoutes);
-
+app.use("/api/jobs", jobRoutes);
 // DB Connection
 connectDB();
 

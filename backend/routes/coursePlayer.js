@@ -42,7 +42,7 @@ Courseplayer.get("/single-courses/:id", async (req, res) => {
         answers: progress?.answers,
         passed: progress?.passed,
         timeSpent: progress?.timeSpent || 0,
-        gradingStatus: progress?.gradingStatus
+        gradingStatus: progress?.gradingStatus,
       };
     });
 
@@ -61,8 +61,8 @@ Courseplayer.get("/single-courses/:id", async (req, res) => {
       enrollmentStatus: {
         enrolledAt: enrollment.enrolledAt,
         completed: enrollment.completed,
-        certificate: enrollment.certificate
-      }
+        certificate: enrollment.certificate,
+      },
     });
   } catch (error) {
     console.log(error);
@@ -75,7 +75,7 @@ Courseplayer.post("/:courseId/access", async (req, res) => {
   try {
     const course = await Course.findOne({
       _id: req.params.courseId,
-      "enrollments.studentId": req.body.user_id
+      "enrollments.studentId": req.body.user_id,
     });
 
     if (!course) {
@@ -104,7 +104,7 @@ Courseplayer.post("/:courseId/track-watch-time", async (req, res) => {
     const { contentItemId, duration, currentTime, totalDuration } = req.body;
     const course = await Course.findOne({
       _id: req.params.courseId,
-      "enrollments.studentId": req.user._id
+      "enrollments.studentId": req.user._id,
     });
 
     if (!course) {
@@ -141,7 +141,7 @@ Courseplayer.post("/:courseId/track-watch-time", async (req, res) => {
         progress: 0,
         completed: false,
         timeSpent: 0,
-        status: "in-progress"
+        status: "in-progress",
       };
       enrollment.progress.push(progressRecord);
     }
@@ -166,7 +166,7 @@ Courseplayer.post("/:courseId/track-watch-time", async (req, res) => {
       duration,
       contentItemId: contentItem._id,
       action: "watched",
-      progress: progressPercentage
+      progress: progressPercentage,
     });
 
     enrollment.lastAccessed = now;
@@ -195,7 +195,7 @@ Courseplayer.post("/:courseId/track-watch-time", async (req, res) => {
       progress: progressRecord.progress,
       timeSpent: progressRecord.timeSpent,
       completed: progressRecord.completed,
-      courseCompleted: allCompleted
+      courseCompleted: allCompleted,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -208,7 +208,7 @@ Courseplayer.post("/:courseId/track-tutorial-time", async (req, res) => {
 
     const course = await Course.findOne({
       _id: req.params.courseId,
-      "enrollments.studentId": user_id
+      "enrollments.studentId": user_id,
     });
 
     if (!course) {
@@ -242,7 +242,7 @@ Courseplayer.post("/:courseId/track-tutorial-time", async (req, res) => {
         timeSpent: 0,
         status: "completed",
         completedAt: now,
-        lastAccessed: now
+        lastAccessed: now,
       };
       enrollment.progress.push(progressRecord);
     } else {
@@ -260,7 +260,7 @@ Courseplayer.post("/:courseId/track-tutorial-time", async (req, res) => {
       duration: 0,
       contentItemId: contentItem._id,
       action: "played",
-      progress: 100
+      progress: 100,
     });
 
     enrollment.lastAccessed = now;
@@ -287,7 +287,7 @@ Courseplayer.post("/:courseId/track-tutorial-time", async (req, res) => {
       success: true,
       progress: 100,
       completed: true,
-      courseCompleted: allCompleted
+      courseCompleted: allCompleted,
     });
   } catch (error) {
     console.error("Error tracking tutorial time:", error);
@@ -341,7 +341,7 @@ Courseplayer.post("/submit-quiz", async (req, res) => {
         attempts: existingProgress.attempts,
         certificateUrl: enrollment.certificate,
         courseCompleted: enrollment.completed,
-        gradingStatus: existingProgress.gradingStatus
+        gradingStatus: existingProgress.gradingStatus,
       });
     }
 
@@ -370,7 +370,7 @@ Courseplayer.post("/submit-quiz", async (req, res) => {
           maxMarks: question.marks,
           explanation: question.explanation,
           needsManualGrading: false,
-          status: "not-answered"
+          status: "not-answered",
         });
         return;
       }
@@ -431,7 +431,7 @@ Courseplayer.post("/submit-quiz", async (req, res) => {
           ? "awaiting-grading"
           : isCorrect
           ? "correct"
-          : "incorrect"
+          : "incorrect",
       });
     });
 
@@ -475,7 +475,7 @@ Courseplayer.post("/submit-quiz", async (req, res) => {
         bestScore: 0,
         bestAttempt: 0,
         status: "in-progress",
-        gradingStatus: "not-graded"
+        gradingStatus: "not-graded",
       };
       enrollment.progress.push(progress);
     }
@@ -503,7 +503,7 @@ Courseplayer.post("/submit-quiz", async (req, res) => {
       accessedAt: now,
       duration: 0,
       contentItemId: quiz._id,
-      action: "quiz-submitted"
+      action: "quiz-submitted",
     });
 
     enrollment.lastAccessed = now;
@@ -540,7 +540,7 @@ Courseplayer.post("/submit-quiz", async (req, res) => {
       needsManualGrading,
       autoGradedScore,
       autoGradedMaxScore,
-      autoGradedPercentage
+      autoGradedPercentage,
     });
   } catch (error) {
     console.log("Quiz submission error:", error);
@@ -612,7 +612,7 @@ Courseplayer.get("/:courseId/quiz-status/:contentItemId", async (req, res) => {
       score: progress.score,
       maxScore: progress.maxScore,
       percentage: progress.percentage,
-      passed: progress.passed
+      passed: progress.passed,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -628,14 +628,14 @@ Courseplayer.post("/:courseId/rate", async (req, res) => {
     if (!rating || rating < 1 || rating > 5) {
       return res.status(400).json({
         success: false,
-        message: "Rating must be between 1 and 5 stars"
+        message: "Rating must be between 1 and 5 stars",
       });
     }
 
     if (!user_id) {
       return res.status(400).json({
         success: false,
-        message: "User ID is required"
+        message: "User ID is required",
       });
     }
 
@@ -644,7 +644,7 @@ Courseplayer.post("/:courseId/rate", async (req, res) => {
     if (!course) {
       return res.status(404).json({
         success: false,
-        message: "Course not found"
+        message: "Course not found",
       });
     }
 
@@ -656,7 +656,7 @@ Courseplayer.post("/:courseId/rate", async (req, res) => {
     if (!enrollment) {
       return res.status(404).json({
         success: false,
-        message: "You must be enrolled in this course to rate it"
+        message: "You must be enrolled in this course to rate it",
       });
     }
 
@@ -668,7 +668,7 @@ Courseplayer.post("/:courseId/rate", async (req, res) => {
     if (existingRating) {
       return res.status(400).json({
         success: false,
-        message: "You have already rated this course"
+        message: "You have already rated this course",
       });
     }
 
@@ -678,7 +678,7 @@ Courseplayer.post("/:courseId/rate", async (req, res) => {
       user: new mongoose.Types.ObjectId(user_id), // Ensure it's stored as ObjectId
       rating: parseInt(rating),
       review: review || "",
-      createdAt: new Date()
+      createdAt: new Date(),
     });
 
     // Mark the enrollment as rated
@@ -698,13 +698,13 @@ Courseplayer.post("/:courseId/rate", async (req, res) => {
       success: true,
       message: "Rating submitted successfully",
       newAverageRating: course.averageRating,
-      hasRated: true
+      hasRated: true,
     });
   } catch (error) {
     console.error("Rating submission error:", error);
     res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: "Internal server error",
     });
   }
 });
@@ -719,13 +719,13 @@ Courseplayer.get("/:courseId/ratings", async (req, res) => {
     const course = await Course.findById(courseId)
       .populate({
         path: "ratings.user",
-        select: "full_name profile_picture"
+        select: "full_name profile_picture",
       })
       .select("ratings averageRating");
     if (!course) {
       return res.status(404).json({
         success: false,
-        message: "Course not found"
+        message: "Course not found",
       });
     }
 
@@ -758,13 +758,13 @@ Courseplayer.get("/:courseId/ratings", async (req, res) => {
       averageRating,
       totalRatings: validRatings.length,
       currentPage: page,
-      totalPages: Math.ceil(validRatings.length / limit)
+      totalPages: Math.ceil(validRatings.length / limit),
     });
   } catch (error) {
     console.error("Get ratings error:", error);
     res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: "Internal server error",
     });
   }
 });
@@ -779,7 +779,7 @@ Courseplayer.post("/:courseId/complete-live-session", async (req, res) => {
     if (!course) {
       return res.status(404).json({
         success: false,
-        message: "Course not found"
+        message: "Course not found",
       });
     }
 
@@ -791,7 +791,7 @@ Courseplayer.post("/:courseId/complete-live-session", async (req, res) => {
     if (!enrollment) {
       return res.status(400).json({
         success: false,
-        message: "Student not enrolled in this course"
+        message: "Student not enrolled in this course",
       });
     }
 
@@ -810,7 +810,7 @@ Courseplayer.post("/:courseId/complete-live-session", async (req, res) => {
         passed: true,
         attempts: 0,
         status: "not-started",
-        gradingStatus: "not-graded"
+        gradingStatus: "not-graded",
       };
       enrollment.progress.push(progress);
     }
@@ -835,13 +835,13 @@ Courseplayer.post("/:courseId/complete-live-session", async (req, res) => {
 
     res.json({
       success: true,
-      message: "Live session attendance updated successfully"
+      message: "Live session attendance updated successfully",
     });
   } catch (error) {
     console.error("Live session completion error:", error);
     res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: "Internal server error",
     });
   }
 });

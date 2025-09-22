@@ -11,7 +11,7 @@ import {
   FiArrowRight,
   FiBookOpen,
   FiClock,
-  FiAward
+  FiAward,
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import axios from "axios";
@@ -32,7 +32,7 @@ const CartModal = ({ isOpen, onClose, positionRef }) => {
       const rect = positionRef.current.getBoundingClientRect();
       setPosition({
         top: rect.bottom + window.scrollY + 10,
-        right: window.innerWidth - rect.right
+        right: window.innerWidth - rect.right,
       });
     }
   }, [isOpen, positionRef]);
@@ -65,8 +65,8 @@ const CartModal = ({ isOpen, onClose, positionRef }) => {
             { user_id: studentData?.id },
             {
               headers: {
-                Authorization: `Bearer ${localStorage.getItem("studentToken")}`
-              }
+                Authorization: `Bearer ${localStorage.getItem("studentToken")}`,
+              },
             }
           );
           await handleRemoveFromCart(courseId, true);
@@ -131,7 +131,7 @@ const CartModal = ({ isOpen, onClose, positionRef }) => {
     right-[10px] lg:right-[-7px]
   "
             style={{
-              top: `${position.top}px`
+              top: `48px`,
             }}
           >
             {/* Arrow indicator */}

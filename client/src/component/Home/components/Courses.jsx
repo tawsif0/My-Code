@@ -12,7 +12,7 @@ import {
   FiStar,
   FiEye,
   FiShoppingCart,
-  FiCheck
+  FiCheck,
 } from "react-icons/fi";
 import AuthContext from "../../../context/AuthContext"; // Adjust path as needed
 import { useNavigate } from "react-router-dom";
@@ -25,10 +25,10 @@ const Courses = () => {
   const [hoveredCourse, setHoveredCourse] = useState(null);
   const [showAllCourses, setShowAllCourses] = useState(false);
   const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
   const [sectionRef, sectionInView] = useInView({
     threshold: 0.1,
-    triggerOnce: true
+    triggerOnce: true,
   });
   const [categories, setCategories] = useState([]);
   const [filterCategory, setFilterCategory] = useState("all");
@@ -39,7 +39,7 @@ const Courses = () => {
     addToCart,
     removeFromCart,
     isInCart,
-    loading: cartLoading
+    loading: cartLoading,
   } = useCart();
 
   const base_url =
@@ -49,14 +49,14 @@ const Courses = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
+      // setLoading(true);
       try {
         // Fetch all data in parallel
         const [coursesResponse, categoriesResponse, teachersResponse] =
           await Promise.all([
             axios.get(`${base_url}/api/auth/all-courses`),
             axios.get(`${base_url}/api/auth/categories`),
-            axios.get(`${base_url}/api/auth/teachers`)
+            axios.get(`${base_url}/api/auth/teachers`),
           ]);
 
         if (coursesResponse.data.success) {
@@ -147,7 +147,7 @@ const Courses = () => {
                 isLive: course.type === "live",
                 totalContent, // Total content items
                 regularLessons, // Regular lessons count
-                liveSessions // Live sessions count
+                liveSessions, // Live sessions count
               };
             }
           );
@@ -170,8 +170,8 @@ const Courses = () => {
                 headers: {
                   Authorization: `Bearer ${localStorage.getItem(
                     "studentToken"
-                  )}`
-                }
+                  )}`,
+                },
               }
             );
 
@@ -188,8 +188,6 @@ const Courses = () => {
       } catch (error) {
         console.error("Error fetching data:", error);
         toast.error(error.response?.data?.message || "Failed to load courses");
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -200,7 +198,12 @@ const Courses = () => {
     return enrolledCourses.some((id) => id.toString() === courseId.toString());
   };
 
-  const handleAddToCart = async (course) => {
+  const handleAddToCart = async (course, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
     // Check if user is logged in
     if (!isAuthenticated) {
       toast.error("Please login to add courses to cart");
@@ -280,9 +283,9 @@ const Courses = () => {
       opacity: 1,
       transition: {
         staggerChildren: 0.1,
-        when: "beforeChildren"
-      }
-    }
+        when: "beforeChildren",
+      },
+    },
   };
 
   const itemVariants = {
@@ -293,9 +296,9 @@ const Courses = () => {
       transition: {
         type: "spring",
         stiffness: 100,
-        damping: 10
-      }
-    }
+        damping: 10,
+      },
+    },
   };
 
   const headerVariants = {
@@ -306,9 +309,9 @@ const Courses = () => {
       transition: {
         type: "spring",
         stiffness: 100,
-        delay: 0.2
-      }
-    }
+        delay: 0.2,
+      },
+    },
   };
 
   const tabsVariants = {
@@ -317,9 +320,9 @@ const Courses = () => {
       opacity: 1,
       transition: {
         delay: 0.4,
-        duration: 0.6
-      }
-    }
+        duration: 0.6,
+      },
+    },
   };
 
   // Get unique category options from courses
@@ -330,33 +333,33 @@ const Courses = () => {
           new Set(courses.flatMap((c) => c.categories || []).filter(Boolean))
         );
 
-  if (loading) {
-    return (
-      <section className="relative py-36 overflow-hidden">
-        <div className="container mx-auto px-4 relative">
-          <div className="text-center">
-            <div className="animate-pulse">
-              <div className="h-8 w-48 bg-gray-300 rounded-full mx-auto mb-4"></div>
-              <div className="h-12 w-96 bg-gray-300 rounded mx-auto mb-6"></div>
-              <div className="h-6 w-80 bg-gray-300 rounded mx-auto mb-12"></div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-              {[1, 2, 3].map((item) => (
-                <div key={item} className="bg-white rounded-xl shadow-md p-6">
-                  <div className="animate-pulse">
-                    <div className="h-40 bg-gray-300 rounded mb-4"></div>
-                    <div className="h-6 bg-gray-300 rounded mb-2"></div>
-                    <div className="h-4 bg-gray-300 rounded mb-4"></div>
-                    <div className="h-10 bg-gray-300 rounded"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <section className="relative py-36 overflow-hidden">
+  //       <div className="container mx-auto px-4 relative">
+  //         <div className="text-center">
+  //           <div className="animate-pulse">
+  //             <div className="h-8 w-48 bg-gray-300 rounded-full mx-auto mb-4"></div>
+  //             <div className="h-12 w-96 bg-gray-300 rounded mx-auto mb-6"></div>
+  //             <div className="h-6 w-80 bg-gray-300 rounded mx-auto mb-12"></div>
+  //           </div>
+  //           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+  //             {[1, 2, 3].map((item) => (
+  //               <div key={item} className="bg-white rounded-xl shadow-md p-6">
+  //                 <div className="animate-pulse">
+  //                   <div className="h-40 bg-gray-300 rounded mb-4"></div>
+  //                   <div className="h-6 bg-gray-300 rounded mb-2"></div>
+  //                   <div className="h-4 bg-gray-300 rounded mb-4"></div>
+  //                   <div className="h-10 bg-gray-300 rounded"></div>
+  //                 </div>
+  //               </div>
+  //             ))}
+  //           </div>
+  //         </div>
+  //       </div>
+  //     </section>
+  //   );
+  // }
 
   return (
     <section ref={sectionRef} className="relative py-36 overflow-hidden">
@@ -474,7 +477,7 @@ const Courses = () => {
             { value: "all", label: "All Levels" },
             { value: "beginner", label: "Beginner" },
             { value: "intermediate", label: "Intermediate" },
-            { value: "advanced", label: "Advanced" }
+            { value: "advanced", label: "Advanced" },
           ].map((level) => (
             <motion.button
               key={level.value}
@@ -501,7 +504,7 @@ const Courses = () => {
             getDisplayedCourses().length === 1
               ? "flex justify-center"
               : getDisplayedCourses().length === 2
-              ? "flex flex-col lg:flex-row lg:justify-between w-full lg:px-20 lg:gap-7 gap-6"
+              ? "flex flex-col md:flex-row justify-center items-center w-full gap-6"
               : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
           }`}
         >
@@ -602,7 +605,7 @@ const Courses = () => {
                   <div
                     className="prose prose-lg max-w-none text-sm text-gray-600 mb-4 line-clamp-1"
                     dangerouslySetInnerHTML={{
-                      __html: course.description
+                      __html: course.description,
                     }}
                   />
                 )}
@@ -676,7 +679,7 @@ const Courses = () => {
                               month: "short",
                               day: "numeric",
                               hour: "2-digit",
-                              minute: "2-digit"
+                              minute: "2-digit",
                             }
                           )}
                         </span>
@@ -698,14 +701,22 @@ const Courses = () => {
                   </motion.span>
                 ) : isInCart(course.id) ? (
                   <button
-                    onClick={() => handleRemoveFromCart(course.id)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleRemoveFromCart(course.id);
+                    }}
                     className="w-full bg-white text-red-600 border border-red-200 hover:border-red-300 py-2 rounded-lg text-sm hover:bg-red-50 flex items-center justify-center transition-all"
                   >
                     <FiShoppingCart className="mr-2" /> Remove from Cart
                   </button>
                 ) : (
                   <button
-                    onClick={() => handleAddToCart(course)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleAddToCart(course);
+                    }}
                     className={`w-full py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center justify-center ${
                       course.type === "free"
                         ? "bg-blue-100 text-[#004080] hover:bg-blue-200"
