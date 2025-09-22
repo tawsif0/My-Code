@@ -39,6 +39,8 @@ import EventUser from "./Events/EventUser";
 import ShowUser from "./Contact/ShowUser";
 import JobPost from "./career/JobPost";
 import AppliedUsers from "./career/AppliedUser";
+import ModifyPost from "./career/ModifyPost";
+import CvUser from "./career/CvUser";
 
 const AdminDashboard = () => {
   const [activeView, setActiveView] = useState(() => {
@@ -127,6 +129,10 @@ const AdminDashboard = () => {
         return <JobPost />;
       case "appliedUser":
         return <AppliedUsers />;
+      case "modifyPost":
+        return <ModifyPost />;
+      case "cvDropped":
+        return <CvUser />;
 
       case "TeacherRegistration":
         return (
