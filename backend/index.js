@@ -30,7 +30,7 @@ const corsOptions = {
   origin: ["http://localhost:5173", "http://localhost:5174"], // Allow only this origin
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true, // Allow cookies/session to be sent
-  optionsSuccessStatus: 204, // For legacy browser support
+  optionsSuccessStatus: 204 // For legacy browser support
 };
 
 // Middleware
@@ -60,6 +60,7 @@ app.use("/api/blog-categories", blogCategoryRoutes);
 app.use("/api/news-categories", newsCategoryRoutes);
 app.use("/api/news", newsRoutes);
 app.use("/api/jobs", jobRoutes);
+app.use("/jobs", express.static("public/jobs"));
 // DB Connection
 connectDB();
 

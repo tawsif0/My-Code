@@ -46,8 +46,8 @@ const Career = () => {
               start: "top top",
               end: "+=300",
               scrub: 0.6,
-              invalidateOnRefresh: true,
-            },
+              invalidateOnRefresh: true
+            }
           }
         );
       });
@@ -64,8 +64,8 @@ const Career = () => {
               start: "top top",
               end: "+=400",
               scrub: 0.6,
-              invalidateOnRefresh: true,
-            },
+              invalidateOnRefresh: true
+            }
           }
         );
       });
@@ -81,21 +81,20 @@ const Career = () => {
     name: "",
     email: "",
     phone: "",
-    position: "General Application",
-    file: null,
+    file: null
   });
   const [submitted, setSubmitted] = useState(false);
   const [showCvDrop, setShowCvDrop] = useState(false);
   const [ref, inView] = useInView({
     threshold: 0.1,
-    triggerOnce: true,
+    triggerOnce: true
   });
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     setFormData({
       ...formData,
-      [name]: files ? files[0] : value,
+      [name]: files ? files[0] : value
     });
   };
 
@@ -106,8 +105,7 @@ const Career = () => {
       name: "",
       email: "",
       phone: "",
-      position: "General Application",
-      file: null,
+      file: null
     });
     setTimeout(() => setSubmitted(false), 5000);
   };
@@ -119,9 +117,9 @@ const Career = () => {
       opacity: 1,
       transition: {
         staggerChildren: 0.1,
-        when: "beforeChildren",
-      },
-    },
+        when: "beforeChildren"
+      }
+    }
   };
 
   const itemVariants = {
@@ -132,9 +130,9 @@ const Career = () => {
       transition: {
         type: "spring",
         stiffness: 100,
-        damping: 10,
-      },
-    },
+        damping: 10
+      }
+    }
   };
 
   const fadeIn = {
@@ -142,9 +140,9 @@ const Career = () => {
     visible: {
       opacity: 1,
       transition: {
-        duration: 0.6,
-      },
-    },
+        duration: 0.6
+      }
+    }
   };
 
   // Floating CV Drop Button Component
@@ -234,14 +232,6 @@ const Career = () => {
                 placeholder="Phone Number"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md mb-2"
               />
-              <select
-                name="position"
-                value={formData.position}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md mb-2"
-              >
-                <option value="General Application">General Application</option>
-              </select>
             </div>
             <input
               type="file"
@@ -368,7 +358,7 @@ const Career = () => {
                 ),
                 title: "Flexible Work Hours",
                 description:
-                  "Work when you're most productive with our flexible scheduling options",
+                  "Work when you're most productive with our flexible scheduling options"
               },
               {
                 icon: (
@@ -389,7 +379,7 @@ const Career = () => {
                 ),
                 title: "Connect with Our Global Partners",
                 description:
-                  "Opportunity to work with our international education partners worldwide",
+                  "Opportunity to work with our international education partners worldwide"
               },
               {
                 icon: (
@@ -410,8 +400,8 @@ const Career = () => {
                 ),
                 title: "Excellent Homely Work Environment",
                 description:
-                  "Enjoy a comfortable and supportive workplace that feels like home",
-              },
+                  "Enjoy a comfortable and supportive workplace that feels like home"
+              }
             ].map((feature, index) => (
               <motion.div
                 key={index}

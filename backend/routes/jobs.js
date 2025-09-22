@@ -30,7 +30,7 @@ const storage = multer.diskStorage({
     }
 
     cb(null, finalName);
-  },
+  }
 });
 
 const upload = multer({ storage: storage });
@@ -56,7 +56,7 @@ router.post("/create", async (req, res) => {
       description,
       applyLink,
       hasCustomForm,
-      customFormFields,
+      customFormFields
     });
 
     await job.save();
@@ -65,12 +65,31 @@ router.post("/create", async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
+//get the applications
+router.get("/applications", async (req, res) => {
+  try {
+    const applications = await Application.find()
+      .populate("jobId", "title customFormFields") // Add customFormFields here
+      .exec();
 
+    res.status(200).json({
+      success: true,
+      count: applications.length,
+      applications
+    });
+  } catch (error) {
+    console.error("Error fetching applications:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+      error: error.message
+    });
+  }
+});
 // Apply for a job
 router.post("/apply", upload.any(), async (req, res) => {
   try {
     const { jobId } = req.body;
-    const userId = req.user.id;
 
     // Check if job exists
     const job = await Job.findById(jobId);
@@ -87,18 +106,18 @@ router.post("/apply", upload.any(), async (req, res) => {
       if (key !== "jobId") {
         fieldData.push({
           fieldId: key,
-          value: req.body[key],
+          value: req.body[key]
         });
       }
     });
 
-    // Process files
+    // Process files - Fix the path to be web-accessible
     if (req.files) {
       req.files.forEach((file) => {
         files.push({
           fieldId: file.fieldname,
           filename: file.originalname,
-          path: file.path,
+          path: "/jobs/" + file.filename // Store web-accessible path
         });
       });
     }
@@ -106,9 +125,8 @@ router.post("/apply", upload.any(), async (req, res) => {
     // Create application
     const application = new Application({
       jobId,
-      applicantId: userId,
       fieldData,
-      files,
+      files
     });
 
     await application.save();
@@ -117,5 +135,37 @@ router.post("/apply", upload.any(), async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
+// Delete a job (and all its applications)
+router.delete("/:id", async (req, res) => {
+  try {
+    // First delete all applications for this job
+    await Application.deleteMany({ jobId: req.params.id });
 
+    // Then delete the job
+    const job = await Job.findByIdAndDelete(req.params.id);
+
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    res.json({ message: "Job and all applications deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Delete a single application
+router.delete("/applications/:id", async (req, res) => {
+  try {
+    const application = await Application.findByIdAndDelete(req.params.id);
+
+    if (!application) {
+      return res.status(404).json({ message: "Application not found" });
+    }
+
+    res.json({ message: "Application deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 module.exports = router;

@@ -38,6 +38,7 @@ import NewsCategory from "./news/newsCategory";
 import EventUser from "./Events/EventUser";
 import ShowUser from "./Contact/ShowUser";
 import JobPost from "./career/JobPost";
+import AppliedUsers from "./career/AppliedUser";
 
 const AdminDashboard = () => {
   const [activeView, setActiveView] = useState(() => {
@@ -124,6 +125,9 @@ const AdminDashboard = () => {
 
       case "jobPost":
         return <JobPost />;
+      case "appliedUser":
+        return <AppliedUsers />;
+
       case "TeacherRegistration":
         return (
           <TeacherRegistration setNotificationCount={setNotificationCount} />
