@@ -13,7 +13,7 @@ const Events = () => {
   const [showAllEvents, setShowAllEvents] = useState(false);
   const [sectionRef, inView] = useInView({
     threshold: 0.1,
-    triggerOnce: true
+    triggerOnce: true,
   });
 
   useEffect(() => {
@@ -63,9 +63,9 @@ const Events = () => {
       opacity: 1,
       transition: {
         staggerChildren: 0.1,
-        when: "beforeChildren"
-      }
-    }
+        when: "beforeChildren",
+      },
+    },
   };
 
   const itemVariants = {
@@ -76,9 +76,9 @@ const Events = () => {
       transition: {
         type: "spring",
         stiffness: 100,
-        damping: 10
-      }
-    }
+        damping: 10,
+      },
+    },
   };
 
   const headerVariants = {
@@ -89,9 +89,9 @@ const Events = () => {
       transition: {
         type: "spring",
         stiffness: 100,
-        delay: 0.2
-      }
-    }
+        delay: 0.2,
+      },
+    },
   };
 
   const noEventsVariants = {
@@ -102,9 +102,9 @@ const Events = () => {
       transition: {
         type: "spring",
         stiffness: 100,
-        delay: 0.5
-      }
-    }
+        delay: 0.5,
+      },
+    },
   };
 
   if (loading) {
@@ -250,6 +250,7 @@ const Events = () => {
                     <div className="mt-auto">
                       <Link
                         to={`/events/${event._id}`}
+                        onClick={() => window.scrollTo(0, 0)}
                         className="w-full bg-[#004080] hover:bg-[#003366] text-white font-medium py-3 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-[1.02] block text-center"
                       >
                         Register Now

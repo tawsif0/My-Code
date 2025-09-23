@@ -39,5 +39,9 @@ const JobSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
-
+// Update the updatedAt field before saving
+JobSchema.pre("save", function (next) {
+  this.updatedAt = Date.now();
+  next();
+});
 module.exports = mongoose.model("Job", JobSchema);

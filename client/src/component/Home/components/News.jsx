@@ -14,7 +14,7 @@ const News = () => {
   const [loading, setLoading] = useState(true);
   const [ref, inView] = useInView({
     threshold: 0.1,
-    triggerOnce: true
+    triggerOnce: true,
   });
 
   // Fetch news items and categories from backend
@@ -72,9 +72,9 @@ const News = () => {
       opacity: 1,
       transition: {
         staggerChildren: 0.1,
-        when: "beforeChildren"
-      }
-    }
+        when: "beforeChildren",
+      },
+    },
   };
 
   const itemVariants = {
@@ -85,9 +85,9 @@ const News = () => {
       transition: {
         type: "spring",
         stiffness: 100,
-        damping: 10
-      }
-    }
+        damping: 10,
+      },
+    },
   };
 
   const headerVariants = {
@@ -98,9 +98,9 @@ const News = () => {
       transition: {
         type: "spring",
         stiffness: 100,
-        delay: 0.2
-      }
-    }
+        delay: 0.2,
+      },
+    },
   };
 
   // Format date function
@@ -242,6 +242,7 @@ const News = () => {
                     </span>
                     <Link
                       to={`/news/${item._id}`}
+                      onClick={() => window.scrollTo(0, 0)}
                       className="text-sm font-medium text-[#004080] hover:text-[#003366] flex items-center gap-1 transition-colors duration-300"
                     >
                       Read Full Story

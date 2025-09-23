@@ -20,6 +20,7 @@ import "./index.css";
 import { useLenis } from "./hooks/useLenis";
 import NewsPost from "./components/NewsPost";
 import ConsultationButton from "./components/ConsultationButton";
+import JobDetails from "./components/JobDeatils";
 // Scroll to Top component
 function ScrollToTop() {
   useLenis();
@@ -30,7 +31,7 @@ function ScrollToTop() {
     if (mainContainer) {
       mainContainer.scrollTo({
         top: 0,
-        behavior: "smooth"
+        behavior: "smooth",
       });
     }
 
@@ -123,6 +124,11 @@ export default function AppRoutes() {
         <Route
           path="/career"
           element={<CareerPage />}
+          key={window.location.pathname}
+        />
+        <Route
+          path="/career/:id"
+          element={<JobDetails />}
           key={window.location.pathname}
         />
         <Route

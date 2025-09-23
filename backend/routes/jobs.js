@@ -30,7 +30,7 @@ const storage = multer.diskStorage({
     }
 
     cb(null, finalName);
-  }
+  },
 });
 
 const upload = multer({ storage: storage });
@@ -40,6 +40,40 @@ router.get("/", async (req, res) => {
   try {
     const jobs = await Job.find().sort({ createdAt: -1 });
     res.json(jobs);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+router.get("/applications", async (req, res) => {
+  try {
+    const applications = await Application.find()
+      .populate("jobId", "title customFormFields") // Add customFormFields here
+      .exec();
+
+    res.status(200).json({
+      success: true,
+      count: applications.length,
+      applications,
+    });
+  } catch (error) {
+    console.error("Error fetching applications:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+      error: error.message,
+    });
+  }
+});
+// Get single job by ID
+router.get("/:id", async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.id);
+
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    res.json(job);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -56,7 +90,7 @@ router.post("/create", async (req, res) => {
       description,
       applyLink,
       hasCustomForm,
-      customFormFields
+      customFormFields,
     });
 
     await job.save();
@@ -65,25 +99,45 @@ router.post("/create", async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
-//get the applications
-router.get("/applications", async (req, res) => {
+router.put("/:id", async (req, res) => {
   try {
-    const applications = await Application.find()
-      .populate("jobId", "title customFormFields") // Add customFormFields here
-      .exec();
+    const { title, description, applyLink, hasCustomForm, customFormFields } =
+      req.body;
 
-    res.status(200).json({
-      success: true,
-      count: applications.length,
-      applications
-    });
+    const job = await Job.findByIdAndUpdate(
+      req.params.id,
+      {
+        title,
+        description,
+        applyLink: hasCustomForm ? "" : applyLink,
+        hasCustomForm,
+        customFormFields: hasCustomForm ? customFormFields : [],
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!job) {
+      return res.status(404).json({ success: false, message: "Job not found" });
+    }
+
+    res.status(200).json({ success: true, data: job });
   } catch (error) {
-    console.error("Error fetching applications:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-      error: error.message
-    });
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// Delete job (protected)
+router.delete("/:id", async (req, res) => {
+  try {
+    const job = await Job.findByIdAndDelete(req.params.id);
+    if (!job) {
+      return res.status(404).json({ success: false, message: "Job not found" });
+    }
+    res
+      .status(200)
+      .json({ success: true, message: "Job deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 // Apply for a job
@@ -106,7 +160,7 @@ router.post("/apply", upload.any(), async (req, res) => {
       if (key !== "jobId") {
         fieldData.push({
           fieldId: key,
-          value: req.body[key]
+          value: req.body[key],
         });
       }
     });
@@ -117,7 +171,7 @@ router.post("/apply", upload.any(), async (req, res) => {
         files.push({
           fieldId: file.fieldname,
           filename: file.originalname,
-          path: "/jobs/" + file.filename // Store web-accessible path
+          path: "/jobs/" + file.filename, // Store web-accessible path
         });
       });
     }
@@ -126,7 +180,7 @@ router.post("/apply", upload.any(), async (req, res) => {
     const application = new Application({
       jobId,
       fieldData,
-      files
+      files,
     });
 
     await application.save();

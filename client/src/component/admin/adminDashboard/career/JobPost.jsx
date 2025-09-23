@@ -245,22 +245,34 @@ const JobPost = () => {
             </div>
 
             {/* Custom Form Toggle */}
-            <div className="flex items-center space-x-3 py-4">
-              <input
-                type="checkbox"
-                id="hasCustomForm"
-                name="hasCustomForm"
-                checked={form.hasCustomForm}
-                onChange={handleChange}
-                className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
-              />
-              <label
-                htmlFor="hasCustomForm"
-                className="text-sm font-medium text-gray-700"
-              >
+            <label className="inline-flex items-center space-x-3 cursor-pointer py-4">
+              <div className="relative w-10 h-6">
+                <input
+                  type="checkbox"
+                  id="hasCustomForm"
+                  name="hasCustomForm"
+                  className="sr-only peer"
+                  checked={form.hasCustomForm}
+                  onChange={handleChange}
+                />
+                <div className="w-full h-full bg-gray-200 rounded-full peer peer-checked:bg-black transition-colors duration-300">
+                  <motion.div
+                    className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm"
+                    animate={{
+                      x: form.hasCustomForm ? 20 : 3,
+                      transition: {
+                        type: "spring",
+                        stiffness: 700,
+                        damping: 30,
+                      },
+                    }}
+                  />
+                </div>
+              </div>
+              <span className="text-sm font-medium text-gray-700">
                 Create Custom Application Form
-              </label>
-            </div>
+              </span>
+            </label>
 
             {/* Custom Form Builder */}
             {form.hasCustomForm && (
@@ -279,7 +291,7 @@ const JobPost = () => {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => addFormField("text")}
-                      className="flex items-center px-3 py-2 bg-blue-100 text-blue-700 rounded-md text-sm"
+                      className="flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-md text-sm"
                     >
                       <FiPlus className="mr-1" /> Text Field
                     </motion.button>
@@ -320,7 +332,7 @@ const JobPost = () => {
                     {customFormFields.map((field) => (
                       <div
                         key={field.id}
-                        className="flex items-center space-x-3 bg-white p-3 rounded border"
+                        className="flex items-center space-x-3 bg-white p-3 rounded shadow-md"
                       >
                         <div className="flex-1">
                           <input
@@ -360,7 +372,7 @@ const JobPost = () => {
                 className={`w-full py-3 px-4 rounded-lg font-medium text-white ${
                   isSubmitting
                     ? "bg-gray-600 cursor-not-allowed"
-                    : "bg-blue-600 hover:bg-blue-700"
+                    : "bg-gray-600 hover:bg-gray-700"
                 } transition-all shadow-md flex items-center justify-center`}
               >
                 {isSubmitting ? "Posting Job..." : "Post Job"}

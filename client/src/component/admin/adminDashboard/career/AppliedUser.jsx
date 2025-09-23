@@ -13,7 +13,7 @@ import {
   FiSearch,
   FiBriefcase,
   FiFileText,
-  FiEye
+  FiEye,
 } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 
@@ -43,7 +43,7 @@ function AppliedUsers() {
         if (!jobsMap[jobId]) {
           jobsMap[jobId] = {
             ...app.jobId,
-            applications: []
+            applications: [],
           };
         }
         jobsMap[jobId].applications.push(app);
@@ -60,18 +60,17 @@ function AppliedUsers() {
 
   useEffect(() => {
     fetchJobApplications();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Filter jobs and applications based on search term
   const filteredJobs = jobs.filter((job) => {
-    const jobMatches = job.title
+    const jobMatches = (job.title || "")
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
 
-    const applicationMatches = job.applications.some((app) =>
-      app.fieldData.some((field) =>
-        field.value.toLowerCase().includes(searchTerm.toLowerCase())
+    const applicationMatches = job.applications?.some((app) =>
+      app.fieldData?.some((field) =>
+        (field.value || "").toLowerCase().includes(searchTerm.toLowerCase())
       )
     );
 
@@ -94,7 +93,7 @@ function AppliedUsers() {
 
       // Fetch file with axios
       const response = await axios.get(downloadUrl, {
-        responseType: "blob"
+        responseType: "blob",
       });
 
       // Create blob and download

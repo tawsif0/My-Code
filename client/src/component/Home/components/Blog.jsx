@@ -14,7 +14,7 @@ const Blog = () => {
   const [loading, setLoading] = useState(true);
   const [ref, inView] = useInView({
     threshold: 0.1,
-    triggerOnce: true
+    triggerOnce: true,
   });
 
   // Fetch blog posts and categories from backend
@@ -38,7 +38,7 @@ const Blog = () => {
         setBlogPosts(postsData);
         setCategories([
           { _id: "all", name: "All Articles" },
-          ...categoriesData
+          ...categoriesData,
         ]);
         setLoading(false);
       } catch (err) {
@@ -71,9 +71,9 @@ const Blog = () => {
       opacity: 1,
       transition: {
         staggerChildren: 0.1,
-        when: "beforeChildren"
-      }
-    }
+        when: "beforeChildren",
+      },
+    },
   };
 
   const itemVariants = {
@@ -84,9 +84,9 @@ const Blog = () => {
       transition: {
         type: "spring",
         stiffness: 100,
-        damping: 10
-      }
-    }
+        damping: 10,
+      },
+    },
   };
 
   const headerVariants = {
@@ -97,9 +97,9 @@ const Blog = () => {
       transition: {
         type: "spring",
         stiffness: 100,
-        delay: 0.2
-      }
-    }
+        delay: 0.2,
+      },
+    },
   };
 
   // Format date function
@@ -242,6 +242,7 @@ const Blog = () => {
                   </span>
                   <Link
                     to={`/blog/${post._id}`}
+                    onClick={() => window.scrollTo(0, 0)}
                     className="text-sm font-medium text-[#004080] hover:text-[#003366] flex items-center gap-1 transition-colors duration-300"
                   >
                     Read More

@@ -24,10 +24,6 @@ const Dashboard = () => {
   const base_url = import.meta.env.VITE_API_KEY_Base_URL;
 
   // Fetch initial data
-  useEffect(() => {
-    fetchInitialData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const fetchInitialData = async () => {
     try {
@@ -54,6 +50,10 @@ const Dashboard = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchInitialData();
+  }, []);
 
   const fetchOverviewStats = async (coursesData) => {
     try {
@@ -102,7 +102,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Content */}
       <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="mx-auto">
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">
@@ -162,7 +162,7 @@ const Dashboard = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-fit"
             >
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">
@@ -211,7 +211,7 @@ const Dashboard = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-fit"
             >
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">

@@ -10,7 +10,7 @@ import {
   FiArrowLeft,
   FiUsers,
   FiDollarSign,
-  FiTag
+  FiTag,
 } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 
@@ -26,12 +26,12 @@ const EventDetail = () => {
     userName: "",
     userEmail: "",
     userPhone: "",
-    message: ""
+    message: "",
   });
   const [errors, setErrors] = useState({
     userName: "",
     userEmail: "",
-    userPhone: ""
+    userPhone: "",
   });
 
   // Fetch event details
@@ -52,7 +52,25 @@ const EventDetail = () => {
     };
     fetchEvent();
   }, [id, base_url]);
+  useEffect(() => {
+    if (!loading) {
+      // Small delay to ensure DOM is fully rendered
+      const timer = setTimeout(() => {
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth",
+        });
+      }, 150);
 
+      return () => clearTimeout(timer);
+    }
+  }, [loading, id]);
+
+  // Also add this to handle direct navigation
+  useEffect(() => {
+    // Quick scroll to top on initial mount
+    window.scrollTo(0, 0);
+  }, []);
   useEffect(() => {
     // Make all event description links open in a new tab
     const links = document.querySelectorAll(".prose a");
@@ -67,7 +85,7 @@ const EventDetail = () => {
     const newErrors = {
       userName: "",
       userEmail: "",
-      userPhone: ""
+      userPhone: "",
     };
 
     // Name validation
@@ -313,7 +331,7 @@ const EventDetail = () => {
     prose-strong:font-semibold prose-strong:text-gray-900
     prose-blockquote:border-l-blue-600 prose-blockquote:bg-gray-100 prose-blockquote:px-6 prose-blockquote:py-4 prose-blockquote:rounded-r-lg"
                   dangerouslySetInnerHTML={{
-                    __html: event.description
+                    __html: event.description,
                   }}
                 />
               </motion.div>
@@ -356,7 +374,7 @@ const EventDetail = () => {
                         onChange={(e) => {
                           setFormData({
                             ...formData,
-                            userName: e.target.value
+                            userName: e.target.value,
                           });
                           if (errors.userName) {
                             setErrors({ ...errors, userName: "" });
@@ -395,7 +413,7 @@ const EventDetail = () => {
                         onChange={(e) => {
                           setFormData({
                             ...formData,
-                            userEmail: e.target.value
+                            userEmail: e.target.value,
                           });
                           if (errors.userEmail) {
                             setErrors({ ...errors, userEmail: "" });
@@ -434,7 +452,7 @@ const EventDetail = () => {
                         onChange={(e) => {
                           setFormData({
                             ...formData,
-                            userPhone: e.target.value
+                            userPhone: e.target.value,
                           });
                           if (errors.userPhone) {
                             setErrors({ ...errors, userPhone: "" });
@@ -473,7 +491,7 @@ const EventDetail = () => {
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            message: e.target.value
+                            message: e.target.value,
                           })
                         }
                         className="w-full px-5 py-2 rounded-xl border-2 border-gray-300 focus:border-[#004080] bg-white hover:border-gray-400 transition-all duration-300 focus:outline-none focus:ring-0 resize-none shadow-sm hover:shadow-md"
@@ -487,7 +505,7 @@ const EventDetail = () => {
                     <motion.button
                       whileHover={{
                         scale: 1.02,
-                        boxShadow: "0 20px 40px rgba(0,0,0,0.12)"
+                        boxShadow: "0 20px 40px rgba(0,0,0,0.12)",
                       }}
                       whileTap={{ scale: 0.98 }}
                       type="submit"
