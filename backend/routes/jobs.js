@@ -158,21 +158,47 @@ router.post("/apply", upload.any(), async (req, res) => {
     // Process regular fields
     Object.keys(req.body).forEach((key) => {
       if (key !== "jobId") {
-        fieldData.push({
-          fieldId: key,
-          value: req.body[key],
-        });
+        let fieldId;
+
+        // Check if it's a field or file key and extract the ID
+        if (key.startsWith("field_")) {
+          fieldId = key.substring(6); // Remove "field_" prefix
+        } else if (key.startsWith("file_")) {
+          fieldId = key.substring(5); // Remove "file_" prefix
+        } else {
+          fieldId = key; // Fallback
+        }
+
+        // Only add if it's a valid ObjectId (24 character hex string)
+        if (fieldId.match(/^[0-9a-fA-F]{24}$/)) {
+          fieldData.push({
+            fieldId: fieldId,
+            value: req.body[key],
+          });
+        }
       }
     });
 
-    // Process files - Fix the path to be web-accessible
+    // Process files
     if (req.files) {
       req.files.forEach((file) => {
-        files.push({
-          fieldId: file.fieldname,
-          filename: file.originalname,
-          path: "/jobs/" + file.filename, // Store web-accessible path
-        });
+        let fieldId = file.fieldname;
+
+        // Extract field ID from fieldname
+        if (file.fieldname.startsWith("file_")) {
+          fieldId = file.fieldname.substring(5);
+        } else if (file.fieldname.startsWith("field_")) {
+          fieldId = file.fieldname.substring(6);
+        }
+
+        // Only add if it's a valid ObjectId
+        if (fieldId.match(/^[0-9a-fA-F]{24}$/)) {
+          files.push({
+            fieldId: fieldId,
+            filename: file.originalname,
+            path: "/jobs/" + file.filename,
+          });
+        }
       });
     }
 

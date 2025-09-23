@@ -245,7 +245,7 @@ const News = () => {
                       onClick={() => window.scrollTo(0, 0)}
                       className="text-sm font-medium text-[#004080] hover:text-[#003366] flex items-center gap-1 transition-colors duration-300"
                     >
-                      Read Full Story
+                      Read Full News
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-4 w-4"
