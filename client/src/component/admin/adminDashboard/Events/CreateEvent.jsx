@@ -6,11 +6,10 @@ import {
   FiClock,
   FiMapPin,
   FiFileText,
-  FiImage
+  FiImage,
 } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import axios from "axios";
-// ✅ add these
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
@@ -22,11 +21,11 @@ const CreateEvent = () => {
     endDate: "",
     startTime: "",
     endTime: "",
-    location: ""
+    location: "",
   });
 
   const [files, setFiles] = useState({
-    image: null
+    image: null,
   });
 
   const [errors, setErrors] = useState({});
@@ -86,8 +85,8 @@ const CreateEvent = () => {
       await axios.post("http://localhost:3500/api/events/create", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${localStorage.getItem("token")}`
-        }
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       });
 
       toast.success("Event created successfully!");
@@ -97,7 +96,7 @@ const CreateEvent = () => {
         endDate: "",
         startTime: "",
         endTime: "",
-        location: ""
+        location: "",
       });
       setDescription("");
       setFiles({ image: null });
@@ -311,8 +310,8 @@ const CreateEvent = () => {
                       ["bold", "italic", "underline", "strike", "blockquote"],
                       [{ list: "ordered" }, { list: "bullet" }],
                       ["link", "image"],
-                      ["clean"]
-                    ]
+                      ["clean"],
+                    ],
                   }}
                   formats={[
                     "header",
@@ -324,7 +323,7 @@ const CreateEvent = () => {
                     "list",
                     "bullet",
                     "link",
-                    "image"
+                    "image",
                   ]}
                 />
               </div>
