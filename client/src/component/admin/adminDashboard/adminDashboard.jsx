@@ -41,6 +41,7 @@ import JobPost from "./career/JobPost";
 import AppliedUsers from "./career/AppliedUser";
 import ModifyPost from "./career/ModifyPost";
 import CvUser from "./career/CvUser";
+import Dashboard from "./dashboard";
 
 const AdminDashboard = () => {
   const [activeView, setActiveView] = useState(() => {
@@ -192,7 +193,7 @@ const AdminDashboard = () => {
       case "settings":
         return <Settings />;
       default:
-        return <h1 className="p-6 text-xl font-bold">Dashboard Overview</h1>;
+        return <Dashboard />;
     }
   };
 
