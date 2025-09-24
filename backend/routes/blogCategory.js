@@ -24,25 +24,28 @@ router.post("/", async (req, res) => {
     }
 
     // Check if category already exists
-    const existingCategory = await BlogCategory.findOne({ 
-      name: { $regex: new RegExp(`^${name.trim()}$`, "i") } 
+    const existingCategory = await BlogCategory.findOne({
+      name: { $regex: new RegExp(`^${name.trim()}$`, "i") }
     });
-    
+
     if (existingCategory) {
       return res.status(400).json({ message: "Blog category already exists" });
     }
 
     const newCategory = new BlogCategory({ name: name.trim() });
     await newCategory.save();
-    
-    res.status(201).json({ message: "Blog category created successfully", category: newCategory });
+
+    res.status(201).json({
+      message: "Blog category created successfully",
+      category: newCategory
+    });
   } catch (err) {
     console.error(err);
-    
-    if (err.name === 'ValidationError') {
+
+    if (err.name === "ValidationError") {
       return res.status(400).json({ message: err.message });
     }
-    
+
     res.status(500).json({ message: "Error creating blog category" });
   }
 });
@@ -64,30 +67,34 @@ router.put("/:id", async (req, res) => {
     }
 
     // Check if name already exists (excluding current category)
-    const existingCategory = await BlogCategory.findOne({ 
+    const existingCategory = await BlogCategory.findOne({
       name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
-      _id: { $ne: id } 
+      _id: { $ne: id }
     });
-    
+
     if (existingCategory) {
-      return res.status(400).json({ message: "Blog category name already exists" });
+      return res
+        .status(400)
+        .json({ message: "Blog category name already exists" });
     }
 
     category.name = name.trim();
     await category.save();
 
-    res.status(200).json({ message: "Blog category updated successfully", category });
+    res
+      .status(200)
+      .json({ message: "Blog category updated successfully", category });
   } catch (err) {
     console.error(err);
-    
-    if (err.name === 'ValidationError') {
+
+    if (err.name === "ValidationError") {
       return res.status(400).json({ message: err.message });
     }
-    
-    if (err.name === 'CastError') {
+
+    if (err.name === "CastError") {
       return res.status(400).json({ message: "Invalid category ID" });
     }
-    
+
     res.status(500).json({ message: "Error updating blog category" });
   }
 });
@@ -106,11 +113,11 @@ router.delete("/:id", async (req, res) => {
     res.status(200).json({ message: "Blog category deleted successfully" });
   } catch (err) {
     console.error(err);
-    
-    if (err.name === 'CastError') {
+
+    if (err.name === "CastError") {
       return res.status(400).json({ message: "Invalid category ID" });
     }
-    
+
     res.status(500).json({ message: "Error deleting blog category" });
   }
 });

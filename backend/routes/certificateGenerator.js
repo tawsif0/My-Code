@@ -9,7 +9,7 @@ const generateCertificate = async (data) => {
   // Create a PDF document
   const doc = new PDFDocument({
     size: "A4",
-    layout: "landscape",
+    layout: "landscape"
   });
 
   // Generate unique filename
@@ -37,11 +37,6 @@ const generateCertificate = async (data) => {
   gradient.stop(0, "#667eea").stop(0.5, "#764ba2").stop(1, "#f093fb");
 
   doc.rect(0, 0, width, height).fill(gradient);
-
-  // Decorative borders and all other elements
-  // (Copy the same design code from above...)
-
-  // Main content
   doc
     .fontSize(48)
     .fillColor("#ffffff")
@@ -49,7 +44,7 @@ const generateCertificate = async (data) => {
     .text("CERTIFICATE", centerX - 200, 160, {
       width: 400,
       align: "center",
-      characterSpacing: 8,
+      characterSpacing: 8
     });
 
   doc
@@ -58,7 +53,7 @@ const generateCertificate = async (data) => {
     .text("OF EXCELLENCE", centerX - 150, 210, {
       width: 300,
       align: "center",
-      characterSpacing: 4,
+      characterSpacing: 4
     });
 
   doc
@@ -68,7 +63,7 @@ const generateCertificate = async (data) => {
     .text(studentName, centerX - 300, 310, {
       width: 600,
       align: "center",
-      characterSpacing: 2,
+      characterSpacing: 2
     });
 
   doc
@@ -78,7 +73,7 @@ const generateCertificate = async (data) => {
     .text(`"${courseName}"`, centerX - 350, 430, {
       width: 700,
       align: "center",
-      characterSpacing: 1,
+      characterSpacing: 1
     });
 
   doc
@@ -90,14 +85,10 @@ const generateCertificate = async (data) => {
       490,
       {
         width: 300,
-        align: "center",
+        align: "center"
       }
     );
-
-  // Finalize the PDF
   doc.end();
-
-  // Wait for the stream to finish writing
   await new Promise((resolve) => stream.on("finish", resolve));
 
   return publicUrl;

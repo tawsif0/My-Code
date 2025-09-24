@@ -83,6 +83,7 @@ const fileFilter = (req, file, cb) => {
     );
   }
 };
+
 // Configure multer instance with error handling
 const upload = multer({
   storage: storage,

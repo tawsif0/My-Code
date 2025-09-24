@@ -11,35 +11,35 @@ router.post("/", async (req, res) => {
     if (!name || !name.trim()) {
       return res.status(400).json({
         success: false,
-        message: "Name is required",
+        message: "Name is required"
       });
     }
 
     if (!email || !email.trim()) {
       return res.status(400).json({
         success: false,
-        message: "Email is required",
+        message: "Email is required"
       });
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({
         success: false,
-        message: "Please provide a valid email address",
+        message: "Please provide a valid email address"
       });
     }
 
     if (!phone || !phone.trim()) {
       return res.status(400).json({
         success: false,
-        message: "Phone number is required",
+        message: "Phone number is required"
       });
     }
 
     if (!message || !message.trim()) {
       return res.status(400).json({
         success: false,
-        message: "Message is required",
+        message: "Message is required"
       });
     }
 
@@ -47,7 +47,7 @@ router.post("/", async (req, res) => {
       name: name.trim(),
       email: email.trim(),
       phone: phone.trim(),
-      message: message.trim(),
+      message: message.trim()
     });
 
     await newContact.save();
@@ -55,13 +55,13 @@ router.post("/", async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Message submitted successfully",
-      data: newContact,
+      data: newContact
     });
   } catch (error) {
     console.error("Error saving contact user:", error);
     res.status(500).json({
       success: false,
-      message: "Server error. Please try again later.",
+      message: "Server error. Please try again later."
     });
   }
 });
@@ -76,6 +76,7 @@ router.get("/", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
 // DELETE /api/contact/:id - Delete a contact message
 router.delete("/:id", async (req, res) => {
   try {
@@ -93,4 +94,5 @@ router.delete("/:id", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
 module.exports = router;

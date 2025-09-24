@@ -15,19 +15,43 @@ exports.authenticateTeacher = async (req, res, next) => {
     if (!token) {
       return res.status(401).json({
         status: "fail",
-        message: "You are not logged in. Please log in to get access.",
+        message: "You are not logged in. Please log in to get access."
       });
     }
 
-    // 2) Verify the token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // 2) Verify the token safely
+    let decoded;
+    try {
+      decoded = jwt.verify(token, "435345sdfsfd");
+    } catch (err) {
+      if (err.name === "TokenExpiredError") {
+        return res.status(401).json({
+          status: "fail",
+          message: "Your token has expired. Please log in again."
+        });
+      }
+      if (err.name === "JsonWebTokenError") {
+        return res.status(401).json({
+          status: "fail",
+          message: "Invalid token. Please log in again."
+        });
+      }
+      console.error("JWT verify error:", err.message);
+      return res.status(500).json({
+        status: "error",
+        message: "An error occurred during authentication"
+      });
+    }
 
     // 3) Check if teacher still exists
-    const currentTeacher = await Teacher.findById(decoded.id);
+    const currentTeacher = await Teacher.findById(decoded.id).catch((err) => {
+      console.error("Teacher lookup error:", err);
+      return null;
+    });
     if (!currentTeacher) {
       return res.status(401).json({
         status: "fail",
-        message: "The teacher belonging to this token no longer exists.",
+        message: "The teacher belonging to this token no longer exists."
       });
     }
 
@@ -35,7 +59,7 @@ exports.authenticateTeacher = async (req, res, next) => {
     if (currentTeacher.status !== "approved") {
       return res.status(403).json({
         status: "fail",
-        message: "Your account is not yet approved. Please contact admin.",
+        message: "Your account is not yet approved. Please contact admin."
       });
     }
 
@@ -43,7 +67,7 @@ exports.authenticateTeacher = async (req, res, next) => {
     if (decoded.role !== "teacher") {
       return res.status(403).json({
         status: "fail",
-        message: "You are not authorized to access this resource.",
+        message: "You are not authorized to access this resource."
       });
     }
 
@@ -51,22 +75,9 @@ exports.authenticateTeacher = async (req, res, next) => {
     req.teacher = currentTeacher;
     next();
   } catch (err) {
-    if (err.name === "JsonWebTokenError") {
-      return res.status(401).json({
-        status: "fail",
-        message: "Invalid token. Please log in again.",
-      });
-    }
-    if (err.name === "TokenExpiredError") {
-      return res.status(401).json({
-        status: "fail",
-        message: "Your token has expired. Please log in again.",
-      });
-    }
-    console.error("Authentication error:", err);
     res.status(500).json({
       status: "error",
-      message: "An error occurred during authentication",
+      message: "An error occurred during authentication"
     });
   }
 };

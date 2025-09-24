@@ -24,25 +24,28 @@ router.post("/", async (req, res) => {
     }
 
     // Check if criteria already exists
-    const existingCriteria = await Criteria.findOne({ 
-      name: { $regex: new RegExp(`^${name.trim()}$`, "i") } 
+    const existingCriteria = await Criteria.findOne({
+      name: { $regex: new RegExp(`^${name.trim()}$`, "i") }
     });
-    
+
     if (existingCriteria) {
       return res.status(400).json({ message: "Criteria already exists" });
     }
 
     const newCriteria = new Criteria({ name: name.trim() });
     await newCriteria.save();
-    
-    res.status(201).json({ message: "Criteria created successfully", criteria: newCriteria });
+
+    res.status(201).json({
+      message: "Criteria created successfully",
+      criteria: newCriteria
+    });
   } catch (err) {
     console.error(err);
-    
-    if (err.name === 'ValidationError') {
+
+    if (err.name === "ValidationError") {
       return res.status(400).json({ message: err.message });
     }
-    
+
     res.status(500).json({ message: "Error creating criteria" });
   }
 });
@@ -64,11 +67,11 @@ router.put("/:id", async (req, res) => {
     }
 
     // Check if name already exists (excluding current criteria)
-    const existingCriteria = await Criteria.findOne({ 
+    const existingCriteria = await Criteria.findOne({
       name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
-      _id: { $ne: id } 
+      _id: { $ne: id }
     });
-    
+
     if (existingCriteria) {
       return res.status(400).json({ message: "Criteria name already exists" });
     }
@@ -76,18 +79,20 @@ router.put("/:id", async (req, res) => {
     criteria.name = name.trim();
     await criteria.save();
 
-    res.status(200).json({ message: "Criteria updated successfully", criteria });
+    res
+      .status(200)
+      .json({ message: "Criteria updated successfully", criteria });
   } catch (err) {
     console.error(err);
-    
-    if (err.name === 'ValidationError') {
+
+    if (err.name === "ValidationError") {
       return res.status(400).json({ message: err.message });
     }
-    
-    if (err.name === 'CastError') {
+
+    if (err.name === "CastError") {
       return res.status(400).json({ message: "Invalid criteria ID" });
     }
-    
+
     res.status(500).json({ message: "Error updating criteria" });
   }
 });
@@ -106,11 +111,11 @@ router.delete("/:id", async (req, res) => {
     res.status(200).json({ message: "Criteria deleted successfully" });
   } catch (err) {
     console.error(err);
-    
-    if (err.name === 'CastError') {
+
+    if (err.name === "CastError") {
       return res.status(400).json({ message: "Invalid criteria ID" });
     }
-    
+
     res.status(500).json({ message: "Error deleting criteria" });
   }
 });

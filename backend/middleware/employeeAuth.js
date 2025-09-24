@@ -1,46 +1,59 @@
 const jwt = require("jsonwebtoken");
 const Employee = require("../models/Employee");
 
-const authenticateToken = (req, res, next) => {
-  // Get token from header
-  const token = req.header("x-auth-token");
-
-  // Check if no token
-  if (!token) {
-    return res.status(401).json({
-      success: false,
-      message: "No token, authorization denied",
-    });
-  }
-
-  // Verify token
+const authenticateToken = async (req, res, next) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const token = req.header("x-auth-token");
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "No token, authorization denied"
+      });
+    }
 
-    // Check if employee still exists
-    Employee.findById(decoded.id).then((employee) => {
-      if (!employee) {
+    let decoded;
+    try {
+      decoded = jwt.verify(token, "435345sdfsfd");
+    } catch (err) {
+      if (err.name === "TokenExpiredError") {
         return res.status(401).json({
           success: false,
-          message: "Employee not found",
+          message: "Token has expired"
         });
       }
+      return res.status(401).json({
+        success: false,
+        message: "Token is not valid"
+      });
+    }
 
-      // Check if password was changed after token was issued
-      if (employee.changedPasswordAfter(decoded.iat)) {
-        return res.status(401).json({
-          success: false,
-          message: "Password was changed recently. Please log in again.",
-        });
-      }
-
-      req.user = decoded;
-      next();
+    const employee = await Employee.findById(decoded.id).catch((err) => {
+      return null;
     });
+
+    if (!employee) {
+      return res.status(401).json({
+        success: false,
+        message: "Employee not found"
+      });
+    }
+
+    if (
+      typeof employee.changedPasswordAfter === "function" &&
+      employee.changedPasswordAfter(decoded.iat)
+    ) {
+      return res.status(401).json({
+        success: false,
+        message: "Password was changed recently. Please log in again."
+      });
+    }
+
+    req.user = decoded;
+    next();
   } catch (err) {
-    res.status(401).json({
+    return res.status(500).json({
       success: false,
-      message: "Token is not valid",
+      message: "Something went wrong. Please try again later."
     });
   }
 };

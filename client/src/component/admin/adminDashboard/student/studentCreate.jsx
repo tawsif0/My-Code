@@ -253,6 +253,7 @@ const StudentAuth = () => {
                   className={`w-full px-4 py-3 rounded-lg border ${
                     errors.email ? "border-red-500" : "border-gray-300"
                   }  focus:border-gray-500 transition-all`}
+                  autoComplete="off"
                 />
                 {errors.email && (
                   <motion.p
@@ -281,6 +282,7 @@ const StudentAuth = () => {
                     className={`w-full px-4 py-3 rounded-lg border ${
                       errors.password ? "border-red-500" : "border-gray-300"
                     }  focus:border-gray-500 transition-all pr-10`}
+                    autoComplete="off"
                   />
                   <button
                     type="button"
@@ -318,6 +320,7 @@ const StudentAuth = () => {
                   className={`w-full px-4 py-3 rounded-lg border ${
                     errors.full_name ? "border-red-500" : "border-gray-300"
                   }  focus:border-gray-500 transition-all`}
+                  autoComplete="off"
                 />
                 {errors.full_name && (
                   <motion.p
@@ -344,6 +347,7 @@ const StudentAuth = () => {
                   className={`w-full px-4 py-3 rounded-lg border ${
                     errors.phone ? "border-red-500" : "border-gray-300"
                   }  focus:border-gray-500 transition-all`}
+                  autoComplete="off"
                 />
                 {errors.phone && (
                   <motion.p
@@ -376,6 +380,7 @@ const StudentAuth = () => {
                   className={`w-full px-4 py-3 rounded-lg border ${
                     errors.date_of_birth ? "border-red-500" : "border-gray-300"
                   }  focus:border-gray-500 transition-all`}
+                  autoComplete="off"
                 />
                 {errors.date_of_birth && (
                   <motion.p
@@ -399,6 +404,7 @@ const StudentAuth = () => {
                   onChange={handleChange}
                   placeholder="Your current address"
                   className="w-full px-4 py-3 rounded-lg border border-gray-300  focus:border-gray-500 transition-all"
+                  autoComplete="off"
                 />
               </div>
             </div>

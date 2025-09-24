@@ -29,12 +29,12 @@ const eventStorage = multer.diskStorage({
     }
 
     cb(null, finalName);
-  },
+  }
 });
 
 const eventUpload = multer({
   storage: eventStorage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB max
 });
 // Get all events
 router.get("/", async (req, res) => {
@@ -70,32 +70,34 @@ router.get("/", async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Server error while fetching events",
+      message: "Server error while fetching events"
     });
   }
 });
+
 // GET only launched events
 router.get("/active", async (req, res) => {
   try {
     const activeEvents = await Event.find({
-      eventStatus: { $in: ["pending", "launched"] },
+      eventStatus: { $in: ["pending", "launched"] }
     }).sort({
       startDate: 1,
-      startTime: 1,
+      startTime: 1
     });
 
     res.status(200).json({
       success: true,
-      data: activeEvents,
+      data: activeEvents
     });
   } catch (error) {
     console.error("Error fetching active events:", error);
     res.status(500).json({
       success: false,
-      message: "Server error while fetching active events",
+      message: "Server error while fetching active events"
     });
   }
 });
+
 // Get all registered users (with optional filter by eventId)
 router.get("/users", async (req, res) => {
   try {
@@ -122,17 +124,18 @@ router.get("/users", async (req, res) => {
       pagination: {
         currentPage: parseInt(page),
         totalPages: Math.ceil(total / parseInt(limit)),
-        totalUsers: total,
-      },
+        totalUsers: total
+      }
     });
   } catch (error) {
     console.error("Error fetching event users:", error);
     res.status(500).json({
       success: false,
-      message: "Server error while fetching event users",
+      message: "Server error while fetching event users"
     });
   }
 });
+
 //get only one event
 router.get("/:id", async (req, res) => {
   try {
@@ -153,7 +156,7 @@ router.post("/create", eventUpload.single("image"), async (req, res) => {
       startTime,
       endTime,
       location,
-      description,
+      description
     } = req.body;
     const imageFile = req.file;
 
@@ -168,7 +171,7 @@ router.post("/create", eventUpload.single("image"), async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        message: "All fields are required",
+        message: "All fields are required"
       });
     }
 
@@ -180,7 +183,7 @@ router.post("/create", eventUpload.single("image"), async (req, res) => {
       endTime,
       location,
       description,
-      eventStatus: "pending",
+      eventStatus: "pending"
     };
 
     if (imageFile) {
@@ -192,16 +195,17 @@ router.post("/create", eventUpload.single("image"), async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Event created successfully",
-      data: newEvent,
+      data: newEvent
     });
   } catch (error) {
     console.error("Error creating event:", error);
     res.status(500).json({
       success: false,
-      message: "Server error while creating event",
+      message: "Server error while creating event"
     });
   }
 });
+
 // Launch event
 router.put("/:id/launch", async (req, res) => {
   try {
@@ -222,12 +226,13 @@ router.put("/:id/launch", async (req, res) => {
     res.json({
       success: true,
       message: "Event launched successfully",
-      data: event,
+      data: event
     });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to launch event" });
   }
 });
+
 //End manually
 router.put("/:id/end", async (req, res) => {
   try {
@@ -243,12 +248,13 @@ router.put("/:id/end", async (req, res) => {
     res.json({
       success: true,
       message: "Event ended successfully",
-      data: event,
+      data: event
     });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to end event" });
   }
 });
+
 // Update Event
 router.put("/:id", eventUpload.single("image"), async (req, res) => {
   try {
@@ -256,7 +262,7 @@ router.put("/:id", eventUpload.single("image"), async (req, res) => {
     if (!event) {
       return res.status(404).json({
         success: false,
-        message: "Event not found",
+        message: "Event not found"
       });
     }
 
@@ -268,7 +274,7 @@ router.put("/:id", eventUpload.single("image"), async (req, res) => {
       startTime,
       endTime,
       location,
-      description,
+      description
     } = req.body;
 
     if (title) event.title = title;
@@ -302,13 +308,13 @@ router.put("/:id", eventUpload.single("image"), async (req, res) => {
     res.json({
       success: true,
       message: "Event updated successfully",
-      data: event,
+      data: event
     });
   } catch (error) {
     console.error("Error updating event:", error);
     res.status(500).json({
       success: false,
-      message: "Server error while updating event",
+      message: "Server error while updating event"
     });
   }
 });
@@ -327,6 +333,7 @@ router.delete("/:id", async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to delete event" });
   }
 });
+
 //Event Register
 router.post("/:id/register", async (req, res) => {
   try {
@@ -344,7 +351,7 @@ router.post("/:id/register", async (req, res) => {
       userName,
       userEmail,
       userPhone,
-      message,
+      message
     });
 
     await eventUser.save();

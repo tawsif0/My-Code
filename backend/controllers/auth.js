@@ -8,7 +8,7 @@ const Teacher = require("../models/Teacher");
 
 // JWT generator
 const generateToken = (id, role) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: "30d" });
+  return jwt.sign({ id, role }, "435345sdfsfd", { expiresIn: "1h" });
 };
 
 // Admin dashboard fetch
@@ -516,7 +516,7 @@ exports.teacherlogin = async (req, res) => {
     // 4) If everything is OK, send token to client
     const token = jwt.sign(
       { id: teacher._id, role: "teacher" },
-      process.env.JWT_SECRET,
+      "435345sdfsfd",
       {
         expiresIn: "10d"
       }

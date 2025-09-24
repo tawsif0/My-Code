@@ -271,6 +271,7 @@ const AdminLogin = () => {
                   onChange={handleInputChange}
                   placeholder="Enter your username"
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black/30 transition-all duration-200"
+                  autoComplete="off"
                 />
               </div>
               {errors.username && (
@@ -308,6 +309,7 @@ const AdminLogin = () => {
                   onChange={handleInputChange}
                   placeholder="admin@example.com"
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 pl-12 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black/30 transition-all duration-200"
+                  autoComplete="off"
                 />
               </div>
               {errors.email && (
@@ -345,6 +347,7 @@ const AdminLogin = () => {
                   onChange={handleInputChange}
                   placeholder="••••••••"
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 pl-12 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black/30 transition-all duration-200"
+                  autoComplete="off"
                 />
                 <button
                   type="button"
@@ -417,6 +420,7 @@ const AdminLogin = () => {
                   onChange={handleInputChange}
                   placeholder="admin@example.com"
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 pl-12 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black/30 transition-all duration-200"
+                  autoComplete="off"
                 />
               </div>
               {errors.email && (
@@ -454,6 +458,7 @@ const AdminLogin = () => {
                   onChange={handleInputChange}
                   placeholder="••••••••"
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 pl-12 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black/30 transition-all duration-200"
+                  autoComplete="off"
                 />
                 <button
                   type="button"

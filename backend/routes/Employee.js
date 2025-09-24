@@ -4,7 +4,7 @@ const { authenticateToken } = require("../middleware/employeeAuth");
 const {
   getMe,
   updateProfile,
-  changePassword,
+  changePassword
 } = require("../controllers/employeeController");
 const Employee = require("../models/Employee");
 const Consultation = require("../models/Consultation");
@@ -15,6 +15,7 @@ const uploads = require("../utils/upload");
 const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+
 // ------------------login-----------------------------------
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
@@ -25,7 +26,7 @@ router.post("/login", async (req, res) => {
     if (!employee) {
       return res.status(400).json({
         success: false,
-        message: "Invalid credentials",
+        message: "Invalid credentials"
       });
     }
 
@@ -34,7 +35,7 @@ router.post("/login", async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({
         success: false,
-        message: "Invalid credentials",
+        message: "Invalid credentials"
       });
     }
 
@@ -48,26 +49,25 @@ router.post("/login", async (req, res) => {
         id: employee._id,
         username: employee.username,
         email: employee.email,
-        phoneNumber: employee.phoneNumber,
-      },
+        phoneNumber: employee.phoneNumber
+      }
     });
   } catch (err) {
     console.error(err.message);
     res.status(500).json({
       success: false,
-      message: "Server Error",
+      message: "Server Error"
     });
   }
 });
 
 // Protected routes
-
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
     user: process.env.EMAIL_USER || "tausifrahman02@gmail.com",
-    pass: process.env.EMAIL_PASS || "uxcc zkkr etre uipd",
-  },
+    pass: process.env.EMAIL_PASS || "uxcc zkkr etre uipd"
+  }
 });
 
 router.post("/forgot-password", async (req, res) => {
@@ -78,7 +78,7 @@ router.post("/forgot-password", async (req, res) => {
     if (!employee) {
       return res.status(200).json({
         success: true,
-        message: "If an account exists, a reset OTP has been sent",
+        message: "If an account exists, a reset OTP has been sent"
       });
     }
 
@@ -93,21 +93,22 @@ router.post("/forgot-password", async (req, res) => {
       from: `"Northern Lights Study and Immigration Consultancy" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Password Reset OTP",
-      html: `Your OTP: <strong>${otp}</strong> (valid for 5 mins)`,
+      html: `Your OTP: <strong>${otp}</strong> (valid for 5 mins)`
     });
 
     res.status(200).json({
       success: true,
-      message: "OTP sent successfully",
+      message: "OTP sent successfully"
     });
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Failed to send OTP",
-      error: error.message,
+      error: error.message
     });
   }
 });
+
 router.post("/verify-reset-otp", async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -116,7 +117,7 @@ router.post("/verify-reset-otp", async (req, res) => {
     if (!email || !otp) {
       return res.status(400).json({
         success: false,
-        message: "Email and OTP are required",
+        message: "Email and OTP are required"
       });
     }
 
@@ -126,7 +127,7 @@ router.post("/verify-reset-otp", async (req, res) => {
     if (!employee) {
       return res.status(400).json({
         success: false,
-        message: "No account found with this email",
+        message: "No account found with this email"
       });
     }
 
@@ -134,7 +135,7 @@ router.post("/verify-reset-otp", async (req, res) => {
     if (!employee.otp || employee.otp !== otp) {
       return res.status(400).json({
         success: false,
-        message: "Invalid OTP",
+        message: "Invalid OTP"
       });
     }
 
@@ -142,7 +143,7 @@ router.post("/verify-reset-otp", async (req, res) => {
     if (employee.otpExpires < new Date()) {
       return res.status(400).json({
         success: false,
-        message: "OTP has expired",
+        message: "OTP has expired"
       });
     }
 
@@ -151,9 +152,9 @@ router.post("/verify-reset-otp", async (req, res) => {
       {
         id: employee._id,
         email: employee.email,
-        purpose: "password_reset",
+        purpose: "password_reset"
       },
-      process.env.JWT_SECRET,
+      "435345sdfsfd",
       { expiresIn: "15m" }
     );
 
@@ -161,7 +162,7 @@ router.post("/verify-reset-otp", async (req, res) => {
     res.status(200).json({
       success: true,
       message: "OTP verified successfully",
-      tempToken,
+      tempToken
     });
 
     // Then save the employee (without waiting)
@@ -171,10 +172,11 @@ router.post("/verify-reset-otp", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal server error during OTP verification",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+      error: process.env.NODE_ENV === "development" ? error.message : undefined
     });
   }
 });
+
 // Reset Password with OTP
 router.post("/reset-password", async (req, res) => {
   try {
@@ -184,7 +186,7 @@ router.post("/reset-password", async (req, res) => {
     if (!email || !otp || !newPassword || !tempToken) {
       return res.status(400).json({
         success: false,
-        message: "All fields are required for password reset",
+        message: "All fields are required for password reset"
       });
     }
 
@@ -195,13 +197,13 @@ router.post("/reset-password", async (req, res) => {
       if (decoded.purpose !== "password_reset") {
         return res.status(400).json({
           success: false,
-          message: "Invalid token purpose",
+          message: "Invalid token purpose"
         });
       }
     } catch (err) {
       return res.status(400).json({
         success: false,
-        message: "Invalid or expired token",
+        message: "Invalid or expired token"
       });
     }
 
@@ -213,7 +215,7 @@ router.post("/reset-password", async (req, res) => {
     if (!employee.otp || employee.otp !== otp) {
       return res.status(400).json({
         success: false,
-        message: "Invalid OTP",
+        message: "Invalid OTP"
       });
     }
 
@@ -221,7 +223,7 @@ router.post("/reset-password", async (req, res) => {
     if (employee.otpExpires < new Date()) {
       return res.status(400).json({
         success: false,
-        message: "OTP has expired. Please request a new one.",
+        message: "OTP has expired. Please request a new one."
       });
     }
 
@@ -233,16 +235,17 @@ router.post("/reset-password", async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Password reset successfully",
+      message: "Password reset successfully"
     });
   } catch (error) {
     console.error("Password reset error:", error);
     return res.status(500).json({
       success: false,
-      message: "Internal server error during password reset",
+      message: "Internal server error during password reset"
     });
   }
 });
+
 //---------------------- Consultancy--------------------------------
 router.use(authenticateToken);
 router.get("/me", getMe);
@@ -254,24 +257,24 @@ router.get("/consultations", async (req, res) => {
     if (req.user.role !== "consultant") {
       return res.status(403).json({
         success: false,
-        message: "Only consultants can access assigned consultations",
+        message: "Only consultants can access assigned consultations"
       });
     }
 
     const consultations = await Consultation.find({
-      assignedTo: req.user.id,
+      assignedTo: req.user.id
     }).sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
       count: consultations.length,
-      data: consultations,
+      data: consultations
     });
   } catch (err) {
     console.error(err.message);
     res.status(500).json({
       success: false,
-      message: "Server Error",
+      message: "Server Error"
     });
   }
 });
@@ -284,20 +287,20 @@ router.put("/consultations/:id/cancel", authenticateToken, async (req, res) => {
     if (!cancellationReason) {
       return res.status(400).json({
         success: false,
-        message: "Cancellation reason is required",
+        message: "Cancellation reason is required"
       });
     }
 
     // Check if consultation exists and is assigned to this employee
     const consultation = await Consultation.findOne({
       _id: req.params.id,
-      assignedTo: req.user.id,
+      assignedTo: req.user.id
     });
 
     if (!consultation) {
       return res.status(404).json({
         success: false,
-        message: "Consultation not found or not assigned to you",
+        message: "Consultation not found or not assigned to you"
       });
     }
 
@@ -308,13 +311,13 @@ router.put("/consultations/:id/cancel", authenticateToken, async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: consultation,
+      data: consultation
     });
   } catch (err) {
     console.error(err.message);
     res.status(500).json({
       success: false,
-      message: "Server Error",
+      message: "Server Error"
     });
   }
 });
@@ -328,13 +331,13 @@ router.put(
       // Check if consultation exists and is assigned to this employee
       const consultation = await Consultation.findOne({
         _id: req.params.id,
-        assignedTo: req.user.id,
+        assignedTo: req.user.id
       });
 
       if (!consultation) {
         return res.status(404).json({
           success: false,
-          message: "Consultation not found or not assigned to you",
+          message: "Consultation not found or not assigned to you"
         });
       }
 
@@ -344,13 +347,13 @@ router.put(
 
       res.status(200).json({
         success: true,
-        data: consultation,
+        data: consultation
       });
     } catch (err) {
       console.error(err.message);
       res.status(500).json({
         success: false,
-        message: "Server Error",
+        message: "Server Error"
       });
     }
   }
@@ -360,21 +363,21 @@ router.get("/assigned", authenticateToken, async (req, res) => {
   try {
     // In your route handler
     const requests = await VisaRequest.find({
-      assignedConsultant: req.user.id,
+      assignedConsultant: req.user.id
     })
       .populate({
         path: "student",
-        select: "full_name email", // Explicitly select required fields
+        select: "full_name email" // Explicitly select required fields
       })
       .populate("assignedConsultant", "username email phoneNumber");
     res.json({
       success: true,
-      requests,
+      requests
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message
     });
   }
 });
@@ -389,13 +392,13 @@ router.put(
 
       const visaRequest = await VisaRequest.findOne({
         _id: req.params.requestId,
-        assignedConsultant: req.user.id,
+        assignedConsultant: req.user.id
       });
 
       if (!visaRequest) {
         return res.status(404).json({
           success: false,
-          message: "Visa request not found or not assigned to you",
+          message: "Visa request not found or not assigned to you"
         });
       }
 
@@ -406,7 +409,7 @@ router.put(
       if (documentIndex === -1) {
         return res.status(400).json({
           success: false,
-          message: "Document not found in request",
+          message: "Document not found in request"
         });
       }
 
@@ -415,12 +418,12 @@ router.put(
 
       res.json({
         success: true,
-        updatedRequest: visaRequest,
+        updatedRequest: visaRequest
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: error.message,
+        message: error.message
       });
     }
   }
@@ -436,13 +439,13 @@ router.put(
 
       const visaRequest = await VisaRequest.findOne({
         _id: req.params.requestId,
-        assignedConsultant: req.user.id,
+        assignedConsultant: req.user.id
       });
 
       if (!visaRequest) {
         return res.status(404).json({
           success: false,
-          message: "Visa request not found or not assigned to you",
+          message: "Visa request not found or not assigned to you"
         });
       }
 
@@ -453,7 +456,7 @@ router.put(
       if (documentIndex === -1) {
         return res.status(400).json({
           success: false,
-          message: "Document not found in request",
+          message: "Document not found in request"
         });
       }
 
@@ -463,12 +466,12 @@ router.put(
 
       res.json({
         success: true,
-        updatedRequest: visaRequest,
+        updatedRequest: visaRequest
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: error.message,
+        message: error.message
       });
     }
   }
@@ -481,13 +484,13 @@ router.put("/update-step/:requestId", authenticateToken, async (req, res) => {
 
     const visaRequest = await VisaRequest.findOne({
       _id: req.params.requestId,
-      assignedConsultant: req.user.id,
+      assignedConsultant: req.user.id
     }).select("+processingSteps.status"); // Ensure status field is included
 
     if (!visaRequest) {
       return res.status(404).json({
         success: false,
-        message: "Visa request not found or not assigned to you",
+        message: "Visa request not found or not assigned to you"
       });
     }
 
@@ -498,7 +501,7 @@ router.put("/update-step/:requestId", authenticateToken, async (req, res) => {
     if (stepIndex === -1) {
       return res.status(400).json({
         success: false,
-        message: "Step not found in request",
+        message: "Step not found in request"
       });
     }
 
@@ -521,7 +524,7 @@ router.put("/update-step/:requestId", authenticateToken, async (req, res) => {
             if (!visaRequest.documents.some((doc) => doc.name === docName)) {
               visaRequest.documents.push({
                 name: docName,
-                status: "pending",
+                status: "pending"
               });
             }
           });
@@ -543,13 +546,13 @@ router.put("/update-step/:requestId", authenticateToken, async (req, res) => {
 
     res.json({
       success: true,
-      updatedRequest,
+      updatedRequest
     });
   } catch (error) {
     console.error("Error updating visa step:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to update visa processing step",
+      message: "Failed to update visa processing step"
     });
   }
 });
@@ -563,7 +566,7 @@ router.post(
       if (!req.file) {
         return res.status(400).json({
           success: false,
-          message: "No file uploaded",
+          message: "No file uploaded"
         });
       }
 
@@ -573,7 +576,7 @@ router.post(
         fs.unlinkSync(req.file.path);
         return res.status(404).json({
           success: false,
-          message: "Visa request not found",
+          message: "Visa request not found"
         });
       }
 
@@ -587,7 +590,7 @@ router.post(
         fs.unlinkSync(req.file.path);
         return res.status(400).json({
           success: false,
-          message: "Invalid document name for this visa request",
+          message: "Invalid document name for this visa request"
         });
       }
 
@@ -609,7 +612,7 @@ router.post(
         url: req.file.path.replace(/\\/g, "/"), // Convert to forward slashes for consistency
         status: "pending", // Reset status when new file is uploaded
         feedback: "", // Clear any previous feedback
-        uploadedAt: new Date(),
+        uploadedAt: new Date()
       };
 
       await visaRequest.save();
@@ -617,7 +620,7 @@ router.post(
       res.json({
         success: true,
         document: visaRequest.documents[documentIndex],
-        message: "Document uploaded successfully",
+        message: "Document uploaded successfully"
       });
     } catch (error) {
       console.error("Error uploading document:", error);
@@ -627,7 +630,7 @@ router.post(
       }
       res.status(500).json({
         success: false,
-        message: "Server error while uploading document",
+        message: "Server error while uploading document"
       });
     }
   }
@@ -649,4 +652,5 @@ router.get("/download/:filename", authenticateToken, (req, res) => {
     res.status(404).send("File not found");
   }
 });
+
 module.exports = router;

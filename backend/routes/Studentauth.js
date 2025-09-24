@@ -8,9 +8,9 @@ const Studnetauth = express.Router();
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
-
+const studentAuth = require("../middleware/studentMiddleware");
 // Configuration
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key_here";
+const JWT_SECRET = "435345sdfsfd";
 const OTP_EXPIRY_MINUTES = 10; // 10 minutes expiration
 const RESET_TOKEN_EXPIRY_MINUTES = 30;
 // Configure multer for file uploads
@@ -46,36 +46,7 @@ const upload = multer({
     fileSize: 2 * 1024 * 1024 // 2MB limit
   }
 });
-// Middleware to protect routes
-const authenticateStudent = async (req, res, next) => {
-  try {
-    const token = req.header("Authorization")?.replace("Bearer ", "");
-    if (!token) {
-      return res.status(401).json({ message: "No token provided" });
-    }
 
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const student = await Student.findById(decoded.id);
-
-    if (!student) {
-      return res.status(404).json({ message: "Student not found" });
-    }
-
-    req.student = student;
-    req.token = token;
-    next();
-  } catch (error) {
-    if (error.name === "JsonWebTokenError") {
-      return res.status(401).json({ message: "Invalid token" });
-    }
-    if (error.name === "TokenExpiredError") {
-      return res.status(401).json({ message: "Token expired" });
-    }
-    res
-      .status(500)
-      .json({ message: "Authentication failed", error: error.message });
-  }
-};
 // Email transporter
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -89,10 +60,9 @@ const transporter = nodemailer.createTransport({
 
 const generateToken = (payload, expiresIn) =>
   jwt.sign(payload, JWT_SECRET, { expiresIn });
-//Profile Route
-// Replace your current student profile endpoint with this:
 
-Studnetauth.get("/profile/:id", authenticateStudent, async (req, res) => {
+//Profile Route
+Studnetauth.get("/profile/:id", studentAuth, async (req, res) => {
   try {
     const studentId = req.params.id;
 
@@ -108,13 +78,13 @@ Studnetauth.get("/profile/:id", authenticateStudent, async (req, res) => {
     res.status(200).json({
       student: {
         _id: student._id,
-        id: student._id, // Include both for compatibility
+        id: student._id,
         email: student.email,
         full_name: student.full_name,
         phone: student.phone,
         date_of_birth: student.date_of_birth,
         address: student.address,
-        profile_picture: student.profile_picture, // CRITICAL: Include this field
+        profile_picture: student.profile_picture,
         role: student.role,
         isVerified: student.isVerified,
         createdAt: student.createdAt,
@@ -130,9 +100,8 @@ Studnetauth.get("/profile/:id", authenticateStudent, async (req, res) => {
 });
 
 // Alternative endpoint if you need to use the current user's data:
-Studnetauth.get("/profile", authenticateStudent, async (req, res) => {
+Studnetauth.get("/profile", studentAuth, async (req, res) => {
   try {
-    // req.student should contain the authenticated student's data
     res.status(200).json({
       student: {
         _id: req.student._id,
@@ -142,7 +111,7 @@ Studnetauth.get("/profile", authenticateStudent, async (req, res) => {
         phone: req.student.phone,
         date_of_birth: req.student.date_of_birth,
         address: req.student.address,
-        profile_picture: req.student.profile_picture, // CRITICAL: Include this field
+        profile_picture: req.student.profile_picture,
         role: req.student.role,
         isVerified: req.student.isVerified,
         createdAt: req.student.createdAt,
@@ -173,8 +142,6 @@ Studnetauth.post(
           message: "Student with this email already exists"
         });
       }
-
-      // Create and save student
       const student = new Student({
         email,
         password,
@@ -184,13 +151,12 @@ Studnetauth.post(
         address: address || null
       });
       if (profilePhoto) {
-        student.profile_picture = req.file.filename; // Make sure this matches what frontend expects
+        student.profile_picture = req.file.filename;
       }
-      // Generate and save OTP
+
       const otp = student.generateOTP();
       await student.save();
 
-      // Send OTP email
       await transporter.sendMail({
         from: '"Northern-Lights" <tausifrahman02@gmail.com>',
         to: email,
@@ -216,6 +182,7 @@ Studnetauth.post(
     }
   }
 );
+
 // Verify OTP
 Studnetauth.post("/verify-otp", async (req, res) => {
   try {
@@ -304,6 +271,7 @@ Studnetauth.post("/resend-otp", async (req, res) => {
       .json({ message: "Failed to resend OTP", error: error.message });
   }
 });
+
 // Student Login
 Studnetauth.post("/login", async (req, res) => {
   try {
@@ -318,7 +286,7 @@ Studnetauth.post("/login", async (req, res) => {
     // Find student with email and select the password field
     const student = await Student.findOne({ email })
       .select("+password")
-      .select("-enrolledCourses"); // Ensure we exclude the enrolledCourses field from validation
+      .select("-enrolledCourses");
 
     if (!student) {
       return res.status(401).json({ message: "Invalid credentials" });
@@ -373,7 +341,7 @@ Studnetauth.post("/login", async (req, res) => {
         phone: student.phone,
         date_of_birth: student.date_of_birth,
         address: student.address,
-        profile_picture: student.profile_picture, // ADDED THIS LINE
+        profile_picture: student.profile_picture,
         role: student.role,
         isVerified: student.isVerified
       }
@@ -436,8 +404,8 @@ Studnetauth.post("/verify-reset-otp", async (req, res) => {
     // Find student with matching email, OTP and check expiration
     const student = await Student.findOne({
       email,
-      otp, // Changed from resetPasswordOTP to otp
-      otpExpires: { $gt: new Date() } // Changed from resetPasswordOTPExpires to otpExpires
+      otp,
+      otpExpires: { $gt: new Date() }
     });
 
     if (!student) {
@@ -458,8 +426,8 @@ Studnetauth.post("/verify-reset-otp", async (req, res) => {
     );
 
     // Clear the OTP after successful verification
-    student.otp = undefined; // Changed from resetPasswordOTP to otp
-    student.otpExpires = undefined; // Changed from resetPasswordOTPExpires to otpExpires
+    student.otp = undefined;
+    student.otpExpires = undefined;
     await student.save();
 
     return res.status(200).json({
@@ -479,6 +447,7 @@ Studnetauth.post("/verify-reset-otp", async (req, res) => {
     });
   }
 });
+
 // Reset Password with OTP
 Studnetauth.post("/reset-password", async (req, res) => {
   try {
@@ -513,7 +482,7 @@ Studnetauth.post("/reset-password", async (req, res) => {
 });
 
 // Change Password
-Studnetauth.post("/change-password", authenticateStudent, async (req, res) => {
+Studnetauth.post("/change-password", studentAuth, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
@@ -523,7 +492,6 @@ Studnetauth.post("/change-password", authenticateStudent, async (req, res) => {
       return res.status(401).json({ message: "Current password is incorrect" });
     }
 
-    // 🔹 Hash the new password before saving
     const bcrypt = require("bcryptjs");
     const salt = await bcrypt.genSalt(10);
     req.student.password = await bcrypt.hash(newPassword, salt);

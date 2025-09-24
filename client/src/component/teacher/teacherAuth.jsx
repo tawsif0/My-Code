@@ -398,6 +398,7 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
                       className={`w-full px-4 py-3 rounded-lg border ${
                         errors.email ? "border-red-500" : "border-gray-300"
                       } focus:ring-2 focus:ring-black focus:border-gray-500`}
+                      autoComplete="off"
                     />
                     {errors.email && (
                       <motion.p
@@ -426,6 +427,7 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
                         className={`w-full px-4 py-3 rounded-lg border ${
                           errors.password ? "border-red-500" : "border-gray-300"
                         } focus:ring-2 focus:ring-black focus:border-gray-500 pr-10`}
+                        autoComplete="off"
                       />
                       <button
                         type="button"
@@ -460,6 +462,7 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
                       className={`w-full px-4 py-3 rounded-lg border ${
                         errors.full_name ? "border-red-500" : "border-gray-300"
                       } focus:ring-2 focus:ring-black focus:border-gray-500`}
+                      autoComplete="off"
                     />
                     {errors.full_name && (
                       <motion.p
@@ -486,6 +489,7 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
                       className={`w-full px-4 py-3 rounded-lg border ${
                         errors.phone ? "border-red-500" : "border-gray-300"
                       } focus:ring-2 focus:ring-black focus:border-gray-500`}
+                      autoComplete="off"
                     />
                     {errors.phone && (
                       <motion.p
@@ -522,11 +526,9 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
                     >
                       <option value="">Select your specialization</option>
                       <option value="IELTS">IELTS</option>
-
                       <option value="SAT">SAT</option>
                       <option value="TOEFL">TOEFL</option>
-
-                      <option value="Other">Other</option>
+                      <option value="Others">Other</option>
                     </select>
                     {form.specialization === "Other" && (
                       <input
@@ -544,6 +546,7 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
                             ? "border-red-500"
                             : "border-gray-700"
                         } focus:ring-2 focus:ring-black focus:border-gray-500`}
+                        autoComplete="off"
                       />
                     )}
 
@@ -577,6 +580,7 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
                           ? "border-red-500"
                           : "border-gray-300"
                       } `}
+                      autoComplete="off"
                     />
                     {errors.qualifications && (
                       <motion.p
@@ -607,6 +611,7 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
                           ? "border-red-500"
                           : "border-gray-300"
                       } focus:ring-2 focus:ring-black focus:border-gray-500`}
+                      autoComplete="off"
                     />
                     {errors.linkedin_url && (
                       <motion.p
@@ -641,6 +646,7 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
                           ? "border-red-500"
                           : "border-gray-300"
                       } focus:ring-2 focus:ring-black focus:border-gray-500`}
+                      autoComplete="off"
                     />
                     {errors.hourly_rate && (
                       <motion.p
@@ -726,7 +732,7 @@ const TeacherAuth = ({ authMode, setAuthMode }) => {
                 {/* Certificates Upload */}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
-                    Certificates (PDF/Image, max 5MB each) *
+                    Certificates (PDF/Image, max 5MB each, max 10) *
                   </label>
                   <div
                     className={`border-2 border-dashed ${

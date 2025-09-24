@@ -306,7 +306,7 @@ const Studentpaper = () => {
     <div className=" min-h-screen">
       <div className="flex w-full h-[100vh] bg-white overflow-hidden">
         {/* Main Content Section */}
-        <div className="flex-1 h-full overflow-auto">
+        <div className="flex-1 h-full">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

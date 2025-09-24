@@ -5,15 +5,20 @@ import {
   Route,
   Navigate
 } from "react-router-dom";
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
+import { jwtDecode } from "jwt-decode";
+
+// Components…
 import AdminLogin from "./component/admin/adminLogin";
 import ForgotPassword from "./component/admin/ForgotPassword";
 import ResetPassword from "./component/admin/ResetPassword";
 import AdminDashboard from "./component/admin/adminDashboard/adminDashboard";
+
 import TeacherAuth from "./component/teacher/teacherAuth";
 import StudentAuth from "./component/student/studentAuth";
 import ResetPasswordTeacher from "./component/teacher/ResetPassword";
 import ForgotPasswordTeacher from "./component/teacher/ForgotPassword";
+
 import ForgotPasswordStudent from "./component/student/ForgotPassword";
 import ResetPasswordStudent from "./component/student/ResetPassword";
 import StudentDashboard from "./component/student/studentDashboard/studentDashboard";
@@ -28,21 +33,41 @@ import EmployeeDashboard from "./component/employee/employeeDashboard/employeeDa
 import ResetPasswordEmployee from "./component/employee/ResetPassword";
 import ForgotPasswordEmployee from "./component/employee/ForgotPassword";
 
-const isAuthenticated = () => {
-  const token =
-    localStorage.getItem("token") || localStorage.getItem("studentToken");
-  return !!token;
+// ✅ Function to check token + expiry
+const isTokenValid = (token) => {
+  try {
+    const decoded = jwtDecode(token); // <- use jwtDecode
+    if (decoded.exp && decoded.exp * 1000 < Date.now()) {
+      return false; // expired
+    }
+    return true;
+  } catch (err) {
+    toast.error(err);
+    return false;
+  }
+};
+
+// ✅ Decide route protection
+const RequireAuth = ({ tokenKey, loginPath, children }) => {
+  const token = localStorage.getItem(tokenKey);
+  if (!token || !isTokenValid(token)) {
+    // Clear invalid/expired token
+    localStorage.removeItem(tokenKey);
+    return <Navigate to={loginPath} replace />;
+  }
+  return children;
 };
 
 const App = () => {
   const [authMode, setAuthMode] = useState("register");
+
   return (
     <>
       <Toaster
         position="top-center"
         containerStyle={{
           position: "fixed",
-          zIndex: 9999 // Higher than your modal's z-index
+          zIndex: 9999
         }}
         toastOptions={{
           className:
@@ -73,23 +98,21 @@ const App = () => {
       <Router>
         <Routes>
           <Route path="/*" element={<AppRoutes />} />
-          <Route path="/admin" element={<AdminLogin />} />
 
+          {/* ---------- Admin ---------- */}
+          <Route path="/admin" element={<AdminLogin />} />
           <Route path="/admin/forgotPassword" element={<ForgotPassword />} />
           <Route path="/admin/reset-password" element={<ResetPassword />} />
-
           <Route
             path="/admin/dashboard"
             element={
-              isAuthenticated() ? (
+              <RequireAuth tokenKey="token" loginPath="/admin">
                 <AdminDashboard />
-              ) : (
-                <Navigate to="/admin" replace />
-              )
+              </RequireAuth>
             }
           />
 
-          {/* Teacher route */}
+          {/* ---------- Teacher ---------- */}
           <Route
             path="/teacher"
             element={
@@ -104,8 +127,16 @@ const App = () => {
             path="/teacher/reset-password"
             element={<ResetPasswordTeacher />}
           />
-          <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-          {/* Student route */}
+          <Route
+            path="/teacher/dashboard"
+            element={
+              <RequireAuth tokenKey="teacherToken" loginPath="/teacher">
+                <TeacherDashboard />
+              </RequireAuth>
+            }
+          />
+
+          {/* ---------- Student ---------- */}
           <Route
             path="/student"
             element={
@@ -120,13 +151,25 @@ const App = () => {
             path="/student/reset-password"
             element={<ResetPasswordStudent setAuthMode={setAuthMode} />}
           />
-          <Route path="/student/dashboard" element={<StudentDashboard />} />
+          <Route
+            path="/student/dashboard"
+            element={
+              <RequireAuth tokenKey="studentToken" loginPath="/student">
+                <StudentDashboard />
+              </RequireAuth>
+            }
+          />
 
-          {/* ------------------------------teacher-all-route---------------------------------------- */}
-
-          {/* ------------------------------Employee-all-route---------------------------------------- */}
+          {/* ---------- Employee ---------- */}
           <Route path="/employee/login" element={<EmployeeLogin />} />
-          <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
+          <Route
+            path="/employee/dashboard"
+            element={
+              <RequireAuth tokenKey="employeeToken" loginPath="/employee/login">
+                <EmployeeDashboard />
+              </RequireAuth>
+            }
+          />
           <Route
             path="/employee/forgotPassword"
             element={<ForgotPasswordEmployee />}
@@ -135,12 +178,24 @@ const App = () => {
             path="/employee/reset-password"
             element={<ResetPasswordEmployee />}
           />
-          {/* ----------------------------------student-all-route---------------------------------- */}
+
+          {/* ---------- Student course routes ---------- */}
           <Route
             path="/student/course-overview/:id"
-            element={<CourseOverview />}
+            element={
+              <RequireAuth tokenKey="studentToken" loginPath="/student">
+                <CourseOverview />
+              </RequireAuth>
+            }
           />
-          <Route path="/student/learn/:id" element={<CoursePlayer />} />
+          <Route
+            path="/student/learn/:id"
+            element={
+              <RequireAuth tokenKey="studentToken" loginPath="/student">
+                <CoursePlayer />
+              </RequireAuth>
+            }
+          />
         </Routes>
       </Router>
     </>

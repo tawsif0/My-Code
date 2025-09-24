@@ -4,7 +4,7 @@ import {
   AiOutlineEyeInvisible,
   AiOutlineLock,
   AiOutlineMail,
-  AiOutlineUser,
+  AiOutlineUser
 } from "react-icons/ai";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
@@ -61,7 +61,7 @@ const EmployeeLogin = () => {
           "http://localhost:3500/api/employee/login",
           {
             email: email.toLowerCase(),
-            password,
+            password
           }
         );
 
@@ -120,7 +120,7 @@ const EmployeeLogin = () => {
           <p className="text-gray-600">Access your work dashboard</p>
         </motion.div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
           <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
@@ -240,8 +240,8 @@ const EmployeeLogin = () => {
                       transition: {
                         type: "spring",
                         stiffness: 700,
-                        damping: 30,
-                      },
+                        damping: 30
+                      }
                     }}
                   />
                 </div>

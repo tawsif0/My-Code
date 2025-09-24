@@ -1,5 +1,4 @@
 const express = require("express");
-
 const { authenticateTeacher } = require("../middleware/teacherauth");
 const { create } = require("../models/Admin");
 const Course = require("../models/Course");
@@ -11,6 +10,8 @@ const fs = require("fs");
 const Teacher = require("../models/Teacher");
 const Category = require("../models/Category");
 const Student = require("../models/Student");
+const mongoose = require("mongoose");
+
 // Configure storage for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -53,7 +54,6 @@ const uploadMultiple = upload.fields([
 ]);
 
 // --------------------------teacher-profile---------------------------------
-// Get teacher profile data
 Teaceherrouter.get(
   "/teacher-profile/:id",
   authenticateTeacher,
@@ -682,7 +682,6 @@ Teaceherrouter.put(
   }
 );
 
-// Teacher routes for courses
 Teaceherrouter.get(
   "/my-courses/:teacherId",
   authenticateTeacher,
@@ -894,7 +893,6 @@ Teaceherrouter.get(
   authenticateTeacher,
   async (req, res) => {
     try {
-      // Find the student and populate the course details
       const student = await Student.findById(req.user.id)
         .populate({
           path: "enrolledCourses.course",
@@ -966,6 +964,7 @@ Teaceherrouter.get(
     }
   }
 );
+
 Teaceherrouter.get(
   "/enrolled-courses/:studentId",
   authenticateTeacher,
@@ -1180,13 +1179,13 @@ const storages = multer.diskStorage({
   }
 });
 
-// Configure multer instance with error handling
 const uploads = multer({
   storage: storages,
   limits: {
     fileSize: 5 * 1024 * 1024
   }
 });
+
 Teaceherrouter.put(
   "/update-profile-photo/:id",
   authenticateTeacher,
@@ -1519,6 +1518,7 @@ function cleanupFiles(files) {
     });
   }
 }
+
 function formatCorrectAnswer(questionType, correctAnswer) {
   if (questionType === "mcq-single") {
     return parseInt(correctAnswer);
@@ -1721,6 +1721,7 @@ Teaceherrouter.delete(
     }
   }
 );
+
 // ---------------------------all-category----------------------------
 Teaceherrouter.get("/all-category", authenticateTeacher, async (req, res) => {
   try {
@@ -1733,9 +1734,8 @@ Teaceherrouter.get("/all-category", authenticateTeacher, async (req, res) => {
     console.log(error);
   }
 });
-// -------------------------- All Student Submissions Routes ----------------------------
 
-const mongoose = require("mongoose");
+// -------------------------- All Student Submissions Routes ----------------------------
 
 // ================= GET ALL SUBMISSIONS =================
 Teaceherrouter.get(
@@ -2086,6 +2086,7 @@ Teaceherrouter.put(
 );
 
 // -------------------------- Student Quiz Answers Routes ----------------------------
+
 // Get submissions needing grading
 Teaceherrouter.get(
   "/submissions-needing-grading",
@@ -2150,6 +2151,7 @@ Teaceherrouter.get(
     }
   }
 );
+
 // Get all quiz answers for a specific course
 Teaceherrouter.get(
   "/course/:courseId/quiz-answers",

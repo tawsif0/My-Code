@@ -9,12 +9,12 @@ const SubadminCreate = () => {
   const [form, setForm] = useState({
     username: "",
     email: "",
-    password: "",
+    password: ""
   });
   const [errors, setErrors] = useState({
     username: "",
     email: "",
-    password: "",
+    password: ""
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,12 +82,12 @@ const SubadminCreate = () => {
         "http://localhost:3500/api/auth/subadmin",
         {
           ...form,
-          email: form.email.toLowerCase(),
+          email: form.email.toLowerCase()
         },
         {
           headers: {
-            Authorization: `Bearer ${token}`,
-          },
+            Authorization: `Bearer ${token}`
+          }
         }
       );
 
@@ -147,6 +147,7 @@ const SubadminCreate = () => {
                 className={`w-full px-4 py-3 rounded-lg border ${
                   errors.username ? "border-red-500" : "border-gray-300"
                 } focus:ring-2 focus:ring-black focus:border-gray-600 `}
+                autoComplete="off"
               />
               {errors.username && (
                 <motion.p
@@ -174,6 +175,7 @@ const SubadminCreate = () => {
                 className={`w-full px-4 py-3 rounded-lg border ${
                   errors.email ? "border-red-500" : "border-gray-300"
                 } focus:ring-2 focus:ring-black focus:border-gray-600`}
+                autoComplete="off"
               />
               {errors.email && (
                 <motion.p
@@ -204,6 +206,7 @@ const SubadminCreate = () => {
                   } focus:ring-2 focus:ring-black focus:border-gray-600 pr-10`}
                   required
                   minLength="8"
+                  autoComplete="off"
                 />
                 <button
                   type="button"

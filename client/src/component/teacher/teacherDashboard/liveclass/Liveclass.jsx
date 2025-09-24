@@ -10,7 +10,7 @@ import {
   FiXCircle,
   FiChevronDown,
   FiChevronUp,
-  FiClock,
+  FiClock
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -43,8 +43,8 @@ const Liveclass = () => {
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("teacherToken")}`,
-            teacher_id: teacherId,
-          },
+            teacher_id: teacherId
+          }
         }
       );
 
@@ -52,7 +52,7 @@ const Liveclass = () => {
       const attendanceData = response.data.data.map((item) => ({
         ...item,
         attendanceStatus:
-          item.attendanceStatus ?? item.progress?.attendanceStatus ?? "pending",
+          item.attendanceStatus ?? item.progress?.attendanceStatus ?? "pending"
       }));
 
       setSubmissions(attendanceData);
@@ -81,7 +81,7 @@ const Liveclass = () => {
           classes: {},
           totalStudents: 0,
           presentStudents: 0,
-          absentStudents: 0,
+          absentStudents: 0
         };
       }
 
@@ -92,7 +92,7 @@ const Liveclass = () => {
           students: [],
           presentCount: 0,
           absentCount: 0,
-          totalCount: 0,
+          totalCount: 0
         };
       }
 
@@ -137,7 +137,7 @@ const Liveclass = () => {
   const toggleCourse = (courseKey) => {
     setExpandedCourses((prev) => ({
       ...prev,
-      [courseKey]: !prev[courseKey],
+      [courseKey]: !prev[courseKey]
     }));
   };
 
@@ -145,7 +145,7 @@ const Liveclass = () => {
   const toggleClass = (classKey) => {
     setExpandedClasses((prev) => ({
       ...prev,
-      [classKey]: !prev[classKey],
+      [classKey]: !prev[classKey]
     }));
   };
 
@@ -158,8 +158,8 @@ const Liveclass = () => {
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("teacherToken")}`,
-            teacher_id: teacherId,
-          },
+            teacher_id: teacherId
+          }
         }
       );
 
@@ -195,8 +195,8 @@ const Liveclass = () => {
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("teacherToken")}`,
-            teacher_id: teacherId,
-          },
+            teacher_id: teacherId
+          }
         }
       );
 
@@ -227,7 +227,7 @@ const Liveclass = () => {
         return {
           text: "Present",
           bg: "bg-green-100",
-          textColor: "text-green-800",
+          textColor: "text-green-800"
         };
       case "absent":
         return { text: "Absent", bg: "bg-red-100", textColor: "text-red-800" };
@@ -236,7 +236,7 @@ const Liveclass = () => {
         return {
           text: "Pending",
           bg: "bg-yellow-100",
-          textColor: "text-yellow-800",
+          textColor: "text-yellow-800"
         };
     }
   };
@@ -272,7 +272,7 @@ const Liveclass = () => {
         if (filteredStudents.length > 0) {
           filteredClasses[classKey] = {
             ...classItem,
-            students: filteredStudents,
+            students: filteredStudents
           };
         }
       });
@@ -280,7 +280,7 @@ const Liveclass = () => {
       if (Object.keys(filteredClasses).length > 0) {
         acc[courseKey] = {
           ...course,
-          classes: filteredClasses,
+          classes: filteredClasses
         };
       }
 
@@ -292,7 +292,7 @@ const Liveclass = () => {
   return (
     <div className="min-h-screen">
       <div className="flex w-full h-[100vh] bg-white overflow-hidden">
-        <div className="flex-1 h-full overflow-auto">
+        <div className="flex-1 h-full">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

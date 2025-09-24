@@ -11,6 +11,10 @@ const mongoose = require("mongoose");
 const path = require("path");
 const multer = require("multer");
 const uploads = require("../utils/upload");
+const fs = require("fs");
+const PDFDocument = require("pdfkit");
+const moment = require("moment");
+
 // Protected route - Get student profile
 Studentrouter.get("/profile/:id", studentAuth, async (req, res) => {
   try {
@@ -259,6 +263,7 @@ Studentrouter.post("/enroll/:courseId", async (req, res) => {
     });
   }
 });
+
 // Get enrolled courses for a student
 Studentrouter.get("/my-courses", async (req, res) => {
   try {
@@ -306,6 +311,7 @@ Studentrouter.get("/my-courses", async (req, res) => {
     });
   }
 });
+
 // Get enrolled courses for a specific student
 Studentrouter.post("/:courseId/enroll", studentAuth, async (req, res) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.courseId)) {
@@ -373,6 +379,7 @@ Studentrouter.post("/:courseId/enroll", studentAuth, async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
 Studentrouter.get("/enrolled-courses/:studentId", async (req, res) => {
   try {
     const { studentId } = req.params;
@@ -478,10 +485,10 @@ Studentrouter.get("/enrolled-courses/:studentId", async (req, res) => {
     });
   }
 });
+
 // Helper function to calculate overall progress
 function calculateOverallProgress(progressItems) {
   if (!progressItems || progressItems.length === 0) return 0;
-
   const completedItems = progressItems.filter((item) => item.completed).length;
   return Math.round((completedItems / progressItems.length) * 100);
 }
@@ -489,10 +496,8 @@ function calculateOverallProgress(progressItems) {
 // Helper function to calculate overall progress percentage
 function calculateOverallProgress(progressItems) {
   if (!progressItems || progressItems.length === 0) return 0;
-
   const totalItems = progressItems.length;
   const completedItems = progressItems.filter((item) => item.completed).length;
-
   return Math.round((completedItems / totalItems) * 100);
 }
 
@@ -520,7 +525,6 @@ Studentrouter.post("/:courseId/access", studentAuth, async (req, res) => {
     const now = new Date();
 
     if (!enrollment) {
-      // Create new enrollment if not exists
       enrollment = {
         studentId: studentId,
         enrolledAt: now,
@@ -543,7 +547,6 @@ Studentrouter.post("/:courseId/access", studentAuth, async (req, res) => {
       };
       course.enrollments.push(enrollment);
     } else {
-      // Update existing enrollment
       enrollment.lastAccessed = now;
       enrollment.accessHistory.push({
         accessedAt: now,
@@ -556,8 +559,6 @@ Studentrouter.post("/:courseId/access", studentAuth, async (req, res) => {
         enrollment.firstAccessedAt = now;
       }
     }
-
-    // Mark the enrollments array as modified
     course.markModified("enrollments");
     await course.save();
 
@@ -627,6 +628,7 @@ Studentrouter.get("/video/:filename", studentAuth, async (req, res) => {
     });
   }
 });
+
 // Get course progress for a student
 Studentrouter.get("/:courseId/progress", studentAuth, async (req, res) => {
   try {
@@ -738,7 +740,6 @@ Studentrouter.put(
             let isCorrect = false;
             let marksObtained = 0;
 
-            // Check answer correctness
             if (
               question.type === "mcq-single" ||
               question.type === "mcq-multiple"
@@ -755,7 +756,6 @@ Studentrouter.put(
                 correctAnswers.every((ans) => studentAnswers.includes(ans));
               marksObtained = isCorrect ? question.marks : 0;
             } else {
-              // For subjective answers, mark as incomplete (needs teacher review)
               isCorrect = false;
               marksObtained = 0;
             }
@@ -779,7 +779,6 @@ Studentrouter.put(
         );
       }
 
-      // Update last accessed for the entire enrollment
       course.enrollments[enrollmentIndex].lastAccessed = new Date();
 
       await course.save();
@@ -793,12 +792,12 @@ Studentrouter.put(
     }
   }
 );
+
 // Get enrolled courses by student ID
 Studentrouter.get("/enrolled/:studentId", async (req, res) => {
   try {
     const { studentId } = req.params;
 
-    // Validate studentId
     if (!mongoose.Types.ObjectId.isValid(studentId)) {
       return res.status(400).json({ message: "Invalid student ID" });
     }
@@ -807,8 +806,8 @@ Studentrouter.get("/enrolled/:studentId", async (req, res) => {
     const enrolledCourses = await Course.find({
       "enrollments.studentId": studentId
     })
-      .populate("instructor", "name email") // Populate instructor details
-      .select("-content -attachments -previousInstructors -ratings"); // Exclude large/unnecessary fields
+      .populate("instructor", "name email")
+      .select("-content -attachments -previousInstructors -ratings");
 
     if (!enrolledCourses || enrolledCourses.length === 0) {
       return res
@@ -816,9 +815,7 @@ Studentrouter.get("/enrolled/:studentId", async (req, res) => {
         .json({ message: "No enrolled courses found for this student" });
     }
 
-    // Format the response to include enrollment details for each course
     const formattedCourses = enrolledCourses.map((course) => {
-      // Find the specific enrollment for this student
       const enrollment = course.enrollments.find(
         (enroll) => enroll.studentId.toString() === studentId
       );
@@ -870,8 +867,6 @@ Studentrouter.get("/single-courses/:id", async (req, res) => {
   }
 });
 
-// Get course learning page with student progress
-
 // -----------------single-course----------------------------------
 Studentrouter.get("/course-overview/:id", async (req, res) => {
   try {
@@ -884,9 +879,6 @@ Studentrouter.get("/course-overview/:id", async (req, res) => {
     console.log(error);
   }
 });
-const fs = require("fs");
-const PDFDocument = require("pdfkit");
-const moment = require("moment");
 
 // Generate and download certificate
 Studentrouter.get("/certificate/:courseId/:studentId", async (req, res) => {

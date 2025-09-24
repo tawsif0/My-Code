@@ -4,7 +4,6 @@ const path = require("path");
 const fs = require("fs");
 const Country = require("../models/Country");
 const Criteria = require("../models/Criteria");
-
 const router = express.Router();
 
 // Configure multer for file uploads
@@ -20,7 +19,7 @@ const storage = multer.diskStorage({
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const extension = path.extname(file.originalname);
     cb(null, "flag-" + uniqueSuffix + extension);
-  },
+  }
 });
 
 // File filter for images only
@@ -29,7 +28,7 @@ const fileFilter = (req, file, cb) => {
     "image/jpeg",
     "image/png",
     "image/jpg",
-    "image/svg+xml",
+    "image/svg+xml"
   ];
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
@@ -42,8 +41,8 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
-  },
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  }
 });
 
 // GET all countries
@@ -122,14 +121,14 @@ router.post("/", upload.single("flag"), async (req, res) => {
     // Pair criteria with description
     const criteriaWithDesc = criteriaArray.map((c, i) => ({
       criteria: c,
-      description: descriptionArray[i]?.trim() || "",
+      description: descriptionArray[i]?.trim() || ""
     }));
 
     const newCountry = new Country({
       name: name.trim(),
       criteria: criteriaWithDesc,
       highlights: highlightsArray,
-      flag: req.file ? req.file.filename : null,
+      flag: req.file ? req.file.filename : null
     });
 
     await newCountry.save();
@@ -181,18 +180,18 @@ router.put("/:id", upload.single("flag"), async (req, res) => {
     const duplicate = await Country.findOne({
       _id: { $ne: id },
       name: name.trim(),
-      "criteria.criteria": { $in: criteriaArray },
+      "criteria.criteria": { $in: criteriaArray }
     });
     if (duplicate) {
       return res.status(400).json({
-        message: "This criteria is already used for this country",
+        message: "This criteria is already used for this country"
       });
     }
 
     // ✅ CORRECTED: Create proper criteria objects
     const criteriaWithDesc = criteriaArray.map((c, i) => ({
       criteria: c,
-      description: descriptionArray[i]?.trim() || "",
+      description: descriptionArray[i]?.trim() || ""
     }));
 
     // ✅ Update country fields with proper structure

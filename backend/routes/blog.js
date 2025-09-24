@@ -107,6 +107,7 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ message: "Error fetching blog" });
   }
 });
+
 // Get related blogs by category
 router.get("/related/:categoryId", async (req, res) => {
   try {
@@ -128,6 +129,7 @@ router.get("/related/:categoryId", async (req, res) => {
     res.status(500).json({ message: "Error fetching related blogs" });
   }
 });
+
 // Update Blog
 router.put("/:id", upload.single("image"), async (req, res) => {
   try {

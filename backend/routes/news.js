@@ -50,19 +50,19 @@ const newsUpload = multer({
   }
 });
 
-// ✅ GET all news (pagination optional)
+//  GET all news (pagination optional)
 router.get("/", async (req, res) => {
   try {
     const news = await News.find()
       .populate("category", "name")
       .sort({ createdAt: -1 });
-    res.status(200).json({ news }); // ✅ corrected
+    res.status(200).json({ news }); //  corrected
   } catch (err) {
     res.status(500).json({ message: "Error fetching news" }); // updated message
   }
 });
 
-// ✅ GET single news by ID
+//  GET single news by ID
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -98,7 +98,7 @@ router.get("/related/:categoryId", async (req, res) => {
     res.status(500).json({ message: "Error fetching related news" });
   }
 });
-// ✅ POST create news
+//  POST create news
 router.post("/", newsUpload.single("image"), async (req, res) => {
   try {
     const { title, description, category } = req.body;
@@ -142,7 +142,7 @@ router.post("/", newsUpload.single("image"), async (req, res) => {
   }
 });
 
-// ✅ PUT update news
+//  PUT update news
 router.put("/:id", newsUpload.single("image"), async (req, res) => {
   try {
     const { id } = req.params;
@@ -171,12 +171,12 @@ router.put("/:id", newsUpload.single("image"), async (req, res) => {
       return res.status(400).json({ message: "Invalid news category" });
     }
 
-    // ✅ Update fields
+    //  Update fields
     newsItem.title = title.trim();
     newsItem.description = description.trim();
     newsItem.category = category;
 
-    // ✅ Handle new image
+    //  Handle new image
     if (imageFile) {
       newsItem.image = imageFile.filename;
     }
@@ -194,7 +194,7 @@ router.put("/:id", newsUpload.single("image"), async (req, res) => {
   }
 });
 
-// ✅ DELETE news
+//  DELETE news
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -212,7 +212,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-// ✅ GET news by category
+//  GET news by category
 router.get("/category/:categoryId", async (req, res) => {
   try {
     const { categoryId } = req.params;

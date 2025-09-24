@@ -30,7 +30,7 @@ const storage = multer.diskStorage({
     }
 
     cb(null, finalName);
-  },
+  }
 });
 
 const upload = multer({ storage: storage });
@@ -44,6 +44,7 @@ router.get("/", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
 router.get("/applications", async (req, res) => {
   try {
     const applications = await Application.find()
@@ -53,14 +54,14 @@ router.get("/applications", async (req, res) => {
     res.status(200).json({
       success: true,
       count: applications.length,
-      applications,
+      applications
     });
   } catch (error) {
     console.error("Error fetching applications:", error);
     res.status(500).json({
       success: false,
       message: "Server Error",
-      error: error.message,
+      error: error.message
     });
   }
 });
@@ -90,7 +91,7 @@ router.post("/create", async (req, res) => {
       description,
       applyLink,
       hasCustomForm,
-      customFormFields,
+      customFormFields
     });
 
     await job.save();
@@ -99,6 +100,7 @@ router.post("/create", async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
+
 router.put("/:id", async (req, res) => {
   try {
     const { title, description, applyLink, hasCustomForm, customFormFields } =
@@ -111,7 +113,7 @@ router.put("/:id", async (req, res) => {
         description,
         applyLink: hasCustomForm ? "" : applyLink,
         hasCustomForm,
-        customFormFields: hasCustomForm ? customFormFields : [],
+        customFormFields: hasCustomForm ? customFormFields : []
       },
       { new: true, runValidators: true }
     );
@@ -140,6 +142,7 @@ router.delete("/:id", async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
 // Apply for a job
 router.post("/apply", upload.any(), async (req, res) => {
   try {
@@ -173,7 +176,7 @@ router.post("/apply", upload.any(), async (req, res) => {
         if (fieldId.match(/^[0-9a-fA-F]{24}$/)) {
           fieldData.push({
             fieldId: fieldId,
-            value: req.body[key],
+            value: req.body[key]
           });
         }
       }
@@ -196,7 +199,7 @@ router.post("/apply", upload.any(), async (req, res) => {
           files.push({
             fieldId: fieldId,
             filename: file.originalname,
-            path: "/jobs/" + file.filename,
+            path: "/jobs/" + file.filename
           });
         }
       });
@@ -206,7 +209,7 @@ router.post("/apply", upload.any(), async (req, res) => {
     const application = new Application({
       jobId,
       fieldData,
-      files,
+      files
     });
 
     await application.save();
@@ -215,6 +218,7 @@ router.post("/apply", upload.any(), async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
+
 // Delete a job (and all its applications)
 router.delete("/:id", async (req, res) => {
   try {
@@ -248,4 +252,5 @@ router.delete("/applications/:id", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
 module.exports = router;

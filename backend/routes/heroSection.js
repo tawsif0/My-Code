@@ -4,7 +4,6 @@ const HeroSection = require("../models/HeroSection");
 const upload = require("../utils/multer");
 const fs = require("fs");
 const path = require("path");
-
 const router = express.Router();
 
 // POST API to add a new hero section (with image and description)

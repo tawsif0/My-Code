@@ -369,6 +369,7 @@ const TeacherRegistration = ({ setNotificationCount }) => {
                   className={`w-full px-4 py-3 rounded-lg border ${
                     errors.email ? "border-red-500" : "border-gray-700"
                   } focus:ring-2 focus:ring-black focus:border-gray-500`}
+                  autoComplete="off"
                 />
                 {errors.email && (
                   <motion.p
@@ -397,6 +398,7 @@ const TeacherRegistration = ({ setNotificationCount }) => {
                     className={`w-full px-4 py-3 rounded-lg border ${
                       errors.password ? "border-red-500" : "border-gray-700"
                     } focus:ring-2 focus:ring-black focus:border-gray-500 pr-10`}
+                    autoComplete="off"
                   />
                   <button
                     type="button"
@@ -431,6 +433,7 @@ const TeacherRegistration = ({ setNotificationCount }) => {
                   className={`w-full px-4 py-3 rounded-lg border ${
                     errors.full_name ? "border-red-500" : "border-gray-700"
                   } focus:ring-2 focus:ring-black focus:border-gray-500`}
+                  autoComplete="off"
                 />
                 {errors.full_name && (
                   <motion.p
@@ -457,6 +460,7 @@ const TeacherRegistration = ({ setNotificationCount }) => {
                   className={`w-full px-4 py-3 rounded-lg border ${
                     errors.phone ? "border-red-500" : "border-gray-700"
                   } focus:ring-2 focus:ring-black focus:border-gray-500`}
+                  autoComplete="off"
                 />
                 {errors.phone && (
                   <motion.p
@@ -539,6 +543,7 @@ const TeacherRegistration = ({ setNotificationCount }) => {
                   className={`w-full px-4 py-3 rounded-lg border ${
                     errors.qualifications ? "border-red-500" : "border-gray-700"
                   } `}
+                  autoComplete="off"
                 />
                 {errors.qualifications && (
                   <motion.p
@@ -567,6 +572,7 @@ const TeacherRegistration = ({ setNotificationCount }) => {
                   className={`w-full px-4 py-3 rounded-lg border ${
                     errors.linkedin_url ? "border-red-500" : "border-gray-700"
                   } focus:ring-2 focus:ring-black focus:border-gray-500`}
+                  autoComplete="off"
                 />
                 {errors.linkedin_url && (
                   <motion.p
@@ -597,6 +603,7 @@ const TeacherRegistration = ({ setNotificationCount }) => {
                   className={`w-full px-4 py-3 rounded-lg border ${
                     errors.hourly_rate ? "border-red-500" : "border-gray-700"
                   } focus:ring-2 focus:ring-black focus:border-gray-500 appearance-none`}
+                  autoComplete="off"
                 />
                 {errors.hourly_rate && (
                   <motion.p

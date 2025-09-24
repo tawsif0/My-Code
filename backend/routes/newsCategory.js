@@ -1,6 +1,5 @@
 const express = require("express");
 const NewsCategory = require("../models/NewsCategory");
-
 const router = express.Router();
 
 // GET all news categories
@@ -24,25 +23,28 @@ router.post("/", async (req, res) => {
     }
 
     // Check if category already exists
-    const existingCategory = await NewsCategory.findOne({ 
-      name: { $regex: new RegExp(`^${name.trim()}$`, "i") } 
+    const existingCategory = await NewsCategory.findOne({
+      name: { $regex: new RegExp(`^${name.trim()}$`, "i") }
     });
-    
+
     if (existingCategory) {
       return res.status(400).json({ message: "News category already exists" });
     }
 
     const newCategory = new NewsCategory({ name: name.trim() });
     await newCategory.save();
-    
-    res.status(201).json({ message: "News category created successfully", category: newCategory });
+
+    res.status(201).json({
+      message: "News category created successfully",
+      category: newCategory
+    });
   } catch (err) {
     console.error(err);
-    
-    if (err.name === 'ValidationError') {
+
+    if (err.name === "ValidationError") {
       return res.status(400).json({ message: err.message });
     }
-    
+
     res.status(500).json({ message: "Error creating news category" });
   }
 });
@@ -64,30 +66,34 @@ router.put("/:id", async (req, res) => {
     }
 
     // Check if name already exists (excluding current category)
-    const existingCategory = await NewsCategory.findOne({ 
+    const existingCategory = await NewsCategory.findOne({
       name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
-      _id: { $ne: id } 
+      _id: { $ne: id }
     });
-    
+
     if (existingCategory) {
-      return res.status(400).json({ message: "News category name already exists" });
+      return res
+        .status(400)
+        .json({ message: "News category name already exists" });
     }
 
     category.name = name.trim();
     await category.save();
 
-    res.status(200).json({ message: "News category updated successfully", category });
+    res
+      .status(200)
+      .json({ message: "News category updated successfully", category });
   } catch (err) {
     console.error(err);
-    
-    if (err.name === 'ValidationError') {
+
+    if (err.name === "ValidationError") {
       return res.status(400).json({ message: err.message });
     }
-    
-    if (err.name === 'CastError') {
+
+    if (err.name === "CastError") {
       return res.status(400).json({ message: "Invalid category ID" });
     }
-    
+
     res.status(500).json({ message: "Error updating news category" });
   }
 });
@@ -106,11 +112,11 @@ router.delete("/:id", async (req, res) => {
     res.status(200).json({ message: "News category deleted successfully" });
   } catch (err) {
     console.error(err);
-    
-    if (err.name === 'CastError') {
+
+    if (err.name === "CastError") {
       return res.status(400).json({ message: "Invalid category ID" });
     }
-    
+
     res.status(500).json({ message: "Error deleting news category" });
   }
 });

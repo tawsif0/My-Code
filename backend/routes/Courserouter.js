@@ -7,7 +7,7 @@ const mongoose = require("mongoose");
 Courserouter.get("/student-courses/:userid", async (req, res) => {
   try {
     const courses = await Course.find({
-      "enrollments.studentId": req.params.userid,
+      "enrollments.studentId": req.params.userid
     })
       .select(
         "title description thumbnail instructor duration totalStudents averageRating"
@@ -38,7 +38,7 @@ Courserouter.get("/student-courses/:userid", async (req, res) => {
             score: quiz.score,
             maxScore: quiz.maxScore,
             percentage: quiz.percentage,
-            passed: quiz.passed,
+            passed: quiz.passed
           })) || [];
 
       return {
@@ -46,7 +46,7 @@ Courserouter.get("/student-courses/:userid", async (req, res) => {
         progress,
         quizResults,
         enrollmentDate: enrollment?.enrolledAt,
-        completed: enrollment?.completed || false,
+        completed: enrollment?.completed || false
       };
     });
 
@@ -93,7 +93,7 @@ Courserouter.get("/single-courses/:id", async (req, res) => {
         score: progress?.score,
         maxScore: progress?.maxScore,
         attempts: progress?.attempts,
-        lastAccessed: progress?.lastAccessed,
+        lastAccessed: progress?.lastAccessed
       };
     });
 
@@ -112,8 +112,8 @@ Courserouter.get("/single-courses/:id", async (req, res) => {
       enrollmentStatus: {
         enrolledAt: enrollment.enrolledAt,
         completed: enrollment.completed,
-        certificate: enrollment.certificate,
-      },
+        certificate: enrollment.certificate
+      }
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -142,7 +142,7 @@ Courserouter.post("/enroll/:courseId", async (req, res) => {
     // Add enrollment
     course.enrollments.push({
       studentId: req.user._id,
-      enrolledAt: new Date(),
+      enrolledAt: new Date()
     });
 
     course.totalStudents += 1;
@@ -150,7 +150,7 @@ Courserouter.post("/enroll/:courseId", async (req, res) => {
 
     res.json({
       success: true,
-      message: "Successfully enrolled in the course",
+      message: "Successfully enrolled in the course"
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -206,7 +206,7 @@ Courserouter.post("/submit-quiz", async (req, res) => {
         bestScore: 0,
         bestAttempt: 0,
         status: "in-progress",
-        gradingStatus: "not-graded",
+        gradingStatus: "not-graded"
       };
       enrollment.progress.push(progress);
     }
@@ -222,7 +222,7 @@ Courserouter.post("/submit-quiz", async (req, res) => {
       marksObtained: answer.marksObtained,
       maxMarks: answer.maxMarks,
       explanation: answer.explanation,
-      needsManualGrading: answer.needsManualGrading,
+      needsManualGrading: answer.needsManualGrading
     }));
 
     progress.score = results.score;
@@ -247,7 +247,7 @@ Courserouter.post("/submit-quiz", async (req, res) => {
       accessedAt: now,
       duration: 0,
       contentItemId: quiz._id,
-      action: "quiz-submitted",
+      action: "quiz-submitted"
     });
 
     // Check course completion
@@ -284,7 +284,7 @@ Courserouter.post("/submit-quiz", async (req, res) => {
       attempts: progress.attempts,
       remainingAttempts: quiz.maxAttempts - progress.attempts,
       certicateUrl: certificateUrl,
-      courseCompleted: allCompleted,
+      courseCompleted: allCompleted
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -333,7 +333,7 @@ Courserouter.post("/track-progress", async (req, res) => {
         progress: 0,
         completed: false,
         timeSpent: 0,
-        status: "in-progress",
+        status: "in-progress"
       };
       enrollment.progress.push(progressRecord);
     }
@@ -354,7 +354,7 @@ Courserouter.post("/track-progress", async (req, res) => {
       accessedAt: now,
       duration,
       contentItemId: contentItem._id,
-      action: action || "viewed",
+      action: action || "viewed"
     });
 
     enrollment.lastAccessed = now;
@@ -382,7 +382,7 @@ Courserouter.post("/track-progress", async (req, res) => {
       success: true,
       progress: progressRecord.progress,
       completed: progressRecord.completed,
-      courseCompleted: allCompleted,
+      courseCompleted: allCompleted
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -427,7 +427,7 @@ Courserouter.get("/:courseId/student-submissions", async (req, res) => {
                 maxMarks: answer.maxMarks,
                 teacherFeedback: answer.teacherFeedback,
                 needsGrading: answer.needsManualGrading && !answer.gradedBy,
-                graded: !!answer.gradedBy,
+                graded: !!answer.gradedBy
               };
             }),
             score: progress.score,
@@ -436,7 +436,7 @@ Courserouter.get("/:courseId/student-submissions", async (req, res) => {
             passed: progress.passed,
             attempts: progress.attempts,
             submittedAt: progress.completedAt,
-            gradingStatus: progress.gradingStatus,
+            gradingStatus: progress.gradingStatus
           };
         });
 
@@ -448,7 +448,7 @@ Courserouter.get("/:courseId/student-submissions", async (req, res) => {
         enrolledAt: enrollment.enrolledAt,
         completed: enrollment.completed,
         quizSubmissions,
-        totalTimeSpent: enrollment.totalTimeSpent,
+        totalTimeSpent: enrollment.totalTimeSpent
       };
     });
 
@@ -525,7 +525,7 @@ Courserouter.post("/grade-submission", async (req, res) => {
       accessedAt: now,
       duration: 0,
       contentItemId: quizId,
-      action: "graded",
+      action: "graded"
     });
 
     await course.save();
@@ -536,7 +536,7 @@ Courserouter.post("/grade-submission", async (req, res) => {
       maxScore: progress.maxScore,
       percentage: progress.percentage,
       passed: progress.passed,
-      gradingStatus: progress.gradingStatus,
+      gradingStatus: progress.gradingStatus
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -589,10 +589,7 @@ Courserouter.post(
         issuedAt: new Date(),
         issuedBy: req.user._id,
         downloadUrl: certificateUrl,
-        verificationCode: Math.random()
-          .toString(36)
-          .substr(2, 12)
-          .toUpperCase(),
+        verificationCode: Math.random().toString(36).substr(2, 12).toUpperCase()
       };
 
       enrollment.status = "certified";
@@ -600,7 +597,7 @@ Courserouter.post(
 
       res.json({
         success: true,
-        certificate: enrollment.certificate,
+        certificate: enrollment.certificate
       });
     } catch (error) {
       res.status(500).json({ message: error.message });
