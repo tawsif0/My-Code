@@ -3,6 +3,7 @@ import Sidebar from "./sidebar";
 import Settings from "./settings";
 import EmployeeConsultationManagement from "./consultancy/EmployeeConsultationManagement";
 import VisaManagement from "./visa/VisaManagement";
+import EmployeeAnalytics from "./EmployeeAnalytics";
 
 const EmployeeDashboard = () => {
   // Initialize state with proper structure from localStorage
@@ -36,17 +37,7 @@ const EmployeeDashboard = () => {
       case "settings":
         return <Settings />;
       default:
-        return (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-800">
-              Employee Dashboard Overview
-            </h1>
-            <p className="mt-2 text-gray-600">
-              Welcome to your employee dashboard. Use the sidebar to manage your
-              account settings.
-            </p>
-          </div>
-        );
+        return <EmployeeAnalytics />;
     }
   };
 

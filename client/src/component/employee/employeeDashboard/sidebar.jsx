@@ -10,7 +10,7 @@ import {
   FiChevronUp,
   FiLogOut,
   FiBook,
-  FiGlobe
+  FiGlobe,
 } from "react-icons/fi";
 import axios from "axios";
 import { toast } from "react-hot-toast";
@@ -24,7 +24,7 @@ const EmployeeSidebar = ({ activeView, setActiveView }) => {
     username: "",
     email: "",
     phoneNumber: "",
-    avatarColor: "bg-gradient-to-r from-purple-500 to-pink-500"
+    avatarColor: "bg-gradient-to-r from-purple-500 to-pink-500",
   });
   const [loading, setLoading] = useState(true);
   const [expandedMenus, setExpandedMenus] = useState({});
@@ -38,8 +38,8 @@ const EmployeeSidebar = ({ activeView, setActiveView }) => {
         if (!token) throw new Error("No token found");
         const response = await axios.get(`${base_url}/api/employee/me`, {
           headers: {
-            "x-auth-token": token
-          }
+            "x-auth-token": token,
+          },
         });
 
         const gradients = [
@@ -47,7 +47,7 @@ const EmployeeSidebar = ({ activeView, setActiveView }) => {
           "bg-gradient-to-r from-blue-500 to-teal-400",
           "bg-gradient-to-r from-amber-500 to-pink-500",
           "bg-gradient-to-r from-emerald-500 to-blue-500",
-          "bg-gradient-to-r from-violet-500 to-fuchsia-500"
+          "bg-gradient-to-r from-violet-500 to-fuchsia-500",
         ];
         const randomGradient =
           gradients[Math.floor(Math.random() * gradients.length)];
@@ -56,7 +56,7 @@ const EmployeeSidebar = ({ activeView, setActiveView }) => {
           username: response.data.employee.username,
           email: response.data.employee.email,
           phoneNumber: response.data.employee.phoneNumber,
-          avatarColor: randomGradient
+          avatarColor: randomGradient,
         });
         setLoading(false);
       } catch (err) {
@@ -75,20 +75,20 @@ const EmployeeSidebar = ({ activeView, setActiveView }) => {
     {
       name: "Consultancy",
       icon: <FiBook />,
-      children: [{ name: "My Consultancy", component: "myConsultancy" }]
+      children: [{ name: "My Consultancy", component: "myConsultancy" }],
     },
     {
       name: "Visa Processing", // Add this new menu item
       icon: <FiGlobe />,
-      children: [{ name: "Visa Management", component: "visaManagement" }]
+      children: [{ name: "Visa Management", component: "visaManagement" }],
     },
-    { name: "settings", icon: <FiSettings />, component: "settings" }
+    { name: "settings", icon: <FiSettings />, component: "settings" },
   ];
 
   const toggleMenu = (menuName) => {
     setExpandedMenus((prev) => ({
       ...prev,
-      [menuName]: !prev[menuName]
+      [menuName]: !prev[menuName],
     }));
   };
 
@@ -104,7 +104,7 @@ const EmployeeSidebar = ({ activeView, setActiveView }) => {
   };
 
   const confirmLogout = () => {
-    localStorage.removeItem("token");
+    localStorage.removeItem("empToken");
     localStorage.removeItem("employeeData");
     toast.success("Logout successful!");
     setTimeout(() => {

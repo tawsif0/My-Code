@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import { toast } from "react-toastify";
 
 const AuthContext = createContext();
 
@@ -16,54 +17,90 @@ export const AuthProvider = ({ children }) => {
   const [studentLoading, setStudentLoading] = useState(true);
   const [studentError, setStudentError] = useState(null);
 
-  // Teacher state (NEW)
+  // Teacher state
   const [teacherData, setTeacherData] = useState(null);
   const [teacherLoading, setTeacherLoading] = useState(true);
   const [teacherError, setTeacherError] = useState(null);
 
-  // Get admin auth data
+  // Employee state
+  const [employeeData, setEmployeeData] = useState(null);
+  const [employeeLoading, setEmployeeLoading] = useState(true);
+  const [employeeError, setEmployeeError] = useState(null);
+
+  // Get auth data
   const getAdminAuthData = () => ({
     token: localStorage.getItem("token"),
-    userInfo: JSON.parse(localStorage.getItem("admin") || "null")
+    userInfo: JSON.parse(localStorage.getItem("admin") || "null"),
   });
 
-  // Get student auth data
   const getStudentAuthData = () => ({
     token: localStorage.getItem("studentToken"),
-    studentInfo: JSON.parse(localStorage.getItem("studentData") || "null")
+    studentInfo: JSON.parse(localStorage.getItem("studentData") || "null"),
   });
 
-  // Get teacher auth data (NEW)
   const getTeacherAuthData = () => ({
     token: localStorage.getItem("teacherToken"),
-    teacherInfo: JSON.parse(localStorage.getItem("teacherData") || "null")
+    teacherInfo: JSON.parse(localStorage.getItem("teacherData") || "null"),
   });
 
-  // Initialize student data from localStorage immediately
+  const getEmployeeAuthData = () => ({
+    token: localStorage.getItem("empToken"),
+  });
+
+  // Initialize student, teacher, and employee from localStorage
   useEffect(() => {
-    const { token, studentInfo } = getStudentAuthData();
+    const { token: sToken, studentInfo } = getStudentAuthData();
+    if (sToken && studentInfo) setStudentData(studentInfo);
+    setStudentLoading(false);
 
-    if (token && studentInfo) {
-      setStudentData(studentInfo);
-      setStudentLoading(false);
-    } else {
-      setStudentLoading(false);
-    }
-
-    // initialize teacher from localStorage immediately (NEW)
     const { token: tToken, teacherInfo } = getTeacherAuthData();
-    if (tToken && teacherInfo) {
-      setTeacherData(teacherInfo);
-      setTeacherLoading(false);
-    } else {
-      setTeacherLoading(false);
-    }
-  }, []);
+    if (tToken && teacherInfo) setTeacherData(teacherInfo);
+    setTeacherLoading(false);
 
-  // Memoized fetch function for admin
+    const { token: eToken } = getEmployeeAuthData();
+    if (!eToken) {
+      setEmployeeLoading(false);
+      return;
+    }
+
+    const fetchEmployeeData = async () => {
+      try {
+        const response = await axios.get(`${base_url}/api/employee/me`, {
+          headers: { "x-auth-token": eToken },
+        });
+
+        const gradients = [
+          "bg-gradient-to-r from-purple-500 to-pink-500",
+          "bg-gradient-to-r from-blue-500 to-teal-400",
+          "bg-gradient-to-r from-amber-500 to-pink-500",
+          "bg-gradient-to-r from-emerald-500 to-blue-500",
+          "bg-gradient-to-r from-violet-500 to-fuchsia-500",
+        ];
+        const randomGradient =
+          gradients[Math.floor(Math.random() * gradients.length)];
+
+        setEmployeeData({
+          username: response.data.employee.username,
+          email: response.data.employee.email,
+          phoneNumber: response.data.employee.phoneNumber,
+          avatarColor: randomGradient,
+        });
+      } catch (err) {
+        toast.error("Failed to load employee data");
+        setEmployeeError(
+          err.response?.data?.message || "Failed to fetch employee"
+        );
+      } finally {
+        setEmployeeLoading(false);
+      }
+    };
+
+    fetchEmployeeData();
+  }, [base_url]);
+
+  // Admin fetch
   const fetchAdminProfile = useCallback(async () => {
     const { token, userInfo } = getAdminAuthData();
-
     if (!token || !userInfo?._id) {
       setAdminLoading(false);
       return;
@@ -72,16 +109,12 @@ export const AuthProvider = ({ children }) => {
     try {
       setAdminLoading(true);
       setAdminError(null);
-
       const response = await axios.get(
         `${base_url}/api/admin/profile/${userInfo._id}`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
-
       setAdminData(response.data.profile);
     } catch (err) {
       setAdminError(
@@ -97,10 +130,9 @@ export const AuthProvider = ({ children }) => {
     }
   }, [base_url]);
 
-  // Fetch fresh student profile data
+  // Student fetch
   const fetchStudentProfile = useCallback(async () => {
     const { token, studentInfo } = getStudentAuthData();
-
     if (!token || !studentInfo?._id) {
       setStudentData(null);
       setStudentLoading(false);
@@ -110,27 +142,21 @@ export const AuthProvider = ({ children }) => {
     try {
       setStudentLoading(true);
       setStudentError(null);
-
       const response = await axios.get(
         `${base_url}/api/student/profile/${studentInfo._id}`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
-
-      const studentDataResp = response.data.student;
-
-      setStudentData(studentDataResp);
-
-      // Update localStorage with fresh data
-      localStorage.setItem("studentData", JSON.stringify(studentDataResp));
+      setStudentData(response.data.student);
+      localStorage.setItem(
+        "studentData",
+        JSON.stringify(response.data.student)
+      );
     } catch (err) {
       setStudentError(
         err.response?.data?.message || "Failed to fetch student profile"
       );
-
       if (err.response?.status === 401) {
         localStorage.removeItem("studentToken");
         localStorage.removeItem("studentData");
@@ -141,10 +167,9 @@ export const AuthProvider = ({ children }) => {
     }
   }, [base_url]);
 
-  // Fetch teacher profile (NEW) - matches the pattern used for student/admin
+  // Teacher fetch
   const fetchTeacherProfile = useCallback(async () => {
     const { token, teacherInfo } = getTeacherAuthData();
-
     if (!token || !teacherInfo?._id) {
       setTeacherData(null);
       setTeacherLoading(false);
@@ -154,27 +179,19 @@ export const AuthProvider = ({ children }) => {
     try {
       setTeacherLoading(true);
       setTeacherError(null);
-
       const response = await axios.get(
         `${base_url}/api/teacher/teacher-profile/${teacherInfo._id}`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
       const teacherDataResp =
         response.data.data || response.data.teacher || null;
-
       if (teacherDataResp) {
         setTeacherData(teacherDataResp);
-        // sync localStorage
         localStorage.setItem("teacherData", JSON.stringify(teacherDataResp));
-      } else {
-        // If API returned success false or unexpected shape, clear
-        setTeacherData(null);
-      }
+      } else setTeacherData(null);
     } catch (err) {
       setTeacherError(err.response?.data?.message || "Failed to fetch teacher");
       if (err.response?.status === 401) {
@@ -187,107 +204,37 @@ export const AuthProvider = ({ children }) => {
     }
   }, [base_url]);
 
-  // Initial fetch on mount for admin only (keeps original behavior)
-  useEffect(() => {
-    fetchAdminProfile();
-  }, [fetchAdminProfile]);
-
-  // ALSO fetch teacher profile on mount (NEW - this was missing in my earlier snippet)
-  useEffect(() => {
-    fetchTeacherProfile();
-  }, [fetchTeacherProfile]);
-
-  // 1. FIRST: Add updateStudentData
-  const updateStudentData = useCallback((updatedData) => {
-    // Update context state
-    setStudentData(updatedData);
-
-    // Update localStorage
-    localStorage.setItem("studentData", JSON.stringify(updatedData));
+  // Update functions
+  const updateStudentData = useCallback((data) => {
+    setStudentData(data);
+    localStorage.setItem("studentData", JSON.stringify(data));
   }, []);
 
-  // Add updateTeacherData (NEW)
-  const updateTeacherData = useCallback((updatedData) => {
-    setTeacherData(updatedData);
-    localStorage.setItem("teacherData", JSON.stringify(updatedData));
+  const updateTeacherData = useCallback((data) => {
+    setTeacherData(data);
+    localStorage.setItem("teacherData", JSON.stringify(data));
   }, []);
 
-  // Listen for storage changes
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const adminAuth = getAdminAuthData();
-      const studentAuth = getStudentAuthData();
-      const teacherAuth = getTeacherAuthData();
-
-      if (!adminAuth.token || !adminAuth.userInfo) {
-        clearAdminData();
-      } else {
-        fetchAdminProfile();
-      }
-
-      if (!studentAuth.token || !studentAuth.studentInfo) {
-        clearStudentData();
-      } else {
-        setStudentData(studentAuth.studentInfo);
-        fetchStudentProfile();
-      }
-
-      // Teacher sync (NEW)
-      if (!teacherAuth.token || !teacherAuth.teacherInfo) {
-        clearTeacherData();
-      } else {
-        setTeacherData(teacherAuth.teacherInfo);
-        fetchTeacherProfile();
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, [fetchAdminProfile, fetchStudentProfile, fetchTeacherProfile]);
-
-  // Force immediate update from localStorage
-  const forceUpdateFromStorage = useCallback(() => {
-    const { token, studentInfo } = getStudentAuthData();
-
-    if (token && studentInfo) {
-      setStudentData(studentInfo);
-      setStudentLoading(false);
-      setStudentError(null);
-    } else {
-      setStudentData(null);
-      setStudentLoading(false);
-    }
-  }, []);
-
+  // Clear functions
   const clearAdminData = () => {
     setAdminData(null);
     setAdminError(null);
     setAdminLoading(false);
   };
-
   const clearStudentData = () => {
     setStudentData(null);
     setStudentError(null);
     setStudentLoading(false);
   };
-
-  // Clear teacher data (NEW)
   const clearTeacherData = () => {
     setTeacherData(null);
     setTeacherError(null);
     setTeacherLoading(false);
   };
-
-  const refreshAdminData = () => {
-    fetchAdminProfile();
-  };
-
-  const refreshStudentData = () => {
-    fetchStudentProfile();
-  };
-
-  const refreshTeacherData = () => {
-    fetchTeacherProfile();
+  const clearEmployeeData = () => {
+    setEmployeeData(null);
+    setEmployeeError(null);
+    setEmployeeLoading(false);
   };
 
   return (
@@ -297,7 +244,7 @@ export const AuthProvider = ({ children }) => {
         adminData,
         adminLoading,
         adminError,
-        fetchAdminProfile: refreshAdminData,
+        fetchAdminProfile,
         clearAdminData,
         adminRole: adminData?.role || localStorage.getItem("role"),
 
@@ -305,33 +252,40 @@ export const AuthProvider = ({ children }) => {
         studentData,
         studentLoading,
         studentError,
-        fetchStudentProfile: refreshStudentData,
-        forceUpdateFromStorage,
+        fetchStudentProfile,
         updateStudentData,
         clearStudentData,
 
-        // Teacher (NEW)
+        // Teacher
         teacherData,
         teacherLoading,
         teacherError,
-        fetchTeacherProfile: refreshTeacherData,
+        fetchTeacherProfile,
         updateTeacherData,
         clearTeacherData,
 
-        // Combined helper functions
-        isAuthenticated: () => {
-          return (
-            !!localStorage.getItem("token") ||
-            !!localStorage.getItem("studentToken") ||
-            !!localStorage.getItem("teacherToken")
-          );
-        },
-        getUserRole: () => {
-          return (
-            localStorage.getItem("role") ||
-            (teacherData ? "teacher" : studentData ? "student" : "admin")
-          );
-        }
+        // Employee
+        employeeData,
+        employeeLoading,
+        employeeError,
+        clearEmployeeData,
+
+        // Helpers
+        isAuthenticated: () =>
+          !!localStorage.getItem("token") ||
+          !!localStorage.getItem("studentToken") ||
+          !!localStorage.getItem("teacherToken") ||
+          !!localStorage.getItem("empToken"),
+
+        getUserRole: () =>
+          localStorage.getItem("role") ||
+          (employeeData
+            ? "employee"
+            : teacherData
+            ? "teacher"
+            : studentData
+            ? "student"
+            : "admin"),
       }}
     >
       {children}

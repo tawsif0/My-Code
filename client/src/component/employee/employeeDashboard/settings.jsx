@@ -196,6 +196,13 @@ const EmployeeSettings = () => {
       setLoading({ ...loading, password: false });
     }
   };
+  const gradients = [
+    "bg-gradient-to-r from-purple-500 to-pink-500",
+    "bg-gradient-to-r from-blue-500 to-teal-400",
+    "bg-gradient-to-r from-amber-500 to-pink-500",
+    "bg-gradient-to-r from-emerald-500 to-blue-500",
+    "bg-gradient-to-r from-violet-500 to-fuchsia-500",
+  ];
 
   // Handle profile photo change
 
@@ -216,13 +223,22 @@ const EmployeeSettings = () => {
 
       <div className="p-6">
         {/* Profile Photo Section */}
-        <div className="flex flex-col sm:flex-row items-center mb-8 gap-6">
+        <div className="flex flex-col sm:flex-row items-center mb-8 gap-4">
+          {/* Avatar */}
+          <div
+            className={`w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold ${
+              gradients[Math.floor(Math.random() * gradients.length)]
+            }`}
+          >
+            {profile.username ? profile.username.charAt(0).toUpperCase() : "E"}
+          </div>
+
           <div className="flex-1 text-center sm:text-left">
-            <h2 className="text-xl font-semibold text-gray-800">
+            <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2 mb-1">
               {profile.username || "Employee"}
             </h2>
-            <p className="text-gray-600">{profile.email}</p>
-            <div className="mt-2 flex items-center justify-center sm:justify-start space-x-4 text-sm text-gray-500">
+            <p className="text-gray-600 mb-1">{profile.email}</p>
+            <div className="flex items-center justify-center sm:justify-start space-x-4 text-sm text-gray-500">
               <span>
                 Joined {profile.createdAt ? formatDate(profile.createdAt) : ""}
               </span>
@@ -231,7 +247,7 @@ const EmployeeSettings = () => {
         </div>
 
         {/* Profile Information Section */}
-        <div className="space-y-6">
+        <div className="space-y-6 ml-2">
           {/* Username Field */}
           <div className="border-b border-gray-100 pb-6">
             <div className="flex justify-between items-center mb-3">
