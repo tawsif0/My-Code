@@ -73,7 +73,6 @@ const Header = () => {
     { name: "About", path: "/about" },
     { name: "Services", path: "/services" },
     { name: "Countries", path: "/countries" },
-
     {
       name: "Courses",
       path: "/courses",
@@ -321,7 +320,7 @@ const Header = () => {
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              className="lg:hidden focus:outline-none rounded-xl hover:bg-gray-100 transition-colors duration-300 bg-white/80"
+              className="lg:hidden focus:outline-none rounded-xl hover:bg-gray-100 transition-colors duration-300"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label="Toggle menu"
             >
@@ -352,11 +351,11 @@ const Header = () => {
           </div>
         </div>
 
-        {/* Mobile menu with animation */}
+        {/* Mobile menu with animation - FIXED VERSION */}
         <AnimatePresence>
           {isMenuOpen && (
             <motion.div
-              className="lg:hidden mt-4 pb-4 rounded-2xl bg-white/95 backdrop-blur-xl shadow-2xl border border-white/20"
+              className="lg:hidden absolute left-0 right-0 top-full mt-2 mx-4 rounded-2xl bg-white/95 backdrop-blur-xl shadow-2xl border border-white/20 z-50"
               initial={{ opacity: 0, y: -20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -20, scale: 0.95 }}
@@ -371,7 +370,7 @@ const Header = () => {
                     className={({ isActive }) =>
                       `flex items-center px-4 py-3 rounded-xl transition-all duration-300 space-x-3 ${
                         isActive
-                          ? "text-[#004080] font-bold "
+                          ? "text-[#004080] font-bold bg-blue-50/50"
                           : "text-gray-700 hover:text-[#004080] font-medium hover:bg-gray-50/80"
                       }`
                     }
@@ -381,17 +380,20 @@ const Header = () => {
                   </NavLink>
                 ))}
 
-                {/* Register button in mobile */}
+                {/* Register button in mobile (only shown when NOT logged in) */}
                 {!isStudentLoggedIn && (
-                  <motion.div whileTap={{ scale: 0.95 }} className="pt-2">
-                    <Link
-                      to="/student"
-                      className="block px-4 py-3.5 font-medium text-white bg-gradient-to-r from-[#004080] to-[#0066cc] rounded-xl hover:from-[#003366] hover:to-[#004080] transition-all duration-300 shadow-lg text-center"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Register
-                    </Link>
-                  </motion.div>
+                  <>
+                    <div className="border-t border-gray-200/50 my-2"></div>
+                    <motion.div whileTap={{ scale: 0.95 }}>
+                      <Link
+                        to="/student"
+                        className="block px-4 py-3.5 font-medium text-white bg-gradient-to-r from-[#004080] to-[#0066cc] rounded-xl hover:from-[#003366] hover:to-[#004080] transition-all duration-300 shadow-lg text-center"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Register
+                      </Link>
+                    </motion.div>
+                  </>
                 )}
               </div>
             </motion.div>

@@ -5,6 +5,7 @@ import CreateCourse from "./course/CreateCourse";
 import CourseList from "./course/CourseList";
 import Studentpaper from "./paper/Studentpaper";
 import Liveclass from "./liveclass/Liveclass";
+import TeacherAnalytics from "./TeacherAnalytics";
 
 const TeacherDashboard = () => {
   const [activeView, setActiveView] = useState(() => {
@@ -39,7 +40,7 @@ const TeacherDashboard = () => {
         return <Liveclass />;
 
       default:
-        return <h1 className="p-6 text-xl font-bold">Dashboard Overview</h1>;
+        return <TeacherAnalytics />;
     }
   };
 

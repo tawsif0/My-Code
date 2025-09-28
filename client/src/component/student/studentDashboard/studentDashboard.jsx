@@ -9,6 +9,7 @@ import CoursePlayer from "./courses/courseView/CoursePlayer";
 import VisaStatus from "./visa/VisaStatus";
 import VisaRequestForm from "./visa/VisaRequestForm";
 import { useCart } from "../../../context/useCart";
+import StudentAnalytics from "./StudentAnalytics";
 
 const StudentDashboard = () => {
   // Initialize state with proper structure from localStorage
@@ -75,17 +76,7 @@ const StudentDashboard = () => {
       case "visaStatus":
         return <VisaStatus setActiveView={setActiveView} />;
       default:
-        return (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-800">
-              Dashboard Overview
-            </h1>
-            <p className="mt-2 text-gray-600">
-              Welcome to your student dashboard. Use the sidebar to manage your
-              courses and account settings.
-            </p>
-          </div>
-        );
+        return <StudentAnalytics />;
     }
   };
 

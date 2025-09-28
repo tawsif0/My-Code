@@ -35,14 +35,14 @@ const storage = multer.diskStorage({
       counter++;
     }
     cb(null, finalName);
-  }
+  },
 });
 
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 100 * 1024 * 1024 // 100MB limit
-  }
+    fileSize: 100 * 1024 * 1024, // 100MB limit
+  },
 });
 
 // Middleware to handle multiple file uploads
@@ -50,7 +50,7 @@ const uploadMultiple = upload.fields([
   { name: "thumbnail", maxCount: 1 },
   { name: "attachments", maxCount: 10 },
   { name: "contentVideos", maxCount: 20 },
-  { name: "contentThumbnails", maxCount: 20 }
+  { name: "contentThumbnails", maxCount: 20 },
 ]);
 
 // --------------------------teacher-profile---------------------------------
@@ -65,19 +65,19 @@ Teaceherrouter.get(
       if (!teacher) {
         return res.status(404).json({
           success: false,
-          message: "Teacher not found"
+          message: "Teacher not found",
         });
       }
 
       res.status(200).json({
         success: true,
-        data: teacher
+        data: teacher,
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         message: "Failed to fetch teacher profile",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -90,8 +90,8 @@ Teaceherrouter.put(
       { name: "thumbnail", maxCount: 1 },
       { name: "attachments", maxCount: 10 },
       { name: "contentThumbnails", maxCount: 10 },
-      { name: "contentVideos", maxCount: 10 }
-    ])
+      { name: "contentVideos", maxCount: 10 },
+    ]),
   ],
   async (req, res) => {
     try {
@@ -104,14 +104,14 @@ Teaceherrouter.put(
         categories,
         level,
         status,
-        existingAttachments = "[]"
+        existingAttachments = "[]",
       } = req.body;
 
       const course = await Course.findById(req.params.id);
       if (!course) {
         return res.status(404).json({
           success: false,
-          message: "Course not found"
+          message: "Course not found",
         });
       }
 
@@ -128,7 +128,7 @@ Teaceherrouter.put(
             if (parsedContent.length === 0) {
               return res.status(400).json({
                 success: false,
-                message: "Live courses must have at least one live session"
+                message: "Live courses must have at least one live session",
               });
             }
           }
@@ -173,7 +173,7 @@ Teaceherrouter.put(
           filename: thumbnailFile.originalname,
           path: thumbnailFile.filename,
           size: thumbnailFile.size,
-          mimetype: thumbnailFile.mimetype
+          mimetype: thumbnailFile.mimetype,
         };
       }
 
@@ -182,7 +182,11 @@ Teaceherrouter.put(
       try {
         existingAttachmentsArray = JSON.parse(existingAttachments);
       } catch (e) {
-        console.error("Error parsing existingAttachments", e);
+        // console.error("Error parsing existingAttachments", e);
+        res.status(500).json({
+          success: false,
+          message: "Error parsing existingAttachments",
+        });
       }
 
       const newAttachments =
@@ -190,7 +194,7 @@ Teaceherrouter.put(
           filename: file.originalname,
           path: file.filename,
           size: file.size,
-          mimetype: file.mimetype
+          mimetype: file.mimetype,
         })) || [];
 
       course.attachments = [...existingAttachmentsArray, ...newAttachments];
@@ -208,7 +212,7 @@ Teaceherrouter.put(
               if (!question.type || !question.question) {
                 return res.status(400).json({
                   success: false,
-                  message: "All questions must have a type and question text"
+                  message: "All questions must have a type and question text",
                 });
               }
 
@@ -220,7 +224,7 @@ Teaceherrouter.put(
                 ) {
                   return res.status(400).json({
                     success: false,
-                    message: "MCQ questions must have at least 2 options"
+                    message: "MCQ questions must have at least 2 options",
                   });
                 }
                 if (
@@ -229,7 +233,8 @@ Teaceherrouter.put(
                 ) {
                   return res.status(400).json({
                     success: false,
-                    message: "MCQ questions must have a correct answer selected"
+                    message:
+                      "MCQ questions must have a correct answer selected",
                   });
                 }
 
@@ -249,7 +254,7 @@ Teaceherrouter.put(
                   return res.status(400).json({
                     success: false,
                     message:
-                      "Short and broad answer questions must have an expected answer"
+                      "Short and broad answer questions must have an expected answer",
                   });
                 }
 
@@ -275,7 +280,7 @@ Teaceherrouter.put(
           if (invalidItems.length > 0) {
             return res.status(400).json({
               success: false,
-              message: "Live courses can only contain live sessions"
+              message: "Live courses can only contain live sessions",
             });
           }
         }
@@ -301,7 +306,7 @@ Teaceherrouter.put(
                 filename: videoFiles[videoIndex].originalname,
                 path: videoFiles[videoIndex].filename,
                 size: videoFiles[videoIndex].size,
-                mimetype: videoFiles[videoIndex].mimetype
+                mimetype: videoFiles[videoIndex].mimetype,
               };
               videoIndex++;
             } else if (item.content && !item.contentFile) {
@@ -350,7 +355,7 @@ Teaceherrouter.put(
                   filename: thumbFile.originalname,
                   path: thumbFile.filename,
                   size: thumbFile.size,
-                  mimetype: thumbFile.mimetype
+                  mimetype: thumbFile.mimetype,
                 };
               }
             }
@@ -370,7 +375,7 @@ Teaceherrouter.put(
             success: false,
             message: `Missing video files for ${
               expectedVideos - videoIndex
-            } tutorials`
+            } tutorials`,
           });
         }
       }
@@ -385,7 +390,7 @@ Teaceherrouter.put(
         if (!price || isNaN(price)) {
           return res.status(400).json({
             success: false,
-            message: "Price is required for premium and live courses"
+            message: "Price is required for premium and live courses",
           });
         }
         course.price = parseFloat(price);
@@ -406,12 +411,12 @@ Teaceherrouter.put(
       res.json({
         success: true,
         message: "Course updated successfully",
-        data: course
+        data: course,
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: error.message || "Server error while updating course"
+        message: error.message || "Server error while updating course",
       });
     }
   }
@@ -428,7 +433,7 @@ Teaceherrouter.delete(
       if (!course) {
         return res.status(404).json({
           success: false,
-          message: "Course not found"
+          message: "Course not found",
         });
       }
 
@@ -440,7 +445,7 @@ Teaceherrouter.delete(
       if (attachmentIndex === -1) {
         return res.status(404).json({
           success: false,
-          message: "Attachment not found"
+          message: "Attachment not found",
         });
       }
 
@@ -449,7 +454,10 @@ Teaceherrouter.delete(
       try {
         fs.unlinkSync(attachment.path);
       } catch (err) {
-        console.error("Error deleting attachment file:", err);
+        // console.error("Error deleting attachment file:", err);
+        res
+          .status(500)
+          .json({ success: false, message: "Error deleting attachment file:" });
       }
 
       // Remove from array
@@ -458,13 +466,13 @@ Teaceherrouter.delete(
 
       res.status(200).json({
         success: true,
-        message: "Attachment deleted successfully"
+        message: "Attachment deleted successfully",
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         message: "Failed to delete attachment",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -483,7 +491,7 @@ Teaceherrouter.put(
       if (!currentPassword || !newPassword) {
         return res.status(400).json({
           success: false,
-          message: "Current password and new password are required"
+          message: "Current password and new password are required",
         });
       }
 
@@ -493,7 +501,7 @@ Teaceherrouter.put(
       if (!teacher) {
         return res.status(404).json({
           success: false,
-          message: "Teacher not found"
+          message: "Teacher not found",
         });
       }
 
@@ -505,7 +513,7 @@ Teaceherrouter.put(
       if (!isMatch) {
         return res.status(401).json({
           success: false,
-          message: "Current password is incorrect"
+          message: "Current password is incorrect",
         });
       }
 
@@ -513,14 +521,14 @@ Teaceherrouter.put(
       if (newPassword.length < 8) {
         return res.status(400).json({
           success: false,
-          message: "Password must be at least 8 characters"
+          message: "Password must be at least 8 characters",
         });
       }
 
       if (!/\d/.test(newPassword) || !/[!@#$%^&*]/.test(newPassword)) {
         return res.status(400).json({
           success: false,
-          message: "Password must contain a number and a special character"
+          message: "Password must contain a number and a special character",
         });
       }
 
@@ -530,13 +538,13 @@ Teaceherrouter.put(
 
       res.status(200).json({
         success: true,
-        message: "Password updated successfully"
+        message: "Password updated successfully",
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         message: "Failed to update password",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -568,7 +576,7 @@ Teaceherrouter.put(
         "qualifications",
         "linkedin_url",
         "hourly_rate",
-        "profile_photo"
+        "profile_photo",
       ];
 
       // Validate requested fields
@@ -589,7 +597,7 @@ Teaceherrouter.put(
         "specialization",
         "qualifications",
         "linkedin_url",
-        "profile_photo"
+        "profile_photo",
       ].forEach((k) => {
         if (updates[k] != null && typeof updates[k] === "string") {
           updates[k] = updates[k].trim();
@@ -600,7 +608,7 @@ Teaceherrouter.put(
       if (updates.phone && !/^\+[1-9]\d{1,14}$/.test(updates.phone)) {
         return res.status(400).json({
           success: false,
-          message: "Include country code (e.g., +880)"
+          message: "Include country code (e.g., +880)",
         });
       }
 
@@ -608,7 +616,7 @@ Teaceherrouter.put(
       if (updates.full_name && updates.full_name.split(/\s+/).length < 2) {
         return res.status(400).json({
           success: false,
-          message: "Must include first and last name"
+          message: "Must include first and last name",
         });
       }
 
@@ -639,7 +647,7 @@ Teaceherrouter.put(
         }
         const existing = await Teacher.findOne({
           email,
-          _id: { $ne: teacherId }
+          _id: { $ne: teacherId },
         });
         if (existing) {
           return res
@@ -670,13 +678,13 @@ Teaceherrouter.put(
 
       return res.status(200).json({
         success: true,
-        message: "Profile updated successfully"
+        message: "Profile updated successfully",
       });
     } catch (error) {
       return res.status(500).json({
         success: false,
         message: "Failed to update profile",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -692,7 +700,7 @@ Teaceherrouter.get(
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: "Server error while fetching teacher courses"
+        message: "Server error while fetching teacher courses",
       });
     }
   }
@@ -710,7 +718,7 @@ Teaceherrouter.get(
       if (!course) {
         return res.status(404).json({
           success: false,
-          message: "Course not found"
+          message: "Course not found",
         });
       }
 
@@ -718,7 +726,7 @@ Teaceherrouter.get(
       if (course.instructor._id.toString() !== req.teacher._id.toString()) {
         return res.status(403).json({
           success: false,
-          message: "Unauthorized access to this course"
+          message: "Unauthorized access to this course",
         });
       }
 
@@ -726,7 +734,7 @@ Teaceherrouter.get(
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: "Server error while fetching course"
+        message: "Server error while fetching course",
       });
     }
   }
@@ -740,8 +748,8 @@ Teaceherrouter.put(
       { name: "thumbnail", maxCount: 1 },
       { name: "attachments", maxCount: 10 },
       { name: "contentThumbnails", maxCount: 10 },
-      { name: "contentVideos", maxCount: 10 }
-    ])
+      { name: "contentVideos", maxCount: 10 },
+    ]),
   ],
   async (req, res) => {
     try {
@@ -756,7 +764,7 @@ Teaceherrouter.put(
         whatYouWillLearn,
         level,
         status,
-        category
+        category,
       } = req.body;
 
       // First verify the teacher owns this course
@@ -764,14 +772,14 @@ Teaceherrouter.put(
       if (!existingCourse) {
         return res.status(404).json({
           success: false,
-          message: "Course not found"
+          message: "Course not found",
         });
       }
 
       if (existingCourse.instructor.toString() !== req.teacher._id.toString()) {
         return res.status(403).json({
           success: false,
-          message: "Unauthorized to update this course"
+          message: "Unauthorized to update this course",
         });
       }
 
@@ -782,7 +790,7 @@ Teaceherrouter.put(
           filename: thumbnailFile.originalname,
           path: thumbnailFile.path,
           size: thumbnailFile.size,
-          mimetype: thumbnailFile.mimetype
+          mimetype: thumbnailFile.mimetype,
         };
       }
 
@@ -817,11 +825,11 @@ Teaceherrouter.put(
           filename: file.originalname,
           path: file.path,
           size: file.size,
-          mimetype: file.mimetype
+          mimetype: file.mimetype,
         }));
         existingCourse.attachments = [
           ...existingCourse.attachments,
-          ...attachmentFiles
+          ...attachmentFiles,
         ];
       }
 
@@ -841,12 +849,12 @@ Teaceherrouter.put(
       res.json({
         success: true,
         message: "Course updated successfully",
-        data: existingCourse
+        data: existingCourse,
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: "Server error while updating course"
+        message: "Server error while updating course",
       });
     }
   }
@@ -861,7 +869,7 @@ Teaceherrouter.delete(
       if (!course) {
         return res.status(404).json({
           success: false,
-          message: "Course not found"
+          message: "Course not found",
         });
       }
 
@@ -869,7 +877,7 @@ Teaceherrouter.delete(
       if (course.instructor.toString() !== req.teacher._id.toString()) {
         return res.status(403).json({
           success: false,
-          message: "Unauthorized to delete this course"
+          message: "Unauthorized to delete this course",
         });
       }
 
@@ -877,12 +885,12 @@ Teaceherrouter.delete(
 
       res.json({
         success: true,
-        message: "Course deleted successfully"
+        message: "Course deleted successfully",
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: "Server error while deleting course"
+        message: "Server error while deleting course",
       });
     }
   }
@@ -900,8 +908,8 @@ Teaceherrouter.get(
             "title description instructor thumbnail price category level totalStudents rating duration language",
           populate: {
             path: "instructor",
-            select: "full_name profile_picture"
-          }
+            select: "full_name profile_picture",
+          },
         })
         .select("enrolledCourses");
 
@@ -938,7 +946,7 @@ Teaceherrouter.get(
           nextRecommendedContent: getNextRecommendedContent(
             enrollment.contentProgress,
             course.content
-          )
+          ),
         };
       });
 
@@ -953,13 +961,13 @@ Teaceherrouter.get(
       res.status(200).json({
         success: true,
         count: enrolledCourses.length,
-        data: enrolledCourses
+        data: enrolledCourses,
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         message: "Server error while fetching enrolled courses",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -981,7 +989,7 @@ Teaceherrouter.get(
       if (req.user.role !== "admin" && req.user.id !== req.params.studentId) {
         return res.status(403).json({
           success: false,
-          message: "Not authorized to access these courses"
+          message: "Not authorized to access these courses",
         });
       }
 
@@ -994,8 +1002,8 @@ Teaceherrouter.get(
             "title description instructor thumbnail price categories level duration content",
           populate: {
             path: "instructor",
-            select: "full_name profile_picture"
-          }
+            select: "full_name profile_picture",
+          },
         });
 
       if (!student) {
@@ -1046,7 +1054,7 @@ Teaceherrouter.get(
               quizAttempts: enrollment.quizAttempts
                 ? enrollment.quizAttempts.length
                 : 0,
-              certificates: enrollment.certificates || []
+              certificates: enrollment.certificates || [],
             },
             courseDetails: {
               _id: course._id,
@@ -1055,15 +1063,15 @@ Teaceherrouter.get(
               instructor: course.instructor,
               thumbnail: {
                 path: thumbnailUrl,
-                alt: course.title
+                alt: course.title,
               },
               price: course.price,
               categories: course.categories || [],
               level: course.level,
               duration: course.duration, // in minutes
               contentCount: totalContentItems,
-              nextRecommendedContent: nextContent
-            }
+              nextRecommendedContent: nextContent,
+            },
           };
         })
       );
@@ -1084,13 +1092,13 @@ Teaceherrouter.get(
       res.status(200).json({
         success: true,
         count: enrolledCourses.length,
-        enrolledCourses
+        enrolledCourses,
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         message: "Server error while fetching enrolled courses",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -1113,7 +1121,7 @@ function getNextRecommendedContent(contentProgress = [], courseContent = []) {
       return {
         contentItemId: contentItem._id,
         title: contentItem.title || "Untitled Content",
-        type: contentItem.type || "lesson"
+        type: contentItem.type || "lesson",
       };
     }
   }
@@ -1123,7 +1131,7 @@ function getNextRecommendedContent(contentProgress = [], courseContent = []) {
   return {
     contentItemId: firstItem._id,
     title: firstItem.title || "Untitled Content",
-    type: firstItem.type || "lesson"
+    type: firstItem.type || "lesson",
   };
 }
 
@@ -1141,7 +1149,7 @@ function getNextRecommendedContent(contentProgress, courseContent) {
       return {
         contentItemId: contentItem._id,
         title: contentItem.title,
-        type: contentItem.type
+        type: contentItem.type,
       };
     }
   }
@@ -1150,7 +1158,7 @@ function getNextRecommendedContent(contentProgress, courseContent) {
   return {
     contentItemId: courseContent[0]._id,
     title: courseContent[0].title,
-    type: courseContent[0].type
+    type: courseContent[0].type,
   };
 }
 // -------------------------- Profile Photo Update ----------------------------
@@ -1176,14 +1184,14 @@ const storages = multer.diskStorage({
     }
 
     cb(null, finalName);
-  }
+  },
 });
 
 const uploads = multer({
   storage: storages,
   limits: {
-    fileSize: 5 * 1024 * 1024
-  }
+    fileSize: 5 * 1024 * 1024,
+  },
 });
 
 Teaceherrouter.put(
@@ -1197,7 +1205,7 @@ Teaceherrouter.put(
       if (!req.file) {
         return res.status(400).json({
           success: false,
-          message: "Profile photo is required"
+          message: "Profile photo is required",
         });
       }
 
@@ -1235,8 +1243,8 @@ Teaceherrouter.put(
         data: {
           // return filename so frontend can build URL
           profile_photo: teacher.profile_photo,
-          last_updated: teacher.last_updated
-        }
+          last_updated: teacher.last_updated,
+        },
       });
     } catch (error) {
       // cleanup if needed
@@ -1248,7 +1256,7 @@ Teaceherrouter.put(
       return res.status(500).json({
         success: false,
         message: "Failed to update profile photo",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -1267,7 +1275,7 @@ Teaceherrouter.post(
       if (!req.files || !req.files["thumbnail"]) {
         return res.status(400).json({
           success: false,
-          message: "Course thumbnail is required"
+          message: "Course thumbnail is required",
         });
       }
 
@@ -1279,7 +1287,7 @@ Teaceherrouter.post(
         content,
         level = "beginner",
         user_id,
-        category
+        category,
       } = req.body;
 
       // Validate required fields
@@ -1287,7 +1295,8 @@ Teaceherrouter.post(
         cleanupFiles(req.files);
         return res.status(400).json({
           success: false,
-          message: "Title, description, type, user ID, and content are required"
+          message:
+            "Title, description, type, user ID, and content are required",
         });
       }
 
@@ -1296,7 +1305,7 @@ Teaceherrouter.post(
         cleanupFiles(req.files);
         return res.status(400).json({
           success: false,
-          message: "Price is required for premium and live courses"
+          message: "Price is required for premium and live courses",
         });
       }
 
@@ -1319,7 +1328,7 @@ Teaceherrouter.post(
               if (!question.type || !question.question) {
                 return res.status(400).json({
                   success: false,
-                  message: "All questions must have a type and question text"
+                  message: "All questions must have a type and question text",
                 });
               }
 
@@ -1331,7 +1340,7 @@ Teaceherrouter.post(
                 ) {
                   return res.status(400).json({
                     success: false,
-                    message: "MCQ questions must have at least 2 options"
+                    message: "MCQ questions must have at least 2 options",
                   });
                 }
                 if (
@@ -1340,7 +1349,8 @@ Teaceherrouter.post(
                 ) {
                   return res.status(400).json({
                     success: false,
-                    message: "MCQ questions must have a correct answer selected"
+                    message:
+                      "MCQ questions must have a correct answer selected",
                   });
                 }
               }
@@ -1355,7 +1365,7 @@ Teaceherrouter.post(
                   return res.status(400).json({
                     success: false,
                     message:
-                      "Short and broad answer questions must have an expected answer"
+                      "Short and broad answer questions must have an expected answer",
                   });
                 }
 
@@ -1372,7 +1382,7 @@ Teaceherrouter.post(
         return res.status(400).json({
           success: false,
           message: "Invalid content format",
-          error: parseError.message
+          error: parseError.message,
         });
       }
 
@@ -1382,7 +1392,7 @@ Teaceherrouter.post(
         filename: thumbnailFile.originalname,
         path: thumbnailFile.filename,
         size: thumbnailFile.size,
-        mimetype: thumbnailFile.mimetype
+        mimetype: thumbnailFile.mimetype,
       };
 
       // Create a map of video filenames to their file objects for quick lookup
@@ -1411,13 +1421,13 @@ Teaceherrouter.post(
               filename: videoFile.originalname,
               path: videoFile.filename,
               size: videoFile.size,
-              mimetype: videoFile.mimetype
+              mimetype: videoFile.mimetype,
             };
           } else {
             // If video file not found, keep the filename reference but mark as missing
             contentItem.content = {
               filename: videoFilename,
-              error: "Video file not uploaded"
+              error: "Video file not uploaded",
             };
           }
         }
@@ -1435,13 +1445,13 @@ Teaceherrouter.post(
               filename: thumbnailFile.originalname,
               path: thumbnailFile.filename,
               size: thumbnailFile.size,
-              mimetype: thumbnailFile.mimetype
+              mimetype: thumbnailFile.mimetype,
             };
           } else {
             // If thumbnail file not found, keep the filename reference but mark as missing
             contentItem.thumbnail = {
               filename: thumbnailFilename,
-              error: "Thumbnail file not uploaded"
+              error: "Thumbnail file not uploaded",
             };
           }
         }
@@ -1450,7 +1460,7 @@ Teaceherrouter.post(
         if (item.type === "quiz" && item.questions) {
           contentItem.questions = item.questions.map((q) => ({
             ...q,
-            correctAnswer: formatCorrectAnswer(q.type, q.correctAnswer)
+            correctAnswer: formatCorrectAnswer(q.type, q.correctAnswer),
           }));
         }
 
@@ -1465,7 +1475,7 @@ Teaceherrouter.post(
             filename: file.originalname,
             path: file.filename,
             size: file.size,
-            mimetype: file.mimetype
+            mimetype: file.mimetype,
           });
         });
       }
@@ -1484,7 +1494,7 @@ Teaceherrouter.post(
         level: level || "beginner",
         createbyid: user_id,
         category: category || "",
-        categories: category ? [category] : []
+        categories: category ? [category] : [],
       });
 
       await newCourse.save();
@@ -1492,7 +1502,7 @@ Teaceherrouter.post(
       res.status(201).json({
         success: true,
         message: "Course created successfully",
-        data: newCourse
+        data: newCourse,
       });
     } catch (error) {
       cleanupFiles(req.files);
@@ -1500,7 +1510,7 @@ Teaceherrouter.post(
       res.status(500).json({
         success: false,
         message: "Failed to create course",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -1545,7 +1555,7 @@ Teaceherrouter.get("/all-courses", authenticateTeacher, async (req, res) => {
 Teaceherrouter.get("/my-courses/:id", authenticateTeacher, async (req, res) => {
   try {
     const courses = await Course.find({ instructor: req.params.id }).sort({
-      createdAt: -1
+      createdAt: -1,
     });
     res.send(courses);
   } catch (error) {
@@ -1593,7 +1603,7 @@ Teaceherrouter.put(
       "requirements",
       "whatYouWillLearn",
       "level",
-      "content"
+      "content",
     ];
 
     // const isValidOperation = updates.every(update => allowedUpdates.includes(update));
@@ -1605,7 +1615,7 @@ Teaceherrouter.put(
     try {
       const course = await Course.findOne({
         _id: req.params.id,
-        createbyid: req.body.user_id
+        createbyid: req.body.user_id,
       });
 
       if (!course) {
@@ -1632,7 +1642,7 @@ Teaceherrouter.delete(
     try {
       const course = await Course.findOneAndDelete({
         _id: req.params.id,
-        createbyid: req.user._id
+        createbyid: req.user._id,
       });
 
       if (!course) {
@@ -1656,7 +1666,7 @@ Teaceherrouter.post(
     try {
       const course = await Course.findOne({
         _id: req.params.courseId,
-        createbyid: req.user._id
+        createbyid: req.user._id,
       });
 
       if (!course) {
@@ -1682,7 +1692,7 @@ Teaceherrouter.put(
     try {
       const course = await Course.findOne({
         _id: req.params.courseId,
-        createbyid: req.user._id
+        createbyid: req.user._id,
       });
 
       if (!course) {
@@ -1712,7 +1722,7 @@ Teaceherrouter.delete(
   async (req, res) => {
     try {
       const course = await Course.findByIdAndDelete({
-        _id: req.params.courseId
+        _id: req.params.courseId,
       });
 
       res.send({ success: true, message: "Deleted successfully!" });
@@ -1751,11 +1761,11 @@ Teaceherrouter.get(
         .populate({
           path: "enrollments.studentId",
           select: "full_name email",
-          model: "Student"
+          model: "Student",
         })
         .populate({
           path: "content",
-          select: "title type passingScore"
+          select: "title type passingScore",
         });
 
       if (!courses || courses.length === 0) {
@@ -1763,7 +1773,7 @@ Teaceherrouter.get(
           success: true,
           count: 0,
           data: [],
-          message: "No courses found for this teacher"
+          message: "No courses found for this teacher",
         });
       }
 
@@ -1865,21 +1875,21 @@ Teaceherrouter.get(
                     isCorrect: answer.isCorrect || false,
                     marksObtained: answer.marksObtained || 0,
                     maxMarks: answer.maxMarks || 0,
-                    teacherFeedback: answer.teacherFeedback || ""
+                    teacherFeedback: answer.teacherFeedback || "",
                   };
                 });
 
                 return {
                   student: {
                     name: enrollment.studentId?.full_name || "Unknown Student",
-                    email: enrollment.studentId?.email || "No email"
+                    email: enrollment.studentId?.email || "No email",
                   },
                   courseTitle: course.title || "Untitled course",
                   contentItem: {
                     _id: contentItem?._id || null, // Ensure this is included
                     title: contentItem?.title || "Unknown content",
                     type: contentItem?.type || "unknown",
-                    passingScore: contentItem?.passingScore || 70
+                    passingScore: contentItem?.passingScore || 70,
                   },
                   status: progress.status || "unknown",
                   gradingStatus: progress.gradingStatus || "not-graded",
@@ -1888,7 +1898,7 @@ Teaceherrouter.get(
                   percentage: progress.percentage || 0,
                   passed: progress.passed || false,
                   lastAccessed: progress.lastAccessed || new Date(),
-                  answers
+                  answers,
                 };
               });
           });
@@ -1898,14 +1908,14 @@ Teaceherrouter.get(
       res.status(200).json({
         success: true,
         count: submissions.length,
-        data: submissions
+        data: submissions,
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         message: "Failed to fetch submissions",
         error: error.message,
-        stack: process.env.NODE_ENV === "development" ? error.stack : undefined
+        stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
       });
     }
   }
@@ -1926,7 +1936,7 @@ Teaceherrouter.put(
       if (!student) {
         return res.status(404).json({
           success: false,
-          message: "Student not found"
+          message: "Student not found",
         });
       }
 
@@ -1934,18 +1944,18 @@ Teaceherrouter.put(
       const course = await Course.findOne({
         instructor: req.teacher._id,
         "enrollments.studentId": student._id,
-        "content._id": contentItemId // Ensure the course has this content item
+        "content._id": contentItemId, // Ensure the course has this content item
       }).populate({
         path: "enrollments.studentId",
         select: "full_name email",
-        model: "Student"
+        model: "Student",
       });
 
       if (!course) {
         return res.status(404).json({
           success: false,
           message:
-            "Course not found for this teacher and student, or content item not in course"
+            "Course not found for this teacher and student, or content item not in course",
         });
       }
 
@@ -1958,14 +1968,14 @@ Teaceherrouter.put(
       if (!enrollment) {
         return res.status(404).json({
           success: false,
-          message: "Student enrollment not found"
+          message: "Student enrollment not found",
         });
       }
 
       if (!enrollment.progress) {
         return res.status(404).json({
           success: false,
-          message: "No progress data found for this enrollment"
+          message: "No progress data found for this enrollment",
         });
       }
 
@@ -1978,14 +1988,14 @@ Teaceherrouter.put(
         return res.status(404).json({
           success: false,
           message:
-            "Content submission not found for this student and content item"
+            "Content submission not found for this student and content item",
         });
       }
 
       if (!progress.answers) {
         return res.status(404).json({
           success: false,
-          message: "No answers found for this submission"
+          message: "No answers found for this submission",
         });
       }
 
@@ -2072,14 +2082,14 @@ Teaceherrouter.put(
           percentage: progress.percentage,
           passed: progress.passed,
           completed: progress.completed,
-          courseCompleted: allCompleted
-        }
+          courseCompleted: allCompleted,
+        },
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         message: "Failed to grade submission",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -2096,11 +2106,11 @@ Teaceherrouter.get(
       const courses = await Course.find({ instructor: req.body.teacher_id })
         .populate({
           path: "enrollments.studentId",
-          select: "full_name email"
+          select: "full_name email",
         })
         .populate({
           path: "content",
-          select: "title type"
+          select: "title type",
         });
 
       const needsGrading = courses.flatMap((course) => {
@@ -2130,8 +2140,8 @@ Teaceherrouter.get(
                     type: a.questionType,
                     studentAnswer: a.answer,
                     correctAnswer: a.correctAnswer,
-                    maxMarks: a.maxMarks
-                  }))
+                    maxMarks: a.maxMarks,
+                  })),
               };
             });
         });
@@ -2140,13 +2150,13 @@ Teaceherrouter.get(
       res.status(200).json({
         success: true,
         count: needsGrading.length,
-        data: needsGrading
+        data: needsGrading,
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         message: "Failed to fetch submissions needing grading",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -2164,16 +2174,16 @@ Teaceherrouter.get(
       // Verify teacher owns the course
       const course = await Course.findOne({
         _id: courseId,
-        instructor: teacherId
+        instructor: teacherId,
       }).populate({
         path: "enrollments.studentId",
-        select: "full_name email"
+        select: "full_name email",
       });
 
       if (!course) {
         return res.status(404).json({
           success: false,
-          message: "Course not found or not authorized"
+          message: "Course not found or not authorized",
         });
       }
 
@@ -2189,7 +2199,7 @@ Teaceherrouter.get(
               student: {
                 id: enrollment.studentId._id,
                 name: enrollment.studentId.full_name,
-                email: enrollment.studentId.email
+                email: enrollment.studentId.email,
               },
               quizId: progress.contentItemId,
               quizTitle: contentItem.title,
@@ -2210,9 +2220,9 @@ Teaceherrouter.get(
                 maxMarks: answer.maxMarks,
                 teacherFeedback: answer.teacherFeedback,
                 needsManualGrading: answer.needsManualGrading,
-                graded: !!answer.gradedAt
+                graded: !!answer.gradedAt,
               })),
-              submittedAt: progress.lastAccessed
+              submittedAt: progress.lastAccessed,
             });
           }
         });
@@ -2221,13 +2231,13 @@ Teaceherrouter.get(
       res.status(200).json({
         success: true,
         count: quizAnswers.length,
-        data: quizAnswers
+        data: quizAnswers,
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         message: "Failed to fetch quiz answers",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -2245,17 +2255,17 @@ Teaceherrouter.get(
       // Verify teacher owns the course
       const course = await Course.findOne({
         _id: courseId,
-        instructor: teacherId
+        instructor: teacherId,
       }).populate({
         path: "enrollments.studentId",
         match: { _id: studentId },
-        select: "full_name email"
+        select: "full_name email",
       });
 
       if (!course) {
         return res.status(404).json({
           success: false,
-          message: "Course not found or not authorized"
+          message: "Course not found or not authorized",
         });
       }
 
@@ -2266,7 +2276,7 @@ Teaceherrouter.get(
       if (!enrollment) {
         return res.status(404).json({
           success: false,
-          message: "Student not enrolled in this course"
+          message: "Student not enrolled in this course",
         });
       }
 
@@ -2297,9 +2307,9 @@ Teaceherrouter.get(
               maxMarks: answer.maxMarks,
               teacherFeedback: answer.teacherFeedback,
               needsManualGrading: answer.needsManualGrading,
-              graded: !!answer.gradedAt
+              graded: !!answer.gradedAt,
             })),
-            submittedAt: progress.lastAccessed
+            submittedAt: progress.lastAccessed,
           });
         }
       });
@@ -2311,16 +2321,16 @@ Teaceherrouter.get(
           student: {
             id: enrollment.studentId._id,
             name: enrollment.studentId.full_name,
-            email: enrollment.studentId.email
+            email: enrollment.studentId.email,
           },
-          quizzes: quizAnswers
-        }
+          quizzes: quizAnswers,
+        },
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         message: "Failed to fetch student quiz answers",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -2340,20 +2350,20 @@ Teaceherrouter.put(
       if (marks === undefined) {
         return res.status(400).json({
           success: false,
-          message: "Marks are required for grading"
+          message: "Marks are required for grading",
         });
       }
 
       // Verify teacher owns the course
       const course = await Course.findOne({
         _id: courseId,
-        instructor: teacherId
+        instructor: teacherId,
       });
 
       if (!course) {
         return res.status(404).json({
           success: false,
-          message: "Course not found or not authorized"
+          message: "Course not found or not authorized",
         });
       }
 
@@ -2365,7 +2375,7 @@ Teaceherrouter.put(
       if (!enrollment) {
         return res.status(404).json({
           success: false,
-          message: "Student not enrolled in this course"
+          message: "Student not enrolled in this course",
         });
       }
 
@@ -2377,7 +2387,7 @@ Teaceherrouter.put(
       if (!progress) {
         return res.status(404).json({
           success: false,
-          message: "Quiz attempt not found"
+          message: "Quiz attempt not found",
         });
       }
 
@@ -2389,7 +2399,7 @@ Teaceherrouter.put(
       if (!answer) {
         return res.status(404).json({
           success: false,
-          message: "Question answer not found"
+          message: "Question answer not found",
         });
       }
 
@@ -2397,7 +2407,7 @@ Teaceherrouter.put(
       if (marks > answer.maxMarks) {
         return res.status(400).json({
           success: false,
-          message: `Marks cannot exceed maximum marks (${answer.maxMarks})`
+          message: `Marks cannot exceed maximum marks (${answer.maxMarks})`,
         });
       }
 
@@ -2443,14 +2453,14 @@ Teaceherrouter.put(
           maxTotalScore: progress.maxScore,
           percentage: progress.percentage,
           passed: progress.passed,
-          gradingStatus: progress.gradingStatus
-        }
+          gradingStatus: progress.gradingStatus,
+        },
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         message: "Failed to grade quiz answer",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -2470,20 +2480,20 @@ Teaceherrouter.put(
       if (!grades || !Array.isArray(grades)) {
         return res.status(400).json({
           success: false,
-          message: "Grades array is required"
+          message: "Grades array is required",
         });
       }
 
       // Verify teacher owns the course
       const course = await Course.findOne({
         _id: courseId,
-        instructor: teacherId
+        instructor: teacherId,
       });
 
       if (!course) {
         return res.status(404).json({
           success: false,
-          message: "Course not found or not authorized"
+          message: "Course not found or not authorized",
         });
       }
 
@@ -2495,7 +2505,7 @@ Teaceherrouter.put(
       if (!enrollment) {
         return res.status(404).json({
           success: false,
-          message: "Student not enrolled in this course"
+          message: "Student not enrolled in this course",
         });
       }
 
@@ -2507,7 +2517,7 @@ Teaceherrouter.put(
       if (!progress) {
         return res.status(404).json({
           success: false,
-          message: "Quiz attempt not found"
+          message: "Quiz attempt not found",
         });
       }
 
@@ -2566,14 +2576,14 @@ Teaceherrouter.put(
           maxTotalScore: progress.maxScore,
           percentage: progress.percentage,
           passed: progress.passed,
-          gradingStatus: progress.gradingStatus
-        }
+          gradingStatus: progress.gradingStatus,
+        },
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         message: "Failed to grade quiz answers",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -2590,7 +2600,7 @@ Teaceherrouter.get(
       const courses = await Course.find({ instructor: teacherId }).populate({
         path: "enrollments.studentId",
         select: "full_name email",
-        model: "Student"
+        model: "Student",
       });
 
       if (!courses || courses.length === 0) {
@@ -2598,7 +2608,7 @@ Teaceherrouter.get(
           success: true,
           count: 0,
           data: [],
-          message: "No live classes found for this teacher"
+          message: "No live classes found for this teacher",
         });
       }
 
@@ -2630,17 +2640,17 @@ Teaceherrouter.get(
                 title: liveClass.title,
                 type: liveClass.type,
                 schedule: liveClass.schedule,
-                duration: liveClass.duration
+                duration: liveClass.duration,
               },
               student: {
                 _id: enrollment.studentId?._id,
                 name: enrollment.studentId?.full_name || "Unknown Student",
-                email: enrollment.studentId?.email || "No email"
+                email: enrollment.studentId?.email || "No email",
               },
               completed: progress?.completed || false,
               lastAccessed: progress?.lastAccessed || null,
               timeSpent: progress?.timeSpent || 0,
-              attendanceStatus: progress?.attendanceStatus || "not-started"
+              attendanceStatus: progress?.attendanceStatus || "not-started",
             });
           });
         });
@@ -2649,14 +2659,14 @@ Teaceherrouter.get(
       res.status(200).json({
         success: true,
         count: attendanceRecords.length,
-        data: attendanceRecords
+        data: attendanceRecords,
       });
     } catch (error) {
       console.error("Error fetching live class attendance:", error);
       res.status(500).json({
         success: false,
         message: "Failed to fetch live class attendance",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -2674,11 +2684,11 @@ Teaceherrouter.get(
       const courses = await Course.find({ instructor: teacherId })
         .populate({
           path: "enrollments.studentId",
-          select: "full_name email"
+          select: "full_name email",
         })
         .populate({
           path: "content",
-          select: "title type"
+          select: "title type",
         });
 
       // Collect all answers needing grading
@@ -2698,7 +2708,7 @@ Teaceherrouter.get(
                     student: {
                       id: enrollment.studentId._id,
                       name: enrollment.studentId.full_name,
-                      email: enrollment.studentId.email
+                      email: enrollment.studentId.email,
                     },
                     quizId: progress.contentItemId,
                     quizTitle: contentItem.title,
@@ -2709,7 +2719,7 @@ Teaceherrouter.get(
                     correctAnswer: answer.correctAnswer,
                     maxMarks: answer.maxMarks,
                     attemptNumber: progress.attempts,
-                    submittedAt: progress.lastAccessed
+                    submittedAt: progress.lastAccessed,
                   });
                 }
               });
@@ -2721,13 +2731,13 @@ Teaceherrouter.get(
       res.status(200).json({
         success: true,
         count: answersNeedingGrading.length,
-        data: answersNeedingGrading
+        data: answersNeedingGrading,
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         message: "Failed to fetch answers needing grading",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -2744,7 +2754,7 @@ Teaceherrouter.get("/live-class-progress/:courseId", async (req, res) => {
     // Find the course and verify the teacher is the instructor
     const course = await Course.findOne({
       _id: courseId,
-      instructor: teacherId
+      instructor: teacherId,
     })
       .populate("enrollments.studentId", "full_name email")
       .select("content enrollments");
@@ -2752,7 +2762,7 @@ Teaceherrouter.get("/live-class-progress/:courseId", async (req, res) => {
     if (!course) {
       return res.json({
         success: false,
-        message: "Course not found or you are not the instructor"
+        message: "Course not found or you are not the instructor",
       });
     }
 
@@ -2796,21 +2806,21 @@ Teaceherrouter.get("/live-class-progress/:courseId", async (req, res) => {
             email: enrollment.studentId.email,
             completed: progress?.completed || false,
             lastAccessed: progress?.lastAccessed,
-            timeSpent: progress?.timeSpent || 0
+            timeSpent: progress?.timeSpent || 0,
           };
-        })
+        }),
       };
     });
 
     res.json({
       success: true,
-      data: liveClassProgress
+      data: liveClassProgress,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Failed to fetch live class progress",
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -2827,13 +2837,13 @@ Teaceherrouter.post(
       // Verify the teacher is the course instructor
       const course = await Course.findOne({
         _id: courseId,
-        instructor: teacherId
+        instructor: teacherId,
       });
 
       if (!course) {
         return res.status(403).json({
           success: false,
-          message: "Not authorized or course not found"
+          message: "Not authorized or course not found",
         });
       }
 
@@ -2842,7 +2852,7 @@ Teaceherrouter.post(
       if (!liveClass || liveClass.type !== "live") {
         return res.status(404).json({
           success: false,
-          message: "Live class not found"
+          message: "Live class not found",
         });
       }
 
@@ -2861,7 +2871,7 @@ Teaceherrouter.post(
             completed: false,
             lastAccessed: null,
             status: "not-started",
-            timeSpent: 0
+            timeSpent: 0,
           };
           enrollment.progress.push(progress);
         }
@@ -2882,14 +2892,14 @@ Teaceherrouter.post(
           courseId,
           liveClassId: contentId,
           completedAt: now,
-          totalStudents: course.enrollments.length
-        }
+          totalStudents: course.enrollments.length,
+        },
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         message: "Failed to complete live class",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -2907,12 +2917,12 @@ Teaceherrouter.post(
 
       const course = await Course.findOne({
         _id: courseId,
-        instructor: teacherId
+        instructor: teacherId,
       });
       if (!course) {
         return res.status(403).json({
           success: false,
-          message: "Not authorized or course not found"
+          message: "Not authorized or course not found",
         });
       }
 
@@ -2943,7 +2953,7 @@ Teaceherrouter.post(
           lastAccessed: null,
           status: "not-started",
           timeSpent: 0,
-          attendanceStatus: "pending"
+          attendanceStatus: "pending",
         };
         enrollment.progress.push(progress);
       }
@@ -2976,14 +2986,14 @@ Teaceherrouter.post(
           liveClassId: contentId,
           attendanceStatus: progress.attendanceStatus,
           completed: progress.completed,
-          lastAccessed: progress.lastAccessed
-        }
+          lastAccessed: progress.lastAccessed,
+        },
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         message: "Failed to update attendance",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -3001,13 +3011,13 @@ Teaceherrouter.post(
       // Verify the teacher is the course instructor
       const course = await Course.findOne({
         _id: courseId,
-        instructor: teacherId
+        instructor: teacherId,
       });
 
       if (!course) {
         return res.status(403).json({
           success: false,
-          message: "Not authorized or course not found"
+          message: "Not authorized or course not found",
         });
       }
 
@@ -3016,7 +3026,7 @@ Teaceherrouter.post(
       if (!liveClass || liveClass.type !== "live") {
         return res.status(404).json({
           success: false,
-          message: "Live class not found"
+          message: "Live class not found",
         });
       }
 
@@ -3034,7 +3044,7 @@ Teaceherrouter.post(
             lastAccessed: new Date(),
             status: "completed",
             timeSpent: 0,
-            attendanceStatus: "present" // Store as string
+            attendanceStatus: "present", // Store as string
           };
           enrollment.progress.push(progress);
         } else {
@@ -3049,13 +3059,13 @@ Teaceherrouter.post(
 
       res.json({
         success: true,
-        message: "All students marked as present"
+        message: "All students marked as present",
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         message: "Failed to mark all students as present",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -3073,7 +3083,7 @@ Teaceherrouter.get(
       // Verify the teacher is the course instructor
       const course = await Course.findOne({
         _id: courseId,
-        instructor: teacherId
+        instructor: teacherId,
       })
         .populate("enrollments.studentId", "full_name email")
         .select("content enrollments");
@@ -3081,7 +3091,7 @@ Teaceherrouter.get(
       if (!course) {
         return res.status(403).json({
           success: false,
-          message: "Not authorized or course not found"
+          message: "Not authorized or course not found",
         });
       }
 
@@ -3090,7 +3100,7 @@ Teaceherrouter.get(
       if (!liveClass || liveClass.type !== "live") {
         return res.status(404).json({
           success: false,
-          message: "Live class not found"
+          message: "Live class not found",
         });
       }
 
@@ -3107,7 +3117,7 @@ Teaceherrouter.get(
           completed: progress?.completed || false,
           lastAccessed: progress?.lastAccessed,
           timeSpent: progress?.timeSpent || 0,
-          status: progress?.status || "not-started"
+          status: progress?.status || "not-started",
         };
       });
 
@@ -3116,16 +3126,387 @@ Teaceherrouter.get(
         data: {
           liveClassId: contentId,
           title: liveClass.title,
-          studentProgress
-        }
+          studentProgress,
+        },
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         message: "Failed to fetch student progress",
-        error: error.message
+        error: error.message,
       });
     }
   }
 );
+// -------------------------- Teacher Analytics Routes ----------------------------
+
+// Get teacher analytics dashboard data
+Teaceherrouter.get(
+  "/analytics/:teacherId",
+  authenticateTeacher,
+  async (req, res) => {
+    try {
+      const teacherId = req.params.teacherId;
+
+      // Verify teacher owns the analytics
+      if (req.teacher._id.toString() !== teacherId) {
+        return res.status(403).json({
+          success: false,
+          message: "Unauthorized access to analytics",
+        });
+      }
+
+      // Get all courses by this teacher
+      const courses = await Course.find({ instructor: teacherId })
+        .populate({
+          path: "enrollments.studentId",
+          select: "full_name email",
+        })
+        .populate("content");
+
+      if (!courses || courses.length === 0) {
+        return res.status(200).json({
+          success: true,
+          data: {
+            totalCourses: 0,
+            totalStudents: 0,
+            totalEarnings: 0,
+            averageRating: 0,
+            coursePerformance: [],
+            studentEngagement: [],
+            recentSubmissions: [],
+            topPerformingCourses: [],
+            enrollmentStats: {
+              total: 0,
+              thisMonth: 0,
+              growth: 0,
+            },
+            completionStats: {
+              totalStudents: 0,
+              completedCourses: 0,
+              completionRate: 0,
+            },
+            revenueStats: {
+              total: 0,
+              thisMonth: 0,
+              growth: 0,
+            },
+          },
+        });
+      }
+
+      // Calculate total students across all courses
+      const totalStudents = courses.reduce((total, course) => {
+        return total + (course.enrollments?.length || 0);
+      }, 0);
+
+      // Calculate total earnings
+      const totalEarnings = courses.reduce((total, course) => {
+        const courseStudents = course.enrollments?.length || 0;
+        return total + course.price * courseStudents;
+      }, 0);
+
+      // Calculate average rating
+      const averageRating =
+        courses.reduce((total, course) => {
+          return total + (course.rating || 0);
+        }, 0) / courses.length;
+
+      // Get course performance data
+      const coursePerformance = courses.map((course) => {
+        const totalEnrolled = course.enrollments?.length || 0;
+        const completedStudents =
+          course.enrollments?.filter((enrollment) => enrollment.completed)
+            .length || 0;
+
+        return {
+          courseId: course._id,
+          title: course.title,
+          enrolledStudents: totalEnrolled,
+          completionRate:
+            totalEnrolled > 0 ? (completedStudents / totalEnrolled) * 100 : 0,
+          revenue: course.price * totalEnrolled,
+          rating: course.rating || 0,
+        };
+      });
+
+      // Get recent quiz submissions (last 7 days)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const recentSubmissions = [];
+      courses.forEach((course) => {
+        course.enrollments?.forEach((enrollment) => {
+          enrollment.progress?.forEach((progress) => {
+            const contentItem = course.content.id(progress.contentItemId);
+            if (
+              contentItem &&
+              contentItem.type === "quiz" &&
+              progress.lastAccessed > sevenDaysAgo
+            ) {
+              recentSubmissions.push({
+                studentName:
+                  enrollment.studentId?.full_name || "Unknown Student",
+                courseTitle: course.title,
+                quizTitle: contentItem.title,
+                score: progress.score || 0,
+                maxScore: progress.maxScore || 100,
+                submittedAt: progress.lastAccessed,
+                status: progress.passed ? "Passed" : "Failed",
+              });
+            }
+          });
+        });
+      });
+
+      // Sort by most recent
+      recentSubmissions.sort(
+        (a, b) => new Date(b.submittedAt) - new Date(a.submittedAt)
+      );
+
+      // Get top performing courses
+      const topPerformingCourses = [...coursePerformance]
+        .sort((a, b) => b.completionRate - a.completionRate)
+        .slice(0, 5);
+
+      // Calculate enrollment stats
+      const thisMonth = new Date().getMonth();
+      const thisMonthEnrollments = courses.reduce((total, course) => {
+        const monthEnrollments =
+          course.enrollments?.filter((enrollment) => {
+            const enrollDate = new Date(enrollment.enrolledAt);
+            return enrollDate.getMonth() === thisMonth;
+          }).length || 0;
+        return total + monthEnrollments;
+      }, 0);
+
+      // Calculate completion stats
+      const completedCourses = courses.reduce((total, course) => {
+        return (
+          total +
+          (course.enrollments?.filter((enrollment) => enrollment.completed)
+            .length || 0)
+        );
+      }, 0);
+
+      // Calculate revenue stats for this month
+      const thisMonthRevenue = courses.reduce((total, course) => {
+        const monthEnrollments =
+          course.enrollments?.filter((enrollment) => {
+            const enrollDate = new Date(enrollment.enrolledAt);
+            return enrollDate.getMonth() === thisMonth;
+          }).length || 0;
+        return total + course.price * monthEnrollments;
+      }, 0);
+
+      res.status(200).json({
+        success: true,
+        data: {
+          totalCourses: courses.length,
+          totalStudents,
+          totalEarnings,
+          averageRating: Math.round(averageRating * 10) / 10,
+          coursePerformance,
+          studentEngagement: calculateStudentEngagement(courses),
+          recentSubmissions: recentSubmissions.slice(0, 10),
+          topPerformingCourses,
+          enrollmentStats: {
+            total: totalStudents,
+            thisMonth: thisMonthEnrollments,
+            growth: calculateGrowth(thisMonthEnrollments, totalStudents),
+          },
+          completionStats: {
+            totalStudents,
+            completedCourses,
+            completionRate:
+              totalStudents > 0 ? (completedCourses / totalStudents) * 100 : 0,
+          },
+          revenueStats: {
+            total: totalEarnings,
+            thisMonth: thisMonthRevenue,
+            growth: calculateGrowth(thisMonthRevenue, totalEarnings),
+          },
+        },
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to fetch analytics data",
+        error: error.message,
+      });
+    }
+  }
+);
+
+// Get detailed course analytics
+Teaceherrouter.get(
+  "/analytics/course/:courseId",
+  authenticateTeacher,
+  async (req, res) => {
+    try {
+      const { courseId } = req.params;
+      const teacherId = req.teacher._id;
+
+      // Verify teacher owns the course
+      const course = await Course.findOne({
+        _id: courseId,
+        instructor: teacherId,
+      })
+        .populate({
+          path: "enrollments.studentId",
+          select: "full_name email enrolledAt",
+        })
+        .populate("content");
+
+      if (!course) {
+        return res.status(404).json({
+          success: false,
+          message: "Course not found or unauthorized access",
+        });
+      }
+
+      // Calculate detailed analytics
+      const totalEnrolled = course.enrollments?.length || 0;
+      const completedStudents =
+        course.enrollments?.filter((enrollment) => enrollment.completed)
+          .length || 0;
+
+      // Calculate progress by content type
+      const contentProgress = {
+        tutorial: { total: 0, completed: 0 },
+        quiz: { total: 0, completed: 0 },
+        live: { total: 0, completed: 0 },
+      };
+
+      course.content?.forEach((contentItem) => {
+        const type = contentItem.type;
+        if (contentProgress[type]) {
+          contentProgress[type].total++;
+        }
+      });
+
+      course.enrollments?.forEach((enrollment) => {
+        enrollment.progress?.forEach((progress) => {
+          const contentItem = course.content.id(progress.contentItemId);
+          if (
+            contentItem &&
+            contentProgress[contentItem.type] &&
+            progress.completed
+          ) {
+            contentProgress[contentItem.type].completed++;
+          }
+        });
+      });
+
+      // Calculate average scores for quizzes
+      const quizScores = [];
+      course.enrollments?.forEach((enrollment) => {
+        enrollment.progress?.forEach((progress) => {
+          const contentItem = course.content.id(progress.contentItemId);
+          if (contentItem && contentItem.type === "quiz" && progress.score) {
+            quizScores.push({
+              student: enrollment.studentId?.full_name,
+              quiz: contentItem.title,
+              score: progress.score,
+              maxScore: progress.maxScore,
+              percentage: progress.percentage,
+            });
+          }
+        });
+      });
+
+      const averageQuizScore =
+        quizScores.length > 0
+          ? quizScores.reduce((sum, item) => sum + item.percentage, 0) /
+            quizScores.length
+          : 0;
+
+      res.status(200).json({
+        success: true,
+        data: {
+          courseDetails: {
+            title: course.title,
+            type: course.type,
+            price: course.price,
+            rating: course.rating,
+            createdAt: course.createdAt,
+          },
+          enrollmentStats: {
+            total: totalEnrolled,
+            completed: completedStudents,
+            completionRate:
+              totalEnrolled > 0 ? (completedStudents / totalEnrolled) * 100 : 0,
+            activeStudents:
+              course.enrollments?.filter(
+                (enrollment) =>
+                  enrollment.lastAccessed &&
+                  new Date(enrollment.lastAccessed) >
+                    new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+              ).length || 0,
+          },
+          contentProgress,
+          quizPerformance: {
+            averageScore: Math.round(averageQuizScore),
+            totalQuizzes: contentProgress.quiz.total,
+            completedQuizzes: contentProgress.quiz.completed,
+            detailedScores: quizScores,
+          },
+          studentProgress:
+            course.enrollments?.map((enrollment) => ({
+              student: enrollment.studentId?.full_name,
+              email: enrollment.studentId?.email,
+              enrolledAt: enrollment.enrolledAt,
+              completed: enrollment.completed,
+              progress: enrollment.progress || [],
+              lastAccessed: enrollment.lastAccessed,
+            })) || [],
+        },
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to fetch course analytics",
+        error: error.message,
+      });
+    }
+  }
+);
+
+// Helper functions
+function calculateStudentEngagement(courses) {
+  const engagement = {
+    high: 0,
+    medium: 0,
+    low: 0,
+  };
+
+  courses.forEach((course) => {
+    course.enrollments?.forEach((enrollment) => {
+      const lastAccess = enrollment.lastAccessed;
+      if (!lastAccess) {
+        engagement.low++;
+        return;
+      }
+
+      const daysSinceLastAccess =
+        (new Date() - new Date(lastAccess)) / (1000 * 60 * 60 * 24);
+
+      if (daysSinceLastAccess <= 7) {
+        engagement.high++;
+      } else if (daysSinceLastAccess <= 30) {
+        engagement.medium++;
+      } else {
+        engagement.low++;
+      }
+    });
+  });
+
+  return engagement;
+}
+
+function calculateGrowth(current, total) {
+  if (total === 0) return 100;
+  return ((current / total) * 100).toFixed(1);
+}
+
 module.exports = Teaceherrouter;

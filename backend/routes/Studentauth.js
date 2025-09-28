@@ -37,14 +37,14 @@ const storage = multer.diskStorage({
     }
 
     cb(null, finalName);
-  }
+  },
 });
 
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 2 * 1024 * 1024 // 2MB limit
-  }
+    fileSize: 2 * 1024 * 1024, // 2MB limit
+  },
 });
 
 // Email transporter
@@ -52,8 +52,8 @@ const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
     user: "tausifrahman02@gmail.com",
-    pass: "ozbw qiwq tzzn yhli"
-  }
+    pass: "ozbw qiwq tzzn yhli",
+  },
 });
 
 // Helper functions
@@ -88,13 +88,13 @@ Studnetauth.get("/profile/:id", studentAuth, async (req, res) => {
         role: student.role,
         isVerified: student.isVerified,
         createdAt: student.createdAt,
-        updatedAt: student.updatedAt
-      }
+        updatedAt: student.updatedAt,
+      },
     });
   } catch (error) {
     res.status(500).json({
       message: "Failed to fetch profile",
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -115,13 +115,13 @@ Studnetauth.get("/profile", studentAuth, async (req, res) => {
         role: req.student.role,
         isVerified: req.student.isVerified,
         createdAt: req.student.createdAt,
-        updatedAt: req.student.updatedAt
-      }
+        updatedAt: req.student.updatedAt,
+      },
     });
   } catch (error) {
     res.status(500).json({
       message: "Failed to fetch profile",
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -139,7 +139,7 @@ Studnetauth.post(
       if (existingStudent) {
         return res.status(400).json({
           success: false,
-          message: "Student with this email already exists"
+          message: "Student with this email already exists",
         });
       }
       const student = new Student({
@@ -148,7 +148,7 @@ Studnetauth.post(
         full_name,
         phone,
         date_of_birth: date_of_birth || null,
-        address: address || null
+        address: address || null,
       });
       if (profilePhoto) {
         student.profile_picture = req.file.filename;
@@ -161,7 +161,7 @@ Studnetauth.post(
         from: '"Northern-Lights" <tausifrahman02@gmail.com>',
         to: email,
         subject: "Verify Your Account",
-        html: `Your verification OTP is: <strong>${otp}</strong>. It expires in ${OTP_EXPIRY_MINUTES} minutes.`
+        html: `Your verification OTP is: <strong>${otp}</strong>. It expires in ${OTP_EXPIRY_MINUTES} minutes.`,
       });
 
       res.status(201).json({
@@ -172,8 +172,8 @@ Studnetauth.post(
           id: student._id,
           email: student.email,
           full_name: student.full_name,
-          profile_picture: student.profile_picture
-        }
+          profile_picture: student.profile_picture,
+        },
       });
     } catch (error) {
       res
@@ -228,8 +228,8 @@ Studnetauth.post("/verify-otp", async (req, res) => {
         id: student._id,
         email: student.email,
         full_name: student.full_name,
-        role: student.role
-      }
+        role: student.role,
+      },
     });
   } catch (error) {
     res
@@ -261,7 +261,7 @@ Studnetauth.post("/resend-otp", async (req, res) => {
       from: `"Education App" <tausifrahman02@gmail.com>`,
       to: email,
       subject: "New Verification OTP",
-      html: `Your new verification OTP is: <strong>${otp}</strong>. It expires in ${OTP_EXPIRY_MINUTES} minutes.`
+      html: `Your new verification OTP is: <strong>${otp}</strong>. It expires in ${OTP_EXPIRY_MINUTES} minutes.`,
     });
 
     res.status(200).json({ message: "New OTP sent successfully" });
@@ -298,7 +298,7 @@ Studnetauth.post("/login", async (req, res) => {
         (student.lockUntil - Date.now()) / (60 * 1000) // time in minutes
       );
       return res.status(403).json({
-        message: `Account locked. Try again in ${remainingTime} minutes.`
+        message: `Account locked. Try again in ${remainingTime} minutes.`,
       });
     }
 
@@ -313,7 +313,7 @@ Studnetauth.post("/login", async (req, res) => {
     // Check if email is verified
     if (!student.isVerified) {
       return res.status(403).json({
-        message: "Account not verified. Please verify your email first."
+        message: "Account not verified. Please verify your email first.",
       });
     }
 
@@ -343,8 +343,8 @@ Studnetauth.post("/login", async (req, res) => {
         address: student.address,
         profile_picture: student.profile_picture,
         role: student.role,
-        isVerified: student.isVerified
-      }
+        isVerified: student.isVerified,
+      },
     });
   } catch (error) {
     res.status(500).json({ message: "Login failed", error: error.message });
@@ -359,7 +359,7 @@ Studnetauth.post("/forgot-password", async (req, res) => {
     if (!student) {
       return res.status(200).json({
         success: true,
-        message: "If an account exists, a reset OTP has been sent"
+        message: "If an account exists, a reset OTP has been sent",
       });
     }
 
@@ -374,18 +374,18 @@ Studnetauth.post("/forgot-password", async (req, res) => {
       from: `"Education App" <tausifrahman02@gmail.com>`,
       to: email,
       subject: "Password Reset OTP",
-      html: `Your OTP: <strong>${otp}</strong> (valid for 5 mins)`
+      html: `Your OTP: <strong>${otp}</strong> (valid for 5 mins)`,
     });
 
     res.status(200).json({
       success: true,
-      message: "OTP sent successfully"
+      message: "OTP sent successfully",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Failed to send OTP",
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -397,7 +397,7 @@ Studnetauth.post("/verify-reset-otp", async (req, res) => {
     if (!email || !otp) {
       return res.status(400).json({
         success: false,
-        message: "Email and OTP are required"
+        message: "Email and OTP are required",
       });
     }
 
@@ -405,13 +405,13 @@ Studnetauth.post("/verify-reset-otp", async (req, res) => {
     const student = await Student.findOne({
       email,
       otp,
-      otpExpires: { $gt: new Date() }
+      otpExpires: { $gt: new Date() },
     });
 
     if (!student) {
       return res.status(400).json({
         success: false,
-        message: "Invalid or expired OTP"
+        message: "Invalid or expired OTP",
       });
     }
 
@@ -420,7 +420,7 @@ Studnetauth.post("/verify-reset-otp", async (req, res) => {
       {
         id: student._id,
         email: student.email,
-        purpose: "password_reset"
+        purpose: "password_reset",
       },
       "15m"
     );
@@ -436,14 +436,14 @@ Studnetauth.post("/verify-reset-otp", async (req, res) => {
       tempToken,
       user: {
         id: student._id,
-        email: student.email
-      }
+        email: student.email,
+      },
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Internal server error during OTP verification",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 });
@@ -476,7 +476,7 @@ Studnetauth.post("/reset-password", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Password reset failed",
-      error: error.message
+      error: error.message,
     });
   }
 });

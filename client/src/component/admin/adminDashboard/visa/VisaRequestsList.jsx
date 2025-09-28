@@ -129,13 +129,18 @@ const VisaRequestsList = ({ onViewRequest }) => {
   };
 
   const filteredRequests = requests.filter((request) => {
+    // Check if request.student exists and has the required properties
+    if (!request.student) {
+      return false; // Skip requests with null student
+    }
+
     const matchesSearch =
       request.student.full_name
-        .toLowerCase()
+        ?.toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
-      request.student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.student.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.destinationCountry
-        .toLowerCase()
+        ?.toLowerCase()
         .includes(searchTerm.toLowerCase());
 
     const matchesStatus =
@@ -235,14 +240,15 @@ const VisaRequestsList = ({ onViewRequest }) => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-900 flex items-center justify-center text-gray-100 font-bold">
-                        {request.student.full_name.charAt(0).toUpperCase()}
+                        {request.student?.full_name?.charAt(0).toUpperCase() ||
+                          "N/A"}
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">
-                          {request.student.full_name}
+                          {request.student?.full_name || "Student Not Found"}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {request.student.email}
+                          {request.student?.email || "No email"}
                         </div>
                       </div>
                     </div>
